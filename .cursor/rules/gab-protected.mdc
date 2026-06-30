@@ -1,0 +1,31 @@
+---
+description: Protective rule for GAB protected/encrypted (.g2p) script files -- never edit
+globs: "**/*.g2p"
+alwaysApply: false
+---
+
+# GAB Protected Script (.g2p) Files
+
+`.g2p` is the **encrypted distribution format** for GAB scripts. It is an alternative to `.g2u` + `.sig`, NOT a companion file.
+
+## Format Comparison
+| | `.g2u` + `.sig` | `.g2p` |
+|---|---|---|
+| Source code | Plaintext | Encrypted (AES) |
+| Signature | External `.sig` file | Built-in `info::` hash |
+| Editable in Cursor | Yes | **No** |
+| Contains forms | No (forms in ScreenSU code) | Yes (bundles form designer XML) |
+
+## Package Structure
+```
+file::<name>::<version>::<size>
+file::<FormLayout1.xml>::<version>::<size>
+info::<base64_integrity_hash>
+data::<base64_encrypted_payload>
+```
+The encrypted payload contains the script code + bundled form designer XML layouts.
+
+## NEVER Edit These Files
+The content is encrypted. Editing will corrupt the integrity hash and render the file unusable. If you need to work on a `.g2p`:
+1. Open it in the **GAB Code Editor** (decrypts in memory)
+2. **Save As** `.g2u` to get an editable plaintext copy

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .cursor/hooks/gab-auto-lint.ps1",
+        "matcher": "Write",
+        "failClosed": false
+      },
+      {
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .cursor/hooks/gab-sig-check.ps1",
+        "matcher": "Write",
+        "failClosed": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+---
+description: Context for GAB hook data (.hf) files -- runtime artifacts in two formats
+globs: "**/*.hf"
+alwaysApply: false
+---
+
+# GAB Hook Data (.hf) Files
+
+Hook files are **runtime artifacts** that pass environment context from the menu/launcher to the GAB runtime. They exist in two active formats:
+
+## Format 1: Legacy Pipe-Delimited
+Used by `temphook*.hf` and `CallGAS*.hf` files. Fields separated by `*!*`:
+```
+HookNumber*!*Terminal*!*Username*!*CompanyCode*!*FilesDir*!*PrgmsDir*!*ConfigDir*!*GASFile*!*...
+DATA-LaunchFile*!*...*!*STRING*!*...*!*<path>*!*
+```
+
+## Format 2: JSON
+Used by Code Editor `gabce-*.hf` files and parsed into `.g2u.debug` runtime logs. Contains typed `PassedElements` with `Id`, `DataTypeName`, `ValueCurrent`, etc.
+
+## Key Fields (Both Formats)
+- **Username, Terminal, CompanyCode** -- session identity
+- **DATA-LaunchFile** -- the `.gaf` file being launched
+- **SCRIPT** -- the `.g2u` source file path
+- **TRANSID** -- transaction ID for hook callbacks
+- **777777 / 999999** -- control codes (override flag, callback)
+
+## These Are Read-Only
+Do not edit `.hf` files. They are ephemeral -- created at launch, consumed by the runtime, often deleted after execution.
+
+## Routing
+Load `agents/AGENTS.HOOKS.md` for the hook system reference.

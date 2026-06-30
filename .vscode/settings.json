@@ -1,0 +1,42 @@
+﻿{
+    "files.associations":  {
+                               "*.g2u":  "gab",
+                               "*.lib":  "gab",
+                               "*.hf":  "json",
+                               "*.glog":  "log"
+                           },
+    "[gab]":  {
+                  "files.encoding":  "utf8bom",
+                  "files.eol":  "\r\n",
+                  "editor.trimAutoWhitespace":  false,
+                  "files.trimTrailingWhitespace":  false,
+                  "files.insertFinalNewline":  false,
+                  "editor.quickSuggestions":  {
+                                                  "other":  "on",
+                                                  "comments":  "off",
+                                                  "strings":  "off"
+                                              },
+                  "editor.suggestOnTriggerCharacters":  true,
+                  "editor.wordBasedSuggestions":  "off",
+                  "editor.suggest.showWords":  false
+              },
+    "explorer.fileNesting.enabled":  true,
+    "explorer.fileNesting.patterns":  {
+                                          "*.g2u":  "${capture}.g2u.sig, ${capture}.gaf"
+                                      },
+    "search.exclude":  {
+                           "**/*.g2u.sig":  true
+                       },
+    "files.readonlyInclude":  {
+                                  "**/*.g2p":  true,
+                                  "**/*.g2u.sig":  true
+                              },
+    "npm.autoDetect":  "off",
+    "npm.exclude":  [
+                        "**/tools/**",
+                        "**/src/gab-form-designer-ext/**",
+                        "**/src/gab-intellisense-ext/**",
+                        "**/src/GabFormBridge/**"
+                    ],
+    "gabFormDesigner.bridgePath":  "C:\\Users\\bstevens\\.gab-agents\\bin\\GabFormBridge.exe"
+}

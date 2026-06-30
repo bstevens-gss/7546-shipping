@@ -1,0 +1,30 @@
+---
+description: Context for GAB runtime debug (.g2u.debug) log files -- full environment JSON dumps
+globs: "**/*.debug"
+alwaysApply: false
+---
+
+# GAB Runtime Debug (.g2u.debug) Files
+
+Debug files are created by `octsrs.net.exe` for every script execution. Named: `octsrs.<pid>.<timestamp>-<scriptname>.g2u.debug`
+
+## Structure
+The first ~150 lines contain a **JSON environment dump** with:
+- **All GSS directory paths** (25+): GlobalDirectory, PluginsDir, GASDir, DDFDir, ScriptsDir, TempDir, BinDir, etc.
+- **User context**: Username, Terminal, CompanyCode, AccentColor
+- **Script metadata**: GASFile, ScriptName, ScriptPath, ScriptVersion
+- **Calling context**: CallingProgram, CallingProgramPID, CalledSync, MenuType, Debug flag
+- **V.Passed data**: Full typed PassedElements array with Id, DataTypeName, ValueCurrent
+
+After the JSON header, the file contains timestamped runtime log entries for the script execution.
+
+## Location
+`%TEMP%\gss\octsrs.<pid>.<timestamp>-<scriptname>.g2u.debug`
+
+## These files are useful for:
+- Debugging script failures (check the log entries after the JSON header)
+- Understanding the runtime environment (directory paths, user context)
+- Inspecting V.Passed values at launch time
+
+## These Are Read-Only
+Do not edit debug files. They are diagnostic artifacts.

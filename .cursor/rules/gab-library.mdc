@@ -1,0 +1,28 @@
+---
+description: Agent guidance for GAB library (.lib) files -- reusable subroutine collections
+globs: "**/*.lib"
+alwaysApply: false
+---
+
+# GAB Library (.lib) Files
+
+You are editing a **GAB library** -- a reusable collection of subroutines included by `.g2u` scripts via `Program.Sub.IncludeFile`.
+
+## Key Differences from .g2u
+- No `ScreenSU` sub (libraries have no GUI declarations)
+- No `Main` entry point -- libraries provide subs called by the including script
+- Same encoding: **UTF-8 with BOM**, **CRLF**, no trailing newline
+- Same signing: requires a companion `.sig` file
+
+## Include Convention
+Scripts include libraries with: `Program.Sub.IncludeFile("libraryname.lib")`
+The runtime resolves `.lib` files relative to the script's directory, then falls back to `<GlobalDirectory>\PLUGINS\gab` (see `AGENTS.PROJECT.md` for the Global Directory path).
+
+## Standard Libraries
+Numbered `.lib` files in `<GlobalDirectory>\PLUGINS\gab` (e.g. `1000.lib`, `175100.lib`) are GS Mobile shared libraries. Each has a companion `*Validate.lib` for input validation.
+
+## Golden Rule
+Same as .g2u: **never invent APIs**. Verify via `gab_api_lookup` MCP tool. No inline math operators or `+` string concat.
+
+## Routing
+Load `agents/AGENTS.GAB.md` for the full reference.

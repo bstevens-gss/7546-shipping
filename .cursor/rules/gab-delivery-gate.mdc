@@ -1,0 +1,75 @@
+---
+description: GAB delivery gate -- lint, API validate, and runtime trace required before presenting code as complete
+globs: "**/*.g2u,**/*.lib"
+alwaysApply: false
+---
+
+# GAB Delivery Gate (Non-Negotiable)
+
+Before presenting ANY `.g2u` or `.lib` change as complete, working, or ready for review, you MUST run validation and show evidence. Do not ask the user to test first.
+
+## 1. Static validation (required before sign/run)
+
+Run BOTH tools on every changed file. Include full output in a **Verification** section. Both must exit 0 before delivery.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.gab-agents\skills\gab-lint\scripts\gab-lint.ps1" -Path "<file>"
+powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.gab-agents\tools\Validate-GabApi.ps1" -Path "<file>"
+```
+
+- Fix all errors and re-run until clean.
+- Do NOT deliver code with unresolved lint or API validation failures.
+
+## CRITICAL: Sign is ALWAYS the last file operation
+
+Cursor's StrReplace and Write tools strip the UTF-8 BOM. The sign script restores it.
+If you edit a .g2u/.lib AFTER signing, the BOM is gone, the .sig is invalid, and files
+get re-normalized on next open. The correct order is:
+
+1. Make ALL code changes (StrReplace/Write)
+2. Run static validation (lint + API validate)
+3. Fix any errors found (more StrReplace)
+4. Sign (LAST -- restores BOM + generates valid .sig)
+5. NEVER touch the file again after step 4
+
+If you need to fix something after signing, you MUST re-sign as the final step.
+
+## 2. Runtime verification (required in Agent mode)
+
+After static validation passes: sign (`gab-sign` skill), then run `gab-test-debug` or `run-gaf.ps1 -Sign`.
+
+Evidence required (at least one):
+
+- `%TEMP%\GSS\octsrs.*.debug` with modification time after your launch, containing `SCRIPT COMPLETED SUCCESSFULLY` and no `[ERROR]` after it
+- Or `.debug.log` from the test-debug pipeline with the same success marker
+
+If runtime cannot run (Ask mode, no GSS, missing DSN), state explicitly: **"I cannot verify runtime behavior."** Never say "should work", "form is ready", or "looks correct" without evidence.
+
+## 3. Delivery format
+
+Every GAB delivery response MUST include:
+
+| # | Item |
+|---|------|
+| 1 | gab-lint result (pass/fail + output) |
+| 2 | Validate-GabApi result (pass/fail + output) |
+| 3 | Runtime trace excerpt OR explicit "runtime not verified" statement |
+
+No Verification section = delivery is incomplete.
+
+## Plan mode
+
+When the chat is in **Plan mode**:
+
+- Do NOT present GAB work as complete or verified.
+- Do NOT run gab-lint, Validate-GabApi, or gab-test-debug during planning unless the user explicitly asks.
+- Every GAB-related plan MUST include these as explicit build/verify steps after implementation:
+  1. gab-lint (exit 0)
+  2. Validate-GabApi.ps1 (exit 0)
+  3. gab-sign -> gab-test-debug -> trace shows `SCRIPT COMPLETED SUCCESSFULLY`
+- Plan deliverable: a **Verification** subsection under implementation steps, not fabricated "already passed" results.
+
+## Relationship to other rules
+
+- Complements `gab-script.mdc` (sign/run discipline) and `agents/AGENTS.GAB.md` (coding protocol).
+- `agents-routing.mdc` still applies first -- load GAB Tier 2/3 docs before writing code.

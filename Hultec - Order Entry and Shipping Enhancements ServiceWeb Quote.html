@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ServiceWeb Quote - Hultec Order Entry &amp; Shipping Enhancements (15919-0)</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f4f4; padding: 20px; line-height: 1.6; color: #333; }
+        .quote-container { max-width: 1300px; margin: 0 auto; background: white; color: #333; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 30px 40px; }
+        h2 { color: #333; margin-bottom: 15px; }
+        .meta-row { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 12px; }
+        .meta-field { min-width: 150px; }
+        .meta-label { font-size: 0.85em; color: #888; font-style: italic; display: block; }
+        .meta-value { font-size: 1em; color: #333; background: #f8f8f8; padding: 4px 10px; border-radius: 3px; display: inline-block; }
+        .field-label { font-size: 0.85em; color: #888; font-style: italic; margin-top: 20px; margin-bottom: 6px; }
+        .rich-text { background: white; color: #333; border: 1px solid #ddd; padding: 16px 20px; border-radius: 4px; margin-bottom: 20px; }
+        .rich-text h3 { color: #667eea; font-size: 1.3em; margin: 25px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #e8e8e8; }
+        .rich-text h3:first-child { margin-top: 0; }
+        .rich-text h4 { color: #764ba2; font-size: 1.1em; margin: 18px 0 8px; }
+        .rich-text p { margin-bottom: 12px; color: #333; }
+        .rich-text ul, .rich-text ol { margin: 8px 0 16px 25px; color: #333; }
+        .rich-text li { margin-bottom: 6px; color: #333; }
+        .spec-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 0.95em; }
+        .spec-table th { background: #34495e; color: white; padding: 12px 15px; text-align: left; }
+        .spec-table td { padding: 10px 15px; border-bottom: 1px solid #e0e0e0; vertical-align: top; color: #333; }
+        .quote-details-table { width: 90%; border-collapse: collapse; margin: 20px 0; }
+        .quote-details-table th { background: #f0f0f0; color: #555; font-style: italic; padding: 8px 12px; text-align: center; border-bottom: 2px solid #ccc; font-weight: normal; }
+        .quote-details-table td { padding: 8px 12px; text-align: center; border-bottom: 1px solid #eee; color: #333; }
+        .quote-details-table tr.total-row td { border-top: 2px solid #333; font-weight: bold; }
+        .disclaimers { margin-top: 30px; padding-top: 20px; border-top: 2px solid #ddd; }
+        .disclaimers h3 { color: #333; font-size: 1.1em; margin-bottom: 12px; }
+        .disclaimers ol { margin-left: 20px; }
+        .disclaimers li { margin-bottom: 10px; color: #555; font-size: 0.93em; }
+        .signature-area { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+<div class="quote-container">
+    <h2>Quote for Hultec</h2>
+    <div class="meta-row">
+        <div class="meta-field"><span class="meta-label">Quote-Rev</span><span class="meta-value">15919-0</span></div>
+        <div class="meta-field"><span class="meta-label">Expiration Date</span><span class="meta-value">June 12, 2026</span></div>
+        <div class="meta-field"><span class="meta-label">Contact for Quote</span><span class="meta-value">[TBD]</span></div>
+        <div class="meta-field"><span class="meta-label">Call Reference</span><span class="meta-value">7546</span></div>
+    </div>
+    <div class="field-label">Title</div>
+    <div class="meta-value" style="width:93%; margin-bottom:15px;">Order Entry &amp; Shipping Enhancements &mdash; Split SO Line, Edit Sales Order, Performance Optimization</div>
+
+    <!-- ==================== DESCRIPTION ==================== -->
+    <div class="field-label">Description</div>
+    <div class="rich-text">
+
+        <p style="color: #333; margin-bottom: 12px;">Hultec&rsquo;s shipping team uses the Shipping Dashboard (project 7546) for load planning and picker assignment. This enhancement adds the ability to <strong style="color: #333;">split sales order lines</strong> directly from within the dashboard, eliminating the need to exit to the classic Order Entry screen. A new <strong style="color: #333;">&ldquo;Split SO Line&rdquo;</strong> context menu item opens a modal form where users enter a split quantity and new due date. The system creates a new SO line via <code style="color: #333;">ORDADCMD</code>, updates the original line via the <code style="color: #333;">Sales.UpdateOrderLinesByFile</code> CallWrapper, and enforces business rules against ship schedules and staged shipments.</p>
+
+        <p style="color: #333; margin-bottom: 12px;">Additionally, an <strong style="color: #333;">&ldquo;Edit Sales Order&rdquo;</strong> context menu item launches the classic Order Entry edit screen without leaving the dashboard, and a <strong style="color: #333;">shared dictionary optimization</strong> eliminates 6 duplicate SQL queries per load/refresh cycle.</p>
+
+        <div style="background: #fff3cd; color: #333; border-left: 4px solid #ffc107; padding: 15px 20px; border-radius: 6px; margin: 15px 0;">
+            <strong style="color: #856404;">Process Change &mdash; Replaces Existing Workflows</strong>
+            <p style="color: #333; margin: 8px 0 0;">By adopting the Split SO Line approach, Hultec will <strong style="color: #333;">retire two existing processes</strong>:</p>
+            <ul style="margin: 8px 0 0 25px;">
+                <li style="color: #333; margin-bottom: 6px;"><strong style="color: #333;">Custom Reservation Program</strong> &mdash; No longer needed; order line splitting within the dashboard replaces the reservation workflow.</li>
+                <li style="color: #333; margin-bottom: 6px;"><strong style="color: #333;">Blanket Sales Order and Release</strong> &mdash; No longer needed; splitting lines with specific quantities and due dates on standard sales orders replaces the blanket order/release process.</li>
+            </ul>
+            <p style="color: #333; margin: 8px 0 0;">This consolidation simplifies the shipping workflow into a single tool, reducing training requirements and eliminating separate programs.</p>
+        </div>
+
+        <h3 style="color: #667eea; font-size: 1.3em; margin: 25px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #e8e8e8;">Assumptions</h3>
+        <ul>
+            <li style="color: #333; margin-bottom: 6px;">Shipping Dashboard (7546) is deployed and operational in Hultec&rsquo;s environment</li>
+            <li style="color: #333; margin-bottom: 6px;">GSS version 2020.1 or higher with CallWrapper support for <code style="color: #333;">Sales.UpdateOrderLinesByFile</code> and <code style="color: #333;">Sales.EditSalesOrderInClassicScreen</code></li>
+            <li style="color: #333; margin-bottom: 6px;"><code style="color: #333;">ORDADCMD</code> utility is available and functional</li>
+            <li style="color: #333; margin-bottom: 6px;">IPM permissions (Order Entry &gt; Edit &gt; Sales Orders) configured for intended users</li>
+            <li style="color: #333; margin-bottom: 6px;">User field label &ldquo;SPLIT FROM LINE&rdquo; will be configured in <code style="color: #333;">OE_USER_FLDS_LN</code> if traceability is desired (feature degrades gracefully if not configured)</li>
+        </ul>
+
+        <h3 style="color: #667eea; font-size: 1.3em; margin: 25px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #e8e8e8;">Prerequisites</h3>
+        <ul>
+            <li style="color: #333; margin-bottom: 6px;">Shipping Dashboard (7546) deployed and accessible</li>
+            <li style="color: #333; margin-bottom: 6px;">GSS version &ge; 2020.1 with required CallWrappers</li>
+            <li style="color: #333; margin-bottom: 6px;">ODBC connectivity to Actian Zen database</li>
+            <li style="color: #333; margin-bottom: 6px;">User accounts with appropriate IPM permissions</li>
+        </ul>
+    </div>
+
+    <!-- ==================== SPECIFICATIONS ==================== -->
+    <div class="field-label">Specifications</div>
+    <div class="rich-text">
+
+        <h3 style="color: #667eea; font-size: 1.3em; margin: 0 0 12px; padding-bottom: 6px; border-bottom: 2px solid #e8e8e8;">Scope of Work</h3>
+        <ol>
+            <li style="color: #333; margin-bottom: 6px;"><strong style="color: #333;">Split SO Line context menu</strong> &mdash; Add &ldquo;Split SO Line&rdquo; to right-click menus on Open Orders and Due&nbsp;Today/Past&nbsp;Due grids</li>
+            <li style="color: #333; margin-bottom: 6px;"><strong style="color: #333;">Split SO Line modal form</strong> &mdash; Grid displaying selected lines with editable Qty to Split and New Due Date columns (yellow-highlighted)</li>
+            <li style="color: #333; margin-bottom: 6px;"><strong style="color: #333;">Split save processing</strong> &mdash; Order lock check, ship schedule validation, staged shipment validation, new line creation via <code style="color: #333;">ORDADCMD</code>, original line update + promise date via <code style="color: #333;">Sales.UpdateOrderLinesByFile</code> CallWrapper (two-line CSV), DATE_ORDER copy, weight recalculation</li>
+            <li style="color: #333; margin-bottom: 6px;"><strong style="color: #333;">Dynamic user field traceability</strong> &mdash; Lookup &ldquo;SPLIT FROM LINE&rdquo; label in <code style="color: #333;">OE_USER_FLDS_LN</code>, write original line number to mapped user field on new line</li>
+            <li style="color: #333; margin-bottom: 6px;"><strong style="color: #333;">Grid serialization</strong> &mdash; Save/restore split form grid layout via GSS Registry (<code style="color: #333;">GVSPLIT</code> key)</li>
+            <li style="color: #333; margin-bottom: 6px;"><strong style="color: #333;">Edit Sales Order context menu</strong> &mdash; Right-click item launching <code style="color: #333;">Sales.EditSalesOrderInClassicScreen</code> with permission and lock checks</li>
+            <li style="color: #333; margin-bottom: 6px;"><strong style="color: #333;">Shared dictionary optimization</strong> &mdash; Consolidate 6 duplicate SQL queries into <code style="color: #333;">LoadSharedDictionaries</code>/<code style="color: #333;">CloseSharedDictionaries</code> subroutines</li>
+        </ol>
+
+        <h3 style="color: #667eea; font-size: 1.3em; margin: 25px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #e8e8e8;">Context Menu</h3>
+        <p style="color: #333; margin-bottom: 12px;">New items &ldquo;Split SO Line&rdquo; and &ldquo;Edit Sales Order&rdquo; appear at the bottom of the right-click menu on Open Orders and Due&nbsp;Today/Past&nbsp;Due grids:</p>
+        <div style="border: 2px solid #e0e0e0; border-radius: 8px; overflow: hidden; margin: 15px 0; display: inline-block;">
+            <div style="background: #34495e; color: white; padding: 10px 18px; font-weight: bold; font-size: 0.95em;">Context Menu &mdash; New Items Below Separator</div>
+            <img src="context_menu_screenshot.png" alt="Right-click context menu showing standard items followed by a separator and two new items: Split SO Line and Edit Sales Order" style="display: block;">
+        </div>
+
+        <h3 style="color: #667eea; font-size: 1.3em; margin: 25px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #e8e8e8;">Split SO Line &mdash; Screenshot</h3>
+        <p style="color: #333; margin-bottom: 12px;">Grid view with editable Qty to Split and New Due Date columns (yellow background):</p>
+        <div style="border: 2px solid #e0e0e0; border-radius: 8px; overflow: hidden; margin: 15px 0;">
+            <div style="background: #34495e; color: white; padding: 10px 18px; font-weight: bold; font-size: 0.95em;">Split SO Line &mdash; Modal Form</div>
+            <img src="split_so_line_screenshot.png" alt="Split SO Line modal form showing two order lines for AMD / ADVANCED MICRO DEVICES, order 0010111, with editable Qty to Split and New Due Date columns" style="width: 100%; display: block;">
+        </div>
+
+        <h3 style="color: #667eea; font-size: 1.3em; margin: 25px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #e8e8e8;">Validation Logic</h3>
+        <table style="width: 100%; border-collapse: collapse; margin: 15px 0; background: white; color: #333;">
+            <tr>
+                <th style="background: #34495e; color: white; padding: 12px 15px; text-align: left;">Rule</th>
+                <th style="background: #34495e; color: white; padding: 12px 15px; text-align: left;">Check</th>
+                <th style="background: #34495e; color: white; padding: 12px 15px; text-align: left;">Behavior</th>
+            </tr>
+            <tr>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Split qty bounds</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">QTY_SPLIT &gt; 0 AND QTY_SPLIT &lt; QTY_BO</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Block entire save with message</td>
+            </tr>
+            <tr>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Order lock</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">OrderLocked subroutine</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Skip line, continue batch</td>
+            </tr>
+            <tr>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Ship schedule</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">COUNT(*) FROM V_OE_SHIP_SCHED</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Skip line, continue batch</td>
+            </tr>
+            <tr>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Staged shipment</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">COUNT(*) FROM STAGING_QUANTITY</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Skip line, continue batch</td>
+            </tr>
+            <tr>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">IPM permission</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">CheckUserAccessIPM(132,1)</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Block action with message</td>
+            </tr>
+        </table>
+
+        <h3 style="color: #667eea; font-size: 1.3em; margin: 25px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #e8e8e8;">CallWrapper Integration</h3>
+
+        <h4 style="color: #764ba2; font-size: 1.1em; margin: 18px 0 8px;">Sales.UpdateOrderLinesByFile</h4>
+        <p style="color: #333; margin-bottom: 12px;">Property-based CallWrapper processing a two-line CSV file per split. Properties: Company, CallingProgram, Screenless=1, InputFileName.</p>
+
+        <table style="width: 100%; border-collapse: collapse; margin: 15px 0; background: white; color: #333;">
+            <tr>
+                <th style="background: #34495e; color: white; padding: 12px 15px; text-align: left;">CSV&nbsp;Pos</th>
+                <th style="background: #34495e; color: white; padding: 12px 15px; text-align: left;">Field</th>
+                <th style="background: #34495e; color: white; padding: 12px 15px; text-align: left;">Line&nbsp;1 (Original)</th>
+                <th style="background: #34495e; color: white; padding: 12px 15px; text-align: left;">Line&nbsp;2 (New&nbsp;Split)</th>
+            </tr>
+            <tr>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">1</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Record Type</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">L</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">L</td>
+            </tr>
+            <tr>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">2</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Order Number</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">{OrderNo}</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">{OrderNo}</td>
+            </tr>
+            <tr>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">3</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Order Line</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">{OrigLineNo}</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">{NewLineNo}</td>
+            </tr>
+            <tr>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">6</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Qty</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">{RemainingQty}</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">&mdash;</td>
+            </tr>
+            <tr>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">7</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Price</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">{Price, 0.000000}</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">&mdash;</td>
+            </tr>
+            <tr>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">16</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Promise Date</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">&mdash;</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">{YYYYMMDD}</td>
+            </tr>
+            <tr>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">24</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Weight</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">{NewWeight}</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">&mdash;</td>
+            </tr>
+        </table>
+
+        <h4 style="color: #764ba2; font-size: 1.1em; margin: 18px 0 8px;">Sales.EditSalesOrderInClassicScreen</h4>
+        <p style="color: #333; margin-bottom: 12px;">Property-based CallWrapper opening the classic Order Entry screen. Properties: Company, SalesOrder.</p>
+
+        <h3 style="color: #667eea; font-size: 1.3em; margin: 25px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #e8e8e8;">Architecture Overview</h3>
+
+        <div style="background: #f8f9fa; color: #333; border-radius: 12px; padding: 30px; margin: 20px 0; border: 2px solid #e0e0e0;">
+            <div style="text-align: center; font-size: 0.9em; color: #666; margin-bottom: 15px;">Architecture Overview</div>
+            <div style="display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap; color: #333;">
+                <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 20px 25px; border-radius: 10px; text-align: center; min-width: 200px; box-shadow: 0 4px 15px rgba(102,126,234,0.3);">
+                    <div style="font-weight: bold; font-size: 1.1em; color: white;">Shipping Dashboard</div>
+                    <div style="font-size: 0.85em; margin-top: 5px; color: rgba(255,255,255,0.9);">GAB Script (.g2u)</div>
+                    <div style="font-size: 0.8em; color: rgba(255,255,255,0.8);">Split SO Line &bull; Edit SO &bull; Load Planning</div>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; color: #333;">
+                    <div style="display: flex; align-items: center; gap: 5px; color: #333;">
+                        <span style="color: #2ecc71; font-weight: bold;">&larr; READ</span>
+                        <span style="font-size: 0.8em; color: #999;">(ODBC)</span>
+                    </div>
+                    <div style="width: 120px; height: 2px; background: #ccc; color: #ccc;"></div>
+                    <div style="display: flex; align-items: center; gap: 5px; color: #333;">
+                        <span style="color: #e74c3c; font-weight: bold;">WRITE &rarr;</span>
+                        <span style="font-size: 0.8em; color: #999;">(CallWrappers)</span>
+                    </div>
+                </div>
+                <div style="background: #2c3e50; color: white; padding: 20px 25px; border-radius: 10px; text-align: center; min-width: 220px; box-shadow: 0 4px 15px rgba(44,62,80,0.3);">
+                    <div style="font-weight: bold; font-size: 1.1em; color: white;">Global Shop Solutions</div>
+                    <div style="font-size: 0.85em; margin-top: 5px; color: rgba(255,255,255,0.9);">Actian Zen Database</div>
+                    <div style="font-size: 0.8em; color: rgba(255,255,255,0.8); margin-top: 8px; line-height: 1.6;">Order Entry &bull; Shipping &bull; Inventory</div>
+                </div>
+            </div>
+        </div>
+
+        <h3 style="color: #667eea; font-size: 1.3em; margin: 25px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #e8e8e8;">Integration Points</h3>
+
+        <table style="width: 100%; border-collapse: collapse; margin: 15px 0; background: white; color: #333;">
+            <tr>
+                <th style="background: #34495e; color: white; padding: 12px 15px; text-align: left; width: 160px;">GSS Module</th>
+                <th style="background: #34495e; color: white; padding: 12px 15px; text-align: left; width: 70px;">Direction</th>
+                <th style="background: #34495e; color: white; padding: 12px 15px; text-align: left;">Integration Points</th>
+            </tr>
+            <tr>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;"><strong style="color: #333;">Order Entry</strong></td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;"><span style="color:#2ecc71; font-weight:bold;">READ</span></td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;"><code style="color: #333;">ORDER_LINES</code>, <code style="color: #333;">v_order_lines</code>, <code style="color: #333;">V_OE_SHIP_SCHED</code>, <code style="color: #333;">STAGING_QUANTITY</code>, <code style="color: #333;">OE_USER_FLDS_LN</code></td>
+            </tr>
+            <tr>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;"><strong style="color: #333;">Order Entry</strong></td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;"><span style="color:#e74c3c; font-weight:bold;">WRITE</span></td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;"><code style="color: #333;">ORDADCMD</code>, <code style="color: #333;">Sales.UpdateOrderLinesByFile</code>, <code style="color: #333;">Sales.EditSalesOrderInClassicScreen</code>, <code style="color: #333;">ORDER_LINES</code> (user field, DATE_ORDER)</td>
+            </tr>
+            <tr>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;"><strong style="color: #333;">Security</strong></td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;"><span style="color:#2ecc71; font-weight:bold;">READ</span></td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;"><code style="color: #333;">CheckUserAccessIPM(132,1)</code> &mdash; Order Entry edit permission</td>
+            </tr>
+            <tr>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;"><strong style="color: #333;">Shipping</strong></td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;"><span style="color:#2ecc71; font-weight:bold;">READ</span></td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Shared dictionaries: <code style="color: #333;">V_CUST_ORDER_NOTES</code>, <code style="color: #333;">GAB_4167_SO_NOTES</code>, <code style="color: #333;">ORDER_LN_TEXT</code>, <code style="color: #333;">OE_Carrier</code>, location 90 inventory</td>
+            </tr>
+        </table>
+
+        <h3 style="color: #667eea; font-size: 1.3em; margin: 25px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #e8e8e8;">Deliverables</h3>
+
+        <table style="width: 100%; border-collapse: collapse; margin: 15px 0; background: white; color: #333;">
+            <tr>
+                <th style="background: #34495e; color: white; padding: 12px 15px; text-align: left; width: 40px;">#</th>
+                <th style="background: #34495e; color: white; padding: 12px 15px; text-align: left; width: 220px;">Deliverable</th>
+                <th style="background: #34495e; color: white; padding: 12px 15px; text-align: left; width: 120px;">Type</th>
+                <th style="background: #34495e; color: white; padding: 12px 15px; text-align: left;">Description</th>
+            </tr>
+            <tr>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">1</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;"><strong style="color: #333;">Split SO Line</strong></td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">GAB Feature</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Modal form, ORDADCMD + CallWrapper save, validations, user field traceability, grid serialization</td>
+            </tr>
+            <tr>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">2</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;"><strong style="color: #333;">Edit Sales Order</strong></td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">GAB Feature</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Context menu launching classic Order Entry with permission and lock checks</td>
+            </tr>
+            <tr>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">3</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;"><strong style="color: #333;">Performance Optimization</strong></td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">Performance</td>
+                <td style="color: #333; padding: 10px 15px; border-bottom: 1px solid #e0e0e0;">6 duplicate SQL queries eliminated per refresh cycle via shared dictionary subroutines</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- ==================== QUOTE DETAILS ==================== -->
+    <h3>Quote Details</h3>
+    <table class="quote-details-table">
+        <tr>
+            <th>Sequence</th>
+            <th>Type</th>
+            <th>Hours</th>
+            <th>Rate</th>
+            <th>Total</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td>1</td>
+            <td>GAB</td>
+            <td>2</td>
+            <td>$225.00</td>
+            <td>$450.00</td>
+            <td style="text-align: left;">Discovery &amp; Analysis</td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td>GAB</td>
+            <td>16</td>
+            <td>$225.00</td>
+            <td>$3,600.00</td>
+            <td style="text-align: left;">GAB Custom Development &mdash; Split SO Line, Edit Sales Order, Performance Optimization</td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td>GAB</td>
+            <td>4</td>
+            <td>$225.00</td>
+            <td>$900.00</td>
+            <td style="text-align: left;">Testing, Documentation &amp; Delivery</td>
+        </tr>
+        <tr class="total-row">
+            <td></td>
+            <td>Total</td>
+            <td>22</td>
+            <td></td>
+            <td>$4,950.00</td>
+            <td></td>
+        </tr>
+    </table>
+
+    <!-- ==================== DISCLAIMERS ==================== -->
+    <div class="disclaimers">
+        <h3>Disclaimers</h3>
+        <ol>
+            <li><strong>GSS Version Requirement:</strong> GSS version 2020.1 or higher required.</li>
+            <li><strong>Purchase Order and Billing:</strong> PO required in full before commencement. Monthly billing for multi-month projects. Additional POs for overages.</li>
+            <li><strong>Acceptance of Project Scope/Quotes and Change Requests:</strong> Acceptance confirms review. Change requests subject to requote process.</li>
+            <li><strong>Project Cancellation:</strong> Customer may cancel; costs to date are billed.</li>
+            <li><strong>Training:</strong> Not included unless stated. Available as separate line item or virtual session.</li>
+            <li><strong>Terms and Conditions/Service:</strong> Serviced per Software Licensing Agreement. Projects are property of Global Shop Solutions.</li>
+        </ol>
+    </div>
+
+    <!-- ==================== SIGNATURE ==================== -->
+    <div class="signature-area">
+        <p style="color: #333; margin-bottom: 30px;">By signing below, I acknowledge that I have reviewed and accept the scope, terms, and pricing described in this quote.</p>
+        <div style="display: flex; gap: 40px;">
+            <div style="flex: 1;">
+                <div style="border-bottom: 2px solid #333; margin-bottom: 6px; min-width: 250px;">&nbsp;</div>
+                <div style="font-size: 0.85em; color: #666;">Signature</div>
+            </div>
+            <div style="flex: 1;">
+                <div style="border-bottom: 2px solid #333; margin-bottom: 6px; min-width: 200px;">&nbsp;</div>
+                <div style="font-size: 0.85em; color: #666;">Date</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,21 @@
+Program.Sub.Trans900000.Start
+'Transaction ID = 900000
+'Description: Launches an external GAB script by path (synchronous)
+F.Intrinsic.Control.SetErrorHandler("Trans900000_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+V.Global.sRequiredParameters.Set("SCRIPT")
+F.Intrinsic.Control.CallSub(Validateparms)
+
+F.Global.General.CallSyncGAS(V.Passed.SCRIPT, "", 2)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Trans900000_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GSS_GAF.g2u{0}{0}Subroutine: {1}{0}Error {2}: {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+F.Intrinsic.Control.EndIf
+Program.Sub.Trans900000.End

@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hultec - Order Entry &amp; Shipping Enhancements | T&amp;M Agreement</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            color: #333;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 50px 40px 40px;
+            text-align: center;
+            position: relative;
+        }
+        header h1 { font-size: 2.8em; margin-bottom: 8px; letter-spacing: -0.5px; }
+        header .subtitle { font-size: 1.4em; opacity: 0.92; margin-bottom: 20px; }
+        .doc-meta { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; font-size: 0.95em; opacity: 0.88; }
+        .doc-meta span { display: inline-flex; align-items: center; gap: 6px; }
+        .classification-badge {
+            display: inline-block; padding: 8px 24px; border-radius: 50px;
+            font-weight: bold; font-size: 1em; margin: 15px 0 0; letter-spacing: 0.5px;
+            background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.6); color: white;
+        }
+
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 30px; }
+        .info-card { background: #f8f9ff; color: #333; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; }
+        .info-card h3 { color: #667eea; margin-bottom: 12px; font-size: 1.1em; }
+        .info-card table { width: 100%; }
+        .info-card td { padding: 4px 0; vertical-align: top; color: #333; }
+        .info-card td:first-child { font-weight: 600; color: #555; width: 45%; }
+
+        .section { margin: 20px 30px; border: 2px solid #e0e0e0; border-radius: 10px; overflow: hidden; transition: all 0.3s ease; }
+        .section:first-of-type { margin-top: 30px; }
+        .section:last-of-type { margin-bottom: 30px; }
+        .section-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;
+            padding: 18px 25px; cursor: pointer; display: flex; justify-content: space-between;
+            align-items: center; font-size: 1.25em; font-weight: bold; user-select: none;
+        }
+        .section-header:hover { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); }
+        .section-header::after { content: '\25BC'; transition: transform 0.3s ease; font-size: 0.8em; }
+        .section-header.collapsed::after { transform: rotate(-90deg); }
+        .section-content { padding: 25px 30px; background: #fafafa; color: #333; }
+        .section.collapsed .section-content { display: none; }
+        .section-content h3 { color: #667eea; font-size: 1.3em; margin: 25px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #e8e8e8; }
+        .section-content h3:first-child { margin-top: 0; }
+        .section-content h4 { color: #764ba2; font-size: 1.1em; margin: 18px 0 8px; }
+        .section-content p { margin-bottom: 12px; color: #333; }
+        .section-content ul, .section-content ol { margin: 8px 0 16px 25px; color: #333; }
+        .section-content li { margin-bottom: 6px; }
+
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin: 20px 0; }
+        .stat-box { background: white; color: #333; border: 2px solid #667eea; border-radius: 8px; padding: 18px; text-align: center; }
+        .stat-value { font-size: 2.2em; font-weight: bold; color: #667eea; }
+        .stat-label { font-size: 0.88em; color: #666; margin-top: 4px; }
+
+        .info-box { background: #e3f2fd; color: #333; border: 2px solid #2196F3; border-radius: 8px; padding: 18px 22px; margin: 15px 0; }
+        .info-box h4 { color: #1565C0; margin: 0 0 8px; }
+        .warning-box { background: #fff3cd; color: #333; border: 2px solid #ffc107; border-radius: 8px; padding: 18px 22px; margin: 15px 0; }
+        .warning-box h4 { color: #856404; margin: 0 0 8px; }
+        .success-box { background: #d4edda; color: #333; border: 2px solid #28a745; border-radius: 8px; padding: 18px 22px; margin: 15px 0; }
+        .success-box h4 { color: #155724; margin: 0 0 8px; }
+
+        .data-table { width: 100%; border-collapse: collapse; margin: 15px 0; background: white; color: #333; border-radius: 8px; overflow: hidden; font-size: 0.95em; }
+        .data-table th { background: #34495e; color: white; padding: 12px 15px; text-align: left; font-weight: bold; }
+        .data-table td { padding: 10px 15px; border-bottom: 1px solid #e0e0e0; vertical-align: top; color: #333; }
+        .data-table tr:hover { background: #f5f8ff; color: #333; }
+        .data-table tr.total-row { background: #eef2ff; color: #333; font-weight: bold; }
+        .data-table tr.total-row td { border-top: 2px solid #667eea; border-bottom: none; }
+        .data-table tr.grand-total-row { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: bold; font-size: 1.05em; }
+        .data-table tr.grand-total-row td { border-bottom: none; }
+
+        .type-badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 0.85em; font-weight: bold; }
+        .type-badge.type-b { background: #fff8e1; color: #856404; border: 1px solid #ffc107; }
+
+        .phase-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin: 20px 0; }
+        .phase-card { background: white; color: #333; border: 3px solid; border-radius: 10px; padding: 22px; transition: all 0.3s ease; }
+        .phase-card:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+        .phase-card.phase-1 { border-color: #3498db; }
+        .phase-card.phase-2 { border-color: #2ecc71; }
+        .phase-card.phase-3 { border-color: #f39c12; }
+        .phase-number { font-size: 0.85em; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .phase-card.phase-1 .phase-number { color: #3498db; }
+        .phase-card.phase-2 .phase-number { color: #2ecc71; }
+        .phase-card.phase-3 .phase-number { color: #f39c12; }
+        .phase-title { font-size: 1.25em; font-weight: bold; color: #333; margin-bottom: 8px; }
+        .phase-hours { font-size: 0.9em; color: #666; margin-bottom: 12px; font-style: italic; }
+        .phase-items { list-style: none; padding: 0; margin: 0; }
+        .phase-items li { padding: 4px 0 4px 18px; position: relative; color: #555; font-size: 0.92em; }
+        .phase-items li::before { content: '\2713'; position: absolute; left: 0; font-weight: bold; }
+        .phase-card.phase-1 .phase-items li::before { color: #3498db; }
+        .phase-card.phase-2 .phase-items li::before { color: #2ecc71; }
+        .phase-card.phase-3 .phase-items li::before { color: #f39c12; }
+
+        .flow-container { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; margin: 15px 0; }
+        .flow-step { background: white; border: 2px solid #667eea; border-radius: 8px; padding: 10px 18px; text-align: center; font-size: 0.9em; font-weight: 600; color: #333; min-width: 120px; }
+        .flow-arrow { color: #667eea; font-size: 1.4em; font-weight: bold; }
+        .flow-step.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-color: #764ba2; }
+
+        .budget-visual { margin: 20px 0; }
+        .budget-bar { background: #e9ecef; color: #333; border-radius: 12px; height: 40px; position: relative; overflow: hidden; margin: 10px 0; }
+        .budget-fill { height: 100%; border-radius: 12px; transition: width 0.5s ease; }
+        .budget-markers { display: flex; justify-content: space-between; font-size: 0.85em; color: #666; margin-top: 4px; padding: 0 2px; }
+        .budget-marker { text-align: center; }
+        .budget-marker.alert-80 { color: #f39c12; font-weight: 600; }
+        .budget-marker.alert-100 { color: #e74c3c; font-weight: 600; }
+
+        .checklist { list-style: none; padding: 0; margin: 12px 0; }
+        .checklist li { padding: 8px 0 8px 30px; position: relative; border-bottom: 1px solid #eee; color: #333; }
+        .checklist li::before { content: '\25A1'; position: absolute; left: 4px; color: #667eea; font-size: 1.2em; }
+
+        .signature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin: 30px 0 10px; }
+        .signature-block { padding: 20px 0; }
+        .signature-block h4 { color: #667eea; margin-bottom: 20px; font-size: 1.1em; }
+        .sig-line { border-bottom: 2px solid #333; margin: 30px 0 6px; min-width: 300px; }
+        .sig-label { font-size: 0.85em; color: #666; }
+
+        @media (max-width: 768px) {
+            header h1 { font-size: 2em; }
+            .info-grid { grid-template-columns: 1fr; }
+            .signature-grid { grid-template-columns: 1fr; }
+            .section { margin: 12px 15px; }
+            .section-content { padding: 18px; }
+        }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; border-radius: 0; }
+            .section { margin: 10px 20px; break-inside: avoid; }
+            .section-header::after { display: none; }
+            .section.collapsed .section-content { display: block !important; }
+            .phase-card:hover { transform: none; box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <header>
+        <h1>Order Entry &amp; Shipping Enhancements</h1>
+        <p class="subtitle">Time &amp; Materials Agreement</p>
+        <div class="doc-meta">
+            <span>Customer: Hultec</span>
+            <span>Project Code: 7546</span>
+            <span>Date: April 13, 2026</span>
+            <span>Version: 1.0</span>
+        </div>
+        <div class="classification-badge type-b">TYPE B &mdash; TIME &amp; MATERIALS (22 Hours)</div>
+    </header>
+
+    <div class="info-grid">
+        <div class="info-card">
+            <h3>Customer Information</h3>
+            <table>
+                <tr><td>Customer:</td><td>Hultec</td></tr>
+                <tr><td>Primary Contact:</td><td>[TBD]</td></tr>
+                <tr><td>Email:</td><td>[TBD]</td></tr>
+                <tr><td>Phone:</td><td>[TBD]</td></tr>
+                <tr><td>Go-Live Target:</td><td>[TBD]</td></tr>
+            </table>
+        </div>
+        <div class="info-card">
+            <h3>Engagement Information</h3>
+            <table>
+                <tr><td>Project Code:</td><td>7546</td></tr>
+                <tr><td>Engagement Model:</td><td><span class="type-badge type-b">Type&nbsp;B &mdash; T&amp;M</span></td></tr>
+                <tr><td>Estimated Hours:</td><td>22 hours</td></tr>
+                <tr><td>Rate:</td><td>$225.00 / hour</td></tr>
+                <tr><td>Author:</td><td>[TBD]</td></tr>
+                <tr><td>Status:</td><td>Draft &mdash; Pending Approval</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- 1. EXECUTIVE SUMMARY -->
+    <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">1. Executive Summary</div>
+        <div class="section-content">
+            <p>Hultec&rsquo;s shipping team currently relies on the <strong>Shipping Dashboard</strong> (project 7546) for load planning and picker assignment via GS Mobile. When a sales order line needs to be partially fulfilled on different dates, there is no way to split that line from within the dashboard &mdash; users must exit to the classic Order Entry screen, manually create a new line, adjust quantities, and return to the dashboard. This disrupts workflow and introduces data-entry errors.</p>
+
+            <p>This engagement adds two new capabilities directly to the Shipping Dashboard:</p>
+            <ul>
+                <li><strong>Split SO Line</strong> &mdash; A right-click context menu item on the Open Orders and Due&nbsp;Today/Past&nbsp;Due grids that opens a modal form. Users enter a split quantity and new due date; the system creates a new SO line via <code>ORDADCMD</code>, updates the original line via the <code>Sales.UpdateOrderLinesByFile</code> CallWrapper, and enforces business rules against ship schedules and staged shipments.</li>
+                <li><strong>Edit Sales Order</strong> &mdash; A right-click context menu item that launches the classic Order Entry edit screen (<code>Sales.EditSalesOrderInClassicScreen</code>) for the selected order, with permission and lock checks, without leaving the dashboard.</li>
+            </ul>
+
+            <p>Additionally, a <strong>shared dictionary optimization</strong> eliminates 6 duplicate SQL queries per load/refresh cycle, improving dashboard performance.</p>
+
+            <div class="warning-box">
+                <h4>Process Change &mdash; Replaces Existing Workflows</h4>
+                <p>By adopting the Split SO Line approach on the Shipping Dashboard, Hultec will <strong>retire two existing processes</strong>:</p>
+                <ul style="margin-left: 25px; margin-top: 10px;">
+                    <li><strong>Custom Reservation Program</strong> &mdash; No longer needed; order line splitting within the dashboard replaces the reservation workflow for allocating partial quantities to different ship dates.</li>
+                    <li><strong>Blanket Sales Order and Release</strong> &mdash; No longer needed; splitting lines with specific quantities and due dates directly on standard sales orders replaces the blanket order/release process.</li>
+                </ul>
+                <p style="margin-top: 10px;">This consolidation simplifies the shipping workflow into a single tool, reducing training requirements and eliminating the need to maintain separate programs.</p>
+            </div>
+
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">Deliverables</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">22</div>
+                    <div class="stat-label">Estimated Hours</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">$225.00</div>
+                    <div class="stat-label">Hourly Rate</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">Weekly</div>
+                    <div class="stat-label">Billing Frequency</div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h4>Time &amp; Materials Billing</h4>
+                <p>This engagement is billed on a Time &amp; Materials basis at the standard hourly rate. Actual hours are tracked and reported weekly. If actual hours approach the estimate, Hultec will be notified before additional work is performed.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. SCOPE OF WORK -->
+    <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">2. Scope of Work</div>
+        <div class="section-content">
+
+            <h3>2.1 &mdash; Split SO Line Feature</h3>
+
+            <h4>Context Menu Integration</h4>
+            <p>A new <strong>&ldquo;Split SO Line&rdquo;</strong> context menu item is added to both the <strong>Open Orders</strong> (<code>GsGCAllShip</code>) and <strong>Due&nbsp;Today &amp; Past&nbsp;Due</strong> (<code>GsGCDue</code>) grids. The item appears when right-clicking on any row, regardless of mobile picklist settings.</p>
+
+            <h4>Modal Split Form</h4>
+            <p>Clicking the menu item opens a modal form (<code>frmSplitLine</code>) displaying all checked rows in a grid (<code>GsGCSplit</code>). The grid shows read-only context columns (customer, order number, line number, part, description, ship-to details, open quantity) and two editable yellow-highlighted columns:</p>
+            <ul>
+                <li><strong>Qty to Split</strong> &mdash; Numeric field; must be greater than 0 and strictly less than the open quantity</li>
+                <li><strong>New Due Date</strong> &mdash; Date picker for the new split line&rsquo;s promise date</li>
+            </ul>
+
+            <h4>Save Processing</h4>
+            <p>On save, each selected line is processed with the following validation and creation steps:</p>
+            <ol>
+                <li><strong>Order Lock Check</strong> &mdash; Verifies the order is not locked by another user</li>
+                <li><strong>Ship Schedule Validation</strong> &mdash; Blocks the split if any record exists in <code>V_OE_SHIP_SCHED</code> for the order line</li>
+                <li><strong>Staged Shipment Validation</strong> &mdash; Blocks the split if any record exists in <code>STAGING_QUANTITY</code> for the order line</li>
+                <li><strong>New Line Creation</strong> &mdash; Determines next available line number, builds a fixed-width upload file, and calls <code>ORDADCMD</code> via <code>Launchgsssync</code></li>
+                <li><strong>User Field Traceability</strong> &mdash; Dynamically looks up the <code>OE_USER_FLDS_LN</code> table for a field labeled &ldquo;SPLIT FROM LINE&rdquo; and writes the original line number to that user field on the new line (skips gracefully if not configured)</li>
+                <li><strong>Date Copy</strong> &mdash; Copies <code>DATE_ORDER</code> from the original line to the new line</li>
+                <li><strong>Line Updates via CallWrapper</strong> &mdash; Builds a two-line CSV file processed by a single <code>Sales.UpdateOrderLinesByFile</code> CallWrapper invocation:
+                    <ul>
+                        <li>Line&nbsp;1: Updates the original line&rsquo;s quantity, price (6-decimal precision), and recalculated weight</li>
+                        <li>Line&nbsp;2: Sets <code>DATE_ITEM_PROM</code> (CSV position&nbsp;16) on the new split line</li>
+                    </ul>
+                </li>
+            </ol>
+
+            <h4>Grid Serialization</h4>
+            <p>The split form grid supports user layout persistence (column widths, order, sort, filter) via GSS Registry key <code>GVSPLIT</code>. A &ldquo;Reset Grid Serialization&rdquo; context menu item is available to restore default layout.</p>
+
+            <h3>2.2 &mdash; Edit Sales Order Feature</h3>
+            <p>A new <strong>&ldquo;Edit Sales Order&rdquo;</strong> context menu item is added below &ldquo;Split SO Line&rdquo; on the same grids. When clicked:</p>
+            <ol>
+                <li>Checks IPM permission (Order Entry &gt; Edit &gt; Sales Orders, level&nbsp;1)</li>
+                <li>Verifies the order is not locked</li>
+                <li>Disables the parent tab to prevent concurrent actions</li>
+                <li>Launches <code>Sales.EditSalesOrderInClassicScreen</code> CallWrapper for the selected order</li>
+                <li>Re-enables the parent tab on return</li>
+            </ol>
+
+            <h3>2.3 &mdash; Performance Optimization</h3>
+            <p>Six dictionary SQL queries that were duplicated between <code>LoadOpenOrders</code> and <code>LoadLoad</code> are consolidated into shared subroutines (<code>LoadSharedDictionaries</code> / <code>CloseSharedDictionaries</code>). Dictionaries are loaded once per refresh cycle and reused across both data loads, eliminating 6 redundant SQL queries per cycle.</p>
+
+            <div class="warning-box">
+                <h4>Business Rules</h4>
+                <p>The following rules are enforced and cannot be overridden by the user:</p>
+                <ul style="margin-left: 25px; margin-top: 10px;">
+                    <li>Split quantity must be strictly less than open quantity (no full-quantity splits)</li>
+                    <li>Lines with any ship schedule record (open or closed) cannot be split</li>
+                    <li>Lines with any staged shipment record cannot be split</li>
+                    <li>Locked orders are skipped (per-line, allowing partial batch processing)</li>
+                    <li>There is no undo &mdash; corrections must be made via the Edit Sales Order screen</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. MOCKUP SCREENSHOTS -->
+    <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">3. Mockup Screenshots</div>
+        <div class="section-content">
+            <h4>Split SO Line Form</h4>
+            <p>The modal form displays selected order lines in a grid. Read-only context columns (Customer, Order No, Line, Part No, Description, Ship To, City, State, Open Qty) are shown alongside two editable yellow-highlighted columns: <strong>Qty to Split</strong> and <strong>New Due Date</strong>. Save and Cancel buttons are at the bottom.</p>
+
+            <div class="mockup-gallery">
+                <div class="mockup-item">
+                    <div class="mockup-caption">Split SO Line &mdash; Grid view with editable Qty to Split and New Due Date columns (yellow background)</div>
+                    <img src="split_so_line_screenshot.png" alt="Split SO Line modal form showing two order lines for AMD / ADVANCED MICRO DEVICES, order 0010111, with Part No 1040588 METAL BRACKET. Open Qty values of 25 and 100 with yellow editable cells for Qty to Split and New Due Date.">
+                </div>
+            </div>
+
+            <h4>Context Menu Items</h4>
+            <p>Right-clicking on the Open Orders or Due&nbsp;Today/Past&nbsp;Due grids reveals two new items at the bottom of the menu: &ldquo;Split SO Line&rdquo; and &ldquo;Edit Sales Order.&rdquo;</p>
+
+            <div class="mockup-gallery">
+                <div class="mockup-item">
+                    <div class="mockup-caption">Context Menu &mdash; Split SO Line and Edit Sales Order items added below the separator</div>
+                    <img src="context_menu_screenshot.png" alt="Right-click context menu on the Shipping Dashboard grid showing standard items (Refresh, Export, Reset Grid Serialization, etc.) followed by a separator and the two new items: Split SO Line and Edit Sales Order.">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. DELIVERABLES -->
+    <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">4. Deliverables</div>
+        <div class="section-content">
+            <table class="data-table">
+                <tr>
+                    <th style="width: 40px;">#</th>
+                    <th style="width: 220px;">Deliverable</th>
+                    <th style="width: 120px;">Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td><strong>Split SO Line</strong></td>
+                    <td>GAB Feature</td>
+                    <td>Modal form with grid, full save processing (ORDADCMD + CallWrapper), validation against ship schedules and staged shipments, dynamic user field traceability, grid serialization</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td><strong>Edit Sales Order</strong></td>
+                    <td>GAB Feature</td>
+                    <td>Context menu item launching <code>Sales.EditSalesOrderInClassicScreen</code> with permission and lock checks</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td><strong>Shared Dictionary Optimization</strong></td>
+                    <td>Performance</td>
+                    <td>Consolidation of 6 duplicate dictionary SQL queries into shared load/close subroutines, reducing database round-trips per refresh cycle</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- 5. INTEGRATION ARCHITECTURE -->
+    <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">5. Integration Architecture</div>
+        <div class="section-content">
+
+            <h3>5.1 &mdash; System Context</h3>
+
+            <div style="background: #f8f9fa; border-radius: 12px; padding: 30px; margin: 20px 0; border: 2px solid #e0e0e0;">
+                <div style="text-align: center; font-size: 0.9em; color: #666; margin-bottom: 15px;">Architecture Overview</div>
+                <div style="display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap;">
+                    <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 20px 25px; border-radius: 10px; text-align: center; min-width: 200px; box-shadow: 0 4px 15px rgba(102,126,234,0.3);">
+                        <div style="font-weight: bold; font-size: 1.1em;">Shipping Dashboard</div>
+                        <div style="font-size: 0.85em; opacity: 0.9; margin-top: 5px;">GAB Script (.g2u)</div>
+                        <div style="font-size: 0.8em; opacity: 0.8;">Split SO Line &bull; Edit SO &bull; Load Planning</div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <span style="color: #2ecc71; font-weight: bold;">&larr; READ</span>
+                            <span style="font-size: 0.8em; color: #999;">(ODBC)</span>
+                        </div>
+                        <div style="width: 120px; height: 2px; background: #ccc;"></div>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <span style="color: #e74c3c; font-weight: bold;">WRITE &rarr;</span>
+                            <span style="font-size: 0.8em; color: #999;">(CallWrappers)</span>
+                        </div>
+                    </div>
+                    <div style="background: #2c3e50; color: white; padding: 20px 25px; border-radius: 10px; text-align: center; min-width: 220px; box-shadow: 0 4px 15px rgba(44,62,80,0.3);">
+                        <div style="font-weight: bold; font-size: 1.1em;">Global Shop Solutions</div>
+                        <div style="font-size: 0.85em; opacity: 0.9; margin-top: 5px;">Actian Zen Database</div>
+                        <div style="font-size: 0.8em; opacity: 0.8; margin-top: 8px; line-height: 1.6;">Order Entry &bull; Shipping &bull; Inventory</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>5.2 &mdash; Integration Points</h3>
+
+            <table class="data-table">
+                <tr>
+                    <th style="width: 160px;">GSS Module</th>
+                    <th style="width: 70px;">Direction</th>
+                    <th>Integration Points</th>
+                </tr>
+                <tr>
+                    <td><strong>Order Entry</strong></td>
+                    <td><span style="color:#2ecc71; font-weight:bold;">READ</span></td>
+                    <td><code>ORDER_LINES</code> (price, cost, qty, weight, dates), <code>v_order_lines</code> (next line number), <code>V_OE_SHIP_SCHED</code> (ship schedule validation), <code>STAGING_QUANTITY</code> (staged shipment validation), <code>OE_USER_FLDS_LN</code> (user field label lookup)</td>
+                </tr>
+                <tr>
+                    <td><strong>Order Entry</strong></td>
+                    <td><span style="color:#e74c3c; font-weight:bold;">WRITE</span></td>
+                    <td><code>ORDADCMD</code> via <code>Launchgsssync</code> (new line creation), <code>Sales.UpdateOrderLinesByFile</code> CallWrapper (qty/price/weight update + promise date), <code>Sales.EditSalesOrderInClassicScreen</code> CallWrapper (order editing), <code>ORDER_LINES</code> direct SQL (user field, DATE_ORDER)</td>
+                </tr>
+                <tr>
+                    <td><strong>Security</strong></td>
+                    <td><span style="color:#2ecc71; font-weight:bold;">READ</span></td>
+                    <td><code>CheckUserAccessIPM(132,1)</code> &mdash; Order Entry &gt; Edit &gt; Sales Orders permission</td>
+                </tr>
+                <tr>
+                    <td><strong>Shipping</strong></td>
+                    <td><span style="color:#2ecc71; font-weight:bold;">READ</span></td>
+                    <td>Shared dictionaries: <code>V_CUST_ORDER_NOTES</code>, <code>GAB_4167_SO_NOTES</code>, <code>ORDER_LN_TEXT</code>, <code>OE_Carrier</code>, location&nbsp;90 inventory</td>
+                </tr>
+            </table>
+
+            <h3>5.3 &mdash; CallWrapper Details</h3>
+
+            <h4>Sales.UpdateOrderLinesByFile</h4>
+            <p>Property-based CallWrapper invoked with a two-line CSV file per split operation:</p>
+            <ul>
+                <li><strong>Company</strong> &mdash; <code>V.Caller.CompanyCode</code></li>
+                <li><strong>CallingProgram</strong> &mdash; <code>GAB_7546_OE_ShippingReview_Load</code></li>
+                <li><strong>Screenless</strong> &mdash; <code>1</code></li>
+                <li><strong>InputFileName</strong> &mdash; Path to the CSV file</li>
+            </ul>
+
+            <table class="data-table">
+                <tr>
+                    <th>CSV Position</th>
+                    <th>Field</th>
+                    <th>Line 1 (Original)</th>
+                    <th>Line 2 (New Split)</th>
+                </tr>
+                <tr><td>1</td><td>Record Type</td><td>L</td><td>L</td></tr>
+                <tr><td>2</td><td>Order Number</td><td>{OrderNo}</td><td>{OrderNo}</td></tr>
+                <tr><td>3</td><td>Order Line</td><td>{OrigLineNo}</td><td>{NewLineNo}</td></tr>
+                <tr><td>6</td><td>Qty</td><td>{RemainingQty}</td><td>&mdash;</td></tr>
+                <tr><td>7</td><td>Price</td><td>{Price, 0.000000}</td><td>&mdash;</td></tr>
+                <tr><td>16</td><td>Promise Date</td><td>&mdash;</td><td>{YYYYMMDD}</td></tr>
+                <tr><td>24</td><td>Weight</td><td>{NewWeight}</td><td>&mdash;</td></tr>
+            </table>
+
+            <h4>Sales.EditSalesOrderInClassicScreen</h4>
+            <p>Property-based CallWrapper that opens the classic Order Entry screen for editing:</p>
+            <ul>
+                <li><strong>Company</strong> &mdash; <code>V.Caller.CompanyCode</code></li>
+                <li><strong>SalesOrder</strong> &mdash; Selected order number</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 6. TIMELINE & MILESTONES -->
+    <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">6. Timeline &amp; Milestones</div>
+        <div class="section-content">
+
+            <div class="phase-grid">
+                <div class="phase-card phase-1">
+                    <div class="phase-number">Phase 1</div>
+                    <div class="phase-title">Discovery &amp; Analysis</div>
+                    <div class="phase-hours">2 hours</div>
+                    <ul class="phase-items">
+                        <li>Review original specification and customer workflow</li>
+                        <li>Analyze existing Shipping Dashboard codebase</li>
+                        <li>Research ORDADCMD and CallWrapper patterns</li>
+                        <li>Design data flow and validation rules</li>
+                    </ul>
+                </div>
+                <div class="phase-card phase-2">
+                    <div class="phase-number">Phase 2</div>
+                    <div class="phase-title">GAB Custom Development</div>
+                    <div class="phase-hours">16 hours</div>
+                    <ul class="phase-items">
+                        <li>Build <code>frmSplitLine</code> modal form and grid</li>
+                        <li>Implement Split SO Line save processing</li>
+                        <li>Implement Edit Sales Order CallWrapper integration</li>
+                        <li>Add validation rules (ship schedule, staging, locks)</li>
+                        <li>Dynamic user field lookup for traceability</li>
+                        <li>Grid serialization and layout persistence</li>
+                        <li>Shared dictionary optimization</li>
+                    </ul>
+                </div>
+                <div class="phase-card phase-3">
+                    <div class="phase-number">Phase 3</div>
+                    <div class="phase-title">Testing, Documentation &amp; Delivery</div>
+                    <div class="phase-hours">4 hours</div>
+                    <ul class="phase-items">
+                        <li>End-to-end testing of split scenarios</li>
+                        <li>Validation edge cases (ship schedules, staging, locks)</li>
+                        <li>CallWrapper response verification</li>
+                        <li>Documentation and delivery of .g2u script</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. BILLING & PAYMENT TERMS -->
+    <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">7. Billing &amp; Payment Terms</div>
+        <div class="section-content">
+
+            <table class="data-table">
+                <tr>
+                    <th>Category</th>
+                    <th style="width: 100px;">Hours</th>
+                    <th style="width: 120px;">Rate</th>
+                    <th style="width: 120px;">Amount</th>
+                </tr>
+                <tr>
+                    <td>Discovery &amp; Analysis</td>
+                    <td>2</td>
+                    <td>$225.00</td>
+                    <td>$450.00</td>
+                </tr>
+                <tr>
+                    <td>GAB Custom Development</td>
+                    <td>16</td>
+                    <td>$225.00</td>
+                    <td>$3,600.00</td>
+                </tr>
+                <tr>
+                    <td>Testing, Documentation &amp; Delivery</td>
+                    <td>4</td>
+                    <td>$225.00</td>
+                    <td>$900.00</td>
+                </tr>
+                <tr class="grand-total-row">
+                    <td>Total</td>
+                    <td>22</td>
+                    <td></td>
+                    <td>$4,950.00</td>
+                </tr>
+            </table>
+
+            <ul>
+                <li><strong>Hourly rate:</strong> $225.00 / hour (standard), $262.50 / hour (overtime, requires prior approval)</li>
+                <li><strong>Billing increment:</strong> 15 minutes (0.25 hours)</li>
+                <li><strong>Work schedule:</strong> Monday&ndash;Friday, 8:00&nbsp;AM &ndash; 5:00&nbsp;PM CT</li>
+                <li><strong>Billing frequency:</strong> Weekly, based on actual hours logged</li>
+                <li><strong>Budget notification:</strong> Customer will be notified if actual hours approach the 22-hour estimate before additional work is performed</li>
+            </ul>
+
+            <div class="flow-container">
+                <div class="flow-step">Work<br/>Performed</div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">Hours<br/>Logged</div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step active">Weekly<br/>Invoice</div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">Payment<br/>Received</div>
+            </div>
+
+            <div class="info-box">
+                <h4>Budget Transparency</h4>
+                <p>Actual hours are tracked and reported with each invoice. If the scope of work changes or additional requirements emerge, a revised estimate will be provided before any overage work begins.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. BUDGET MANAGEMENT -->
+    <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">8. Budget Management</div>
+        <div class="section-content">
+
+            <table class="data-table">
+                <tr>
+                    <th>Threshold</th>
+                    <th style="width: 100px;">Hours</th>
+                    <th style="width: 120px;">Amount</th>
+                    <th>Action</th>
+                </tr>
+                <tr>
+                    <td>80% of Estimate</td>
+                    <td>18</td>
+                    <td>$4,050.00</td>
+                    <td>Email notification to customer with status update</td>
+                </tr>
+                <tr>
+                    <td>100% of Estimate</td>
+                    <td>22</td>
+                    <td>$4,950.00</td>
+                    <td>Work pauses; written approval required to continue</td>
+                </tr>
+            </table>
+
+            <div class="budget-visual">
+                <div class="budget-bar">
+                    <div class="budget-fill" style="width: 0%; background: linear-gradient(90deg, #2ecc71 0%, #f39c12 80%, #e74c3c 100%);"></div>
+                </div>
+                <div class="budget-markers">
+                    <div class="budget-marker">0 hrs</div>
+                    <div class="budget-marker">6 hrs</div>
+                    <div class="budget-marker">11 hrs</div>
+                    <div class="budget-marker alert-80">18 hrs (80%)</div>
+                    <div class="budget-marker alert-100">22 hrs (100%)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 9. CHANGE ORDER PROCESS -->
+    <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">9. Change Order Process</div>
+        <div class="section-content">
+
+            <h3>What Requires a Change Order</h3>
+            <ul>
+                <li>New features or screens not described in &sect;2 (Scope of Work)</li>
+                <li>Changes to business rules (e.g., allowing splits on lines with ship schedules)</li>
+                <li>Integration with additional GSS modules or external systems</li>
+                <li>Custom reporting or data export requirements</li>
+            </ul>
+
+            <h3>What Does NOT Require a Change Order</h3>
+            <ul>
+                <li>Bug fixes within the original scope (covered by 30-day warranty)</li>
+                <li>Minor UI adjustments (column widths, label text, grid formatting)</li>
+                <li>Configuration of existing features (e.g., adding/removing user field labels)</li>
+            </ul>
+
+            <div class="flow-container">
+                <div class="flow-step">Change<br/>Requested</div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">Impact<br/>Assessed</div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step active">Revised<br/>Estimate</div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">Approval</div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">Work<br/>Begins</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 10. ASSUMPTIONS & PREREQUISITES -->
+    <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">10. Assumptions &amp; Prerequisites</div>
+        <div class="section-content">
+
+            <h3>Assumptions</h3>
+            <ul>
+                <li>The existing Shipping Dashboard (7546) is deployed and operational in Hultec&rsquo;s environment</li>
+                <li>Hultec is running GSS version 2020.1 or higher with CallWrapper support for <code>Sales.UpdateOrderLinesByFile</code> and <code>Sales.EditSalesOrderInClassicScreen</code></li>
+                <li>The <code>ORDADCMD</code> utility is available and functional in the customer&rsquo;s GSS installation</li>
+                <li>IPM permissions (Order Entry &gt; Edit &gt; Sales Orders) are configured for the intended users</li>
+                <li>The user field label &ldquo;SPLIT FROM LINE&rdquo; will be configured in <code>OE_USER_FLDS_LN</code> by the customer if traceability is desired (the feature degrades gracefully if not configured)</li>
+            </ul>
+
+            <h3>Prerequisites</h3>
+            <ul class="checklist">
+                <li>Shipping Dashboard (7546) deployed and accessible</li>
+                <li>GSS version &ge; 2020.1 with required CallWrappers</li>
+                <li>ODBC connectivity to Actian Zen database</li>
+                <li>User accounts with appropriate IPM permissions</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 11. TESTING PLAN -->
+    <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">11. Testing Plan</div>
+        <div class="section-content">
+
+            <table class="data-table">
+                <tr>
+                    <th style="width: 200px;">Objective</th>
+                    <th>Steps</th>
+                    <th>Expected Results</th>
+                </tr>
+                <tr>
+                    <td>Basic split creates new line</td>
+                    <td>Select an order line with open qty &gt;&nbsp;1. Right-click &rarr; &ldquo;Split SO Line.&rdquo; Enter qty&nbsp;=&nbsp;1 and a future due date. Click Save.</td>
+                    <td>New SO line created with qty&nbsp;=&nbsp;1 and the specified promise date. Original line qty reduced by&nbsp;1. Weight recalculated proportionally. User field populated with original line number (if configured).</td>
+                </tr>
+                <tr>
+                    <td>Validation: split qty &ge; open qty</td>
+                    <td>Enter a split qty equal to or greater than the open qty. Click Save.</td>
+                    <td>Error message displayed. Save does not proceed. No new line created.</td>
+                </tr>
+                <tr>
+                    <td>Ship schedule block</td>
+                    <td>Select a line that has a record in <code>V_OE_SHIP_SCHED</code>. Attempt to split.</td>
+                    <td>Message: line cannot be split due to ship schedule. Line is skipped; other lines in the batch continue processing.</td>
+                </tr>
+                <tr>
+                    <td>Staged shipment block</td>
+                    <td>Select a line with a record in <code>STAGING_QUANTITY</code>. Attempt to split.</td>
+                    <td>Message: line cannot be split due to staged shipment. Line is skipped.</td>
+                </tr>
+                <tr>
+                    <td>Order lock block</td>
+                    <td>Lock an order from another session. Attempt to split a line on that order.</td>
+                    <td>Message identifying the locking user. Line is skipped.</td>
+                </tr>
+                <tr>
+                    <td>Multi-line batch split</td>
+                    <td>Check 3+ lines across different orders. Split all with valid quantities and dates.</td>
+                    <td>Each line processed independently. Lines with validation failures are skipped; successful splits complete normally.</td>
+                </tr>
+                <tr>
+                    <td>Edit Sales Order opens classic screen</td>
+                    <td>Select an order line. Right-click &rarr; &ldquo;Edit Sales Order.&rdquo;</td>
+                    <td>Classic Order Entry screen opens in edit mode for the selected order. Dashboard tab is disabled during editing.</td>
+                </tr>
+                <tr>
+                    <td>Permission denied</td>
+                    <td>Log in as a user without IPM permission 132. Attempt Split or Edit.</td>
+                    <td>Permission denied message. No action taken.</td>
+                </tr>
+            </table>
+
+            <div class="flow-container">
+                <div class="flow-step">Developer<br/>Testing</div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step active">Customer<br/>UAT</div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">Sign-Off</div>
+                <div class="flow-arrow">&rarr;</div>
+                <div class="flow-step">Go Live</div>
+            </div>
+
+            <div class="success-box">
+                <h4>Bug Fix Warranty</h4>
+                <p>Defects within the original scope discovered within 30 calendar days of sign-off will be corrected at no additional charge.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 12. TERMS & CONDITIONS -->
+    <div class="section collapsed">
+        <div class="section-header collapsed" onclick="toggleSection(this)">12. Terms &amp; Conditions</div>
+        <div class="section-content">
+            <ol>
+                <li><strong>Billing:</strong> Work is billed at $225.00/hr in 15-minute increments. Overtime ($262.50/hr) requires prior written approval. Invoices are issued weekly.</li>
+                <li><strong>Intellectual Property:</strong> Custom scripts and libraries are property of Hultec upon full payment. Developer retains the right to reuse general-purpose patterns and techniques.</li>
+                <li><strong>Warranty &amp; Support:</strong> 30 calendar days after sign-off, defects within the original scope are corrected at no charge. Post-warranty support is available at the standard rate.</li>
+                <li><strong>Cancellation:</strong> Either party may cancel with 5 business days&rsquo; written notice. Hours worked to date are billed; unused hours are not charged.</li>
+                <li><strong>Limitation of Liability:</strong> Developer liability shall not exceed the total amount paid under this agreement. Neither party shall be liable for indirect, consequential, or punitive damages.</li>
+                <li><strong>Exclusions:</strong> Issues caused by environment changes, database modifications, GSS upgrades, or third-party updates after deployment are not covered under warranty.</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- 13. AUTHORIZATION -->
+    <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">13. Authorization</div>
+        <div class="section-content">
+
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div class="stat-value">22</div>
+                    <div class="stat-label">Estimated Hours</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">$225.00</div>
+                    <div class="stat-label">Hourly Rate</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">$4,950.00</div>
+                    <div class="stat-label">Total Estimate</div>
+                </div>
+            </div>
+
+            <p>By signing below, both parties acknowledge and agree to the scope of work, estimated budget, and terms described in this agreement.</p>
+
+            <div class="signature-grid">
+                <div class="signature-block">
+                    <h4>Customer &mdash; Hultec</h4>
+                    <div class="sig-line"></div>
+                    <div class="sig-label">Authorized Signature</div>
+                    <div class="sig-line"></div>
+                    <div class="sig-label">Printed Name &amp; Title</div>
+                    <div class="sig-line"></div>
+                    <div class="sig-label">Date</div>
+                    <div class="sig-line"></div>
+                    <div class="sig-label">PO Number (if applicable)</div>
+                </div>
+                <div class="signature-block">
+                    <h4>Developer</h4>
+                    <div class="sig-line"></div>
+                    <div class="sig-label">Authorized Signature</div>
+                    <div class="sig-line"></div>
+                    <div class="sig-label">Printed Name &amp; Title</div>
+                    <div class="sig-line"></div>
+                    <div class="sig-label">Date</div>
+                </div>
+            </div>
+
+            <div class="info-box" style="margin-top: 30px;">
+                <h4>Reference Documents</h4>
+                <p>The following documents are referenced by this agreement:</p>
+                <ul style="margin-left: 25px; margin-top: 10px;">
+                    <li>Order Entry and Shipping Enhancements Specification (original customer spec)</li>
+                    <li>Global Shop Solutions &mdash; Sales.UpdateOrderLinesByFile (CallWrapper documentation)</li>
+                    <li><code>GAB_7546_OE_ShippingReview_Load.g2u</code> (production script)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function toggleSection(header) {
+        var section = header.parentElement;
+        section.classList.toggle('collapsed');
+        header.classList.toggle('collapsed');
+    }
+</script>
+
+</body>
+</html>

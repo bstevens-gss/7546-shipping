@@ -1,0 +1,30 @@
+---
+description: Enforces the AGENTS.md tiered loading protocol before any work in this workspace
+alwaysApply: true
+---
+
+# Agent Kit Routing Protocol
+
+This workspace uses a tiered agent file system. You MUST follow this loading order before doing any work:
+
+**IMPORTANT: When the user says "/load-agents" or "load agents", ALWAYS read `skills/load-agents/SKILL.md` from the workspace root and execute the deployment script inside it FIRST — regardless of whether `AGENTS.md` exists.** Do NOT search for the skill through Cursor's skill discovery; the file is in the workspace at that exact path. The skill is idempotent: it installs/upgrades extensions, deploys skills, and tracks versions. Skipping it means extensions may be missing or outdated. After the skill completes, proceed with steps 1-5 below.
+
+1. Read `AGENTS.md` (core rules)
+2. Read `AGENTS.INDEX.md` (activity router)
+3. Read `AGENTS.PROJECT.md` (project config)
+4. Match the user's request against the **Tier 2 routing table** in `AGENTS.INDEX.md` and read the matching entry-point file(s)
+5. Acknowledge the loaded files using the template in `AGENTS.md`
+
+## Quick routing reference (read the full table in AGENTS.INDEX.md)
+
+| Activity | Entry point |
+|----------|-------------|
+| GAB / .g2u / .lib / script | `agents/AGENTS.GAB.md` |
+| GS Mobile / wireless / custom transaction / MobExt / SetCustomResult / Mobile_Custom_Result | `agents/AGENTS.MOBILE.md` then `agents/AGENTS.GAB.md` |
+| SQL / schema / table / Zen | `agents/AGENTS.ZEN.md` + `agents/AGENTS.GSSDB.md` |
+| Hooks / V.Caller / V.Passed | `agents/AGENTS.HOOKS.md` |
+| Quoting / specs / NTP | `agents/AGENTS.QUOTING.md` |
+| Help articles / docs | `agents/AGENTS.HELPARTICLE.md` |
+| Crystal Reports / .rpt / RptToXml | `agents/AGENTS.CRYSTAL.md` |
+
+Do NOT jump directly to Tier 3 sub-files (e.g. `agents/gab/*.md`, `agents/schema/*.md`, `agents/crystal/*.md`). Always enter through the Tier 2 entry point, which will route you to the correct sub-files.

@@ -1,0 +1,12 @@
+# Generated GAB artifacts
+*.gaf
+*.sig
+*.zip
+
+# Logs
+*.log
+
+# OS junk
+Thumbs.db
+Desktop.ini
+.DS_Store

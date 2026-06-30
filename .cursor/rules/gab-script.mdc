@@ -1,0 +1,82 @@
+---
+description: Agent guidance for GAB script (.g2u) files -- syntax, patterns, encoding, routing
+globs: "**/*.g2u"
+alwaysApply: false
+---
+
+# GAB Script (.g2u) Files
+
+You are editing a **GAB script**. GAB is a VB-derived scripting language for Global Shop Solutions ERP.
+
+## Golden Rule
+**NEVER invent GAB APIs.** Always verify commands against agent docs before using them. GAB has no inline math operators (`+`, `-`, `*`, `/`) and no `+` for string concat -- use `F.Intrinsic.Math.*` and `F.Intrinsic.String.Build()`.
+
+## File Structure
+Every .g2u follows this sub order: `ScreenSU` (GUI declarations) → `Preflight` (pre-init) → `Main` (entry point) → custom subs → `Comments` (metadata, auto-generated).
+
+## Encoding Requirements
+- **UTF-8 with BOM**, **CRLF** line endings, **no trailing newline** -- signing is whitespace-sensitive.
+- After editing, the `.sig` companion file is stale. Remind the user to re-sign via the `gab-sign` skill.
+- **CRITICAL: Signing must be the LAST operation on any .g2u or .lib file.**
+  Cursor's StrReplace/Write tools output plain UTF-8 (no BOM). The sign script
+  writes UTF-8 with BOM. If you edit after signing, the BOM is stripped, the .sig
+  becomes invalid, and Cursor re-normalizes the file on next open (changing
+  Date Modified). NEVER use StrReplace or Write on a .g2u/.lib after signing it.
+
+## Property Access Pattern
+- **Read**: `V.Screen.formName!controlName.Property`
+- **Set**: `Gui.formName.controlName.Property(value)`
+
+## Comments Section -- DO NOT EDIT
+The `Comments` sub contains auto-generated metadata (`${$5$}$`, `${$6$}$`, `${$7$}$` lines). These are managed by the Code Editor and signer. Never manually modify them.
+
+## Error Handling
+Every non-trivial sub needs `Function.Intrinsic.Control.SetErrorHandler(SubName_Err)` at the top and a matching `SubName_Err` error handler sub.
+
+## Known Runtime Traps (load PITFALLS.md for full list)
+- `V.Screen.ctrl.PervasiveDate` does NOT work -- use `.Value` + `String.Format`
+- `GsWebView2.ExecuteScript()` does NOT exist -- use file-based JSON injection
+- `V.Caller.FilePath` does NOT exist -- use `V.Ambient.ScriptPath`
+- `DoWhile` does NOT exist -- use `For` or `DoUntil`
+- `F.Intrinsic.String.Chr()` does NOT exist -- use `V.Ambient.DblQuote`
+- `V.Color.*` does NOT work in ScreenSU -- set colors at runtime
+- `V.Args.RowHandle` in FocusedRowChanged -- actually `V.Args.FocusedRowHandle`
+- `CreatePieChart` crashes the runtime -- use `CreateVertBarChart` instead
+- `CheckBox.Value(True/False)` -- use `.Value(1)` / `.Value(0)` (Long, not Boolean)
+- `SaveToJson` writes to file, not variable -- use file path then `File2String`
+- `.Length()` with parentheses causes Error 113 -- use `.Length` (property, not method)
+- Always query `V_*` views for reads -- raw table column names may differ
+- `Panel` control does NOT exist -- use `Frame` as container
+- `GsWebView2.Navigate()` Error 3000 -- use `.Source()` to change URL
+- `V.Ambient.ScriptPath` has NO trailing `\` via `.gaf` -- always add `\` in path builds
+- `F.Intrinsic.String.String2File` wrong namespace -- use `F.Intrinsic.File.String2File`
+- UrlChanged fires multiple times -- add nonce dedup to prevent bounce loops
+- `F.Intrinsic.File.Delete` does NOT exist -- use `F.Intrinsic.File.DeleteFile`
+- Variable declarations inside Try/Catch crash GAB at parse time -- declare at subroutine top
+- `V.Ambient.ApplicationPath`, `MachineName`, `UserName`, `StartupPath` do NOT exist
+- `DataTable.SaveToJson` / `SaveToXML` write to FILES, not string variables
+- `DataTable.AddRow` needs column-name/value PAIRS, not positional args
+- `V.DataTable.name.ColumnCount` does NOT exist -- only `.RowCount` and `.Exists`
+- Form naming: `Gui.Form_Name.` (underscore) NOT `Gui.Form.Name.` (dots) -- dots cause Error 113
+- Form Create: `Gui.Form_Name..Create(BaseForm)` + `..Caption()` + `..Size()` -- NOT `Gui.Form.Create("name",w,h)`
+- Control Create: `ctrl.Create(Button)` + `.Size()` + `.Position()` -- NOT `Create(Button,"name",x,y,w,h)`
+- `CommandButton` does NOT exist as type -- use `Button`
+- Grid binding: use `AddGridviewFromDatatable("viewName","dtName")` + `MainView("viewName")`
+- `Dock(5)` without layout order covers sibling controls -- dock Top/Bottom FIRST, Fill LAST
+- Anchor values: `5`=Top+Left (default/fixed), `13`=Top+L+R (header band), `15`=All (fill grid), `14`=Bot+L+R (status bar), `6`=Bot+Left, `9`=Top+Right, `10`=Bot+Right
+- Always set `Sizeable(True)` + `MaxButton(True)` + `MinX()/MinY()` on resizable forms
+- Use `.Parent("frameName")` to nest controls inside Frame containers
+- BaseForm has no dock panels; use DashForm when DockPanel regions are needed
+- `F.Intrinsic.UI.DropDown()` does NOT exist -- use `BrowserFromString` for selection lists
+- `F.Intrinsic.UI.MsgBox2()` does NOT exist -- use `Msgbox` with button style params
+- `DropDownList.Clear()` / `ComboBox.Clear()` does NOT exist -- use `.ClearItems`
+- `V.Args.*ControlName` returns UPPERCASE -- always UCase before comparing
+- `DataTable.DeleteRow` only MARKS for deletion -- call `AcceptChanges` to physically remove
+- AccordionControl `NavigationFrame()` does NOT auto-switch pages -- manual `SelectedIndex(n)` in ElementClick required
+- DataTable column types: use `"String"`, `"Float"`, `"Long"` -- NOT `"System.String"`, `"System.Decimal"`
+- `AllowGroup` is NOT a grid property -- use `ShowGroupPanel`
+- `SetIcon(V.Enum.*)` / `SvgPicture(V.Enum.*)` crash ScreenSU -- set at runtime only
+- `String.Mid(s,start,0,r)` returns empty -- length 0 is NOT "rest of string"
+
+## Routing
+For full GAB language reference, load `agents/AGENTS.GAB.md` → then relevant `agents/gab/*.md` sub-files per the routing table in `AGENTS.INDEX.md`.

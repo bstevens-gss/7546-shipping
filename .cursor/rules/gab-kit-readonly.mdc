@@ -1,0 +1,43 @@
+---
+description: Prevents agents from creating or modifying files in kit-managed directories (junctions to shared repo)
+globs: "agents/**,skills/**,.cursor/rules/**,.cursor/hooks/**"
+alwaysApply: false
+---
+
+# Kit-Managed Directories (READ-ONLY)
+
+The following directories are **junctions to the shared GAB Agents Kit** (`~/.gab-agents/`). They are version-controlled, auto-synced across all team members, and must NOT be modified from a workspace context.
+
+## Protected Directories
+
+| Directory | Junction Target | Contains |
+|-----------|----------------|----------|
+| `agents/` | `~/.gab-agents/agents/` | Agent documentation (AGENTS.GAB.md, schema/*.md, gab/*.md) |
+| `skills/` | `~/.gab-agents/skills/` | Skill definitions (gab-lint, gab-sign, gab-run, gab-test-debug, etc.) |
+| `.cursor/rules/` | `~/.gab-agents/cursor-rules/` | Cursor rule files (*.mdc) |
+| `.cursor/hooks/` | `~/.gab-agents/cursor-hooks/` | Cursor hook scripts |
+
+## Rules
+
+1. **NEVER create new files** in these directories. New files would be pushed to all team members on next sync.
+2. **NEVER modify existing files** in these directories from a workspace. Changes belong in the kit repo (`~/.gab-agents/`) and must go through the version bump + push workflow.
+3. **NEVER delete files** in these directories. Deletions propagate to all users.
+
+## Where to Put Project-Specific Content
+
+| Content Type | Correct Location |
+|--------------|-----------------|
+| Project notes, architecture, memories | `AGENTS.PROJECT.md` (workspace root) |
+| Project-specific Cursor rules | Create in workspace root as standalone `.mdc` (NOT in `.cursor/rules/`) |
+| Test scripts, demos | `test/` directory |
+| Source code (DLLs, extensions) | `src/` directory |
+| Documentation | `docs/` directory |
+
+## If You Need to Change the Kit
+
+Tell the user: "This change affects the shared agent kit. Should I make this change in `~/.gab-agents/` and push it to the team?" Then:
+1. Edit the file in `~/.gab-agents/` directly (NOT through the junction)
+2. Run `bump-version.ps1`
+3. Commit and push
+
+The junction will reflect the change immediately in all workspaces.

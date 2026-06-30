@@ -1,0 +1,330 @@
+{
+  "GAB Form Script Skeleton": {
+    "scope": "vb",
+    "prefix": "gabform",
+    "body": [
+      "Program.Sub.ScreenSU.Start",
+      "Gui.${1:Form}..Create(BaseForm)",
+      "Gui.${1:Form}..Caption(\"${2:Form Title}\")",
+      "Gui.${1:Form}..Size(${3:800},${4:600})",
+      "Gui.${1:Form}..MinX(${3:800})",
+      "Gui.${1:Form}..MinY(${4:600})",
+      "Gui.${1:Form}..Position(0,0)",
+      "Gui.${1:Form}..AlwaysOnTop(False)",
+      "Gui.${1:Form}..FontName(\"Tahoma\")",
+      "Gui.${1:Form}..FontSize(8.25)",
+      "Gui.${1:Form}..ControlBox(True)",
+      "Gui.${1:Form}..MaxButton(True)",
+      "Gui.${1:Form}..MinButton(True)",
+      "Gui.${1:Form}..Moveable(True)",
+      "Gui.${1:Form}..Sizeable(True)",
+      "Gui.${1:Form}..ShowInTaskBar(True)",
+      "Gui.${1:Form}..TitleBar(True)",
+      "Gui.${1:Form}..Event(UnLoad,${1:Form}_UnLoad)",
+      "Program.Sub.ScreenSU.End",
+      "",
+      "Program.Sub.Preflight.Start",
+      "Program.Sub.Preflight.End",
+      "",
+      "Program.Sub.Main.Start",
+      "Function.Intrinsic.UI.UsePixels",
+      "Function.Intrinsic.Control.SetErrorHandler(Main_Err)",
+      "",
+      "$0",
+      "",
+      "Gui.${1:Form}..Show(1)",
+      "Function.Intrinsic.Control.End",
+      "Program.Sub.Main.End",
+      "",
+      "Program.Sub.Main_Err.Start",
+      "Function.Intrinsic.Control.SetErrorHandler()",
+      "V.Local.sErr.Declare(String)",
+      "Function.Intrinsic.String.Build(\"Error in Main: {0} - {1}\", V.Ambient.ErrorNumber, V.Ambient.ErrorDescription, V.Local.sErr)",
+      "Function.Intrinsic.UI.Msgbox(V.Local.sErr, 16, \"Error\")",
+      "Program.Sub.Main_Err.End",
+      "",
+      "Program.Sub.${1:Form}_UnLoad.Start",
+      "Program.Sub.${1:Form}_UnLoad.End",
+      "",
+      "Program.Sub.Comments.Start",
+      "Program.Sub.Comments.End"
+    ],
+    "description": "Complete GAB form script with ScreenSU, Main, error handler, and UnLoad"
+  },
+
+  "GAB Library Skeleton": {
+    "scope": "vb",
+    "prefix": "gablib",
+    "body": [
+      "Program.Sub.Preflight.Start",
+      "Program.Sub.Preflight.End",
+      "",
+      "Program.Sub.${1:SubName}.Start",
+      "Function.Intrinsic.Control.SetErrorHandler(${1:SubName}_Err)",
+      "",
+      "$0",
+      "",
+      "Function.Intrinsic.Control.End",
+      "Program.Sub.${1:SubName}.End",
+      "",
+      "Program.Sub.${1:SubName}_Err.Start",
+      "Function.Intrinsic.Control.SetErrorHandler()",
+      "V.Local.sErr.Declare(String)",
+      "Function.Intrinsic.String.Build(\"Error in ${1:SubName}: {0} - {1}\", V.Ambient.ErrorNumber, V.Ambient.ErrorDescription, V.Local.sErr)",
+      "Function.Intrinsic.UI.Msgbox(V.Local.sErr, 16, \"Error\")",
+      "Program.Sub.${1:SubName}_Err.End",
+      "",
+      "Program.Sub.Comments.Start",
+      "Program.Sub.Comments.End"
+    ],
+    "description": "GAB library skeleton with a subroutine and error handler"
+  },
+
+  "GAB Subroutine": {
+    "scope": "vb",
+    "prefix": "gabsub",
+    "body": [
+      "Program.Sub.${1:SubName}.Start",
+      "Function.Intrinsic.Control.SetErrorHandler(${1:SubName}_Err)",
+      "",
+      "$0",
+      "",
+      "Function.Intrinsic.Control.End",
+      "Program.Sub.${1:SubName}.End",
+      "",
+      "Program.Sub.${1:SubName}_Err.Start",
+      "Function.Intrinsic.Control.SetErrorHandler()",
+      "V.Local.sErr.Declare(String)",
+      "Function.Intrinsic.String.Build(\"Error in ${1:SubName}: {0} - {1}\", V.Ambient.ErrorNumber, V.Ambient.ErrorDescription, V.Local.sErr)",
+      "Function.Intrinsic.UI.Msgbox(V.Local.sErr, 16, \"Error\")",
+      "Program.Sub.${1:SubName}_Err.End"
+    ],
+    "description": "GAB subroutine with error handler pair"
+  },
+
+  "GAB If Then EndIf": {
+    "scope": "vb",
+    "prefix": "gabif",
+    "body": [
+      "Function.Intrinsic.Control.If(${1:V.Local.sValue}, ${2:=}, ${3:\"expected\"})",
+      "  $0",
+      "Function.Intrinsic.Control.EndIf"
+    ],
+    "description": "GAB If/EndIf conditional block"
+  },
+
+  "GAB If Else EndIf": {
+    "scope": "vb",
+    "prefix": "gabifelse",
+    "body": [
+      "Function.Intrinsic.Control.If(${1:V.Local.sValue}, ${2:=}, ${3:\"expected\"})",
+      "  $0",
+      "Function.Intrinsic.Control.Else",
+      "  ",
+      "Function.Intrinsic.Control.EndIf"
+    ],
+    "description": "GAB If/Else/EndIf conditional block"
+  },
+
+  "GAB Select Case": {
+    "scope": "vb",
+    "prefix": "gabselect",
+    "body": [
+      "Function.Intrinsic.Control.SelectCase(${1:V.Local.sValue})",
+      "  Function.Intrinsic.Control.Case(\"${2:value1}\")",
+      "    $0",
+      "  Function.Intrinsic.Control.Case(\"${3:value2}\")",
+      "    ",
+      "  Function.Intrinsic.Control.CaseElse",
+      "    ",
+      "Function.Intrinsic.Control.EndSelect"
+    ],
+    "description": "GAB Select Case block"
+  },
+
+  "GAB For Next Loop": {
+    "scope": "vb",
+    "prefix": "gabfor",
+    "body": [
+      "Function.Intrinsic.Control.For(${1:V.Local.i}, ${2:0}, ${3:V.Local.iCount}.--)",
+      "  $0",
+      "Function.Intrinsic.Control.Next(${1:V.Local.i})"
+    ],
+    "description": "GAB For/Next loop"
+  },
+
+  "GAB Do While Loop": {
+    "scope": "vb",
+    "prefix": "gabdo",
+    "body": [
+      "Function.Intrinsic.Control.DoWhile(${1:V.Local.bContinue}, ${2:=}, ${3:True})",
+      "  $0",
+      "Function.Intrinsic.Control.Loop"
+    ],
+    "description": "GAB DoWhile/Loop"
+  },
+
+  "GAB Try Catch": {
+    "scope": "vb",
+    "prefix": "gabtry",
+    "body": [
+      "Function.Intrinsic.Control.Try",
+      "",
+      "$0",
+      "",
+      "Function.Intrinsic.Control.Catch",
+      "Function.Intrinsic.Control.EndTry"
+    ],
+    "description": "GAB Try/Catch/EndTry block"
+  },
+
+  "GAB Grid Setup": {
+    "scope": "vb",
+    "prefix": "gabgrid",
+    "body": [
+      "'-- Create DataTable",
+      "Function.Intrinsic.Data.DataTableNew(V.Local.${1:dtData})",
+      "Function.Intrinsic.Data.DataColumnAdd(V.Local.${1:dtData}, \"${2:Column1}\", \"String\")",
+      "Function.Intrinsic.Data.DataColumnAdd(V.Local.${1:dtData}, \"${3:Column2}\", \"String\")",
+      "Function.Intrinsic.Data.DataColumnAdd(V.Local.${1:dtData}, \"${4:Column3}\", \"Decimal\")",
+      "",
+      "'-- Bind to grid",
+      "Gui.${5:Form}.${6:gsgcMain}.DataSource(V.Local.${1:dtData})",
+      "Gui.${5:Form}.${6:gsgcMain}.ColumnHeaderText(\"${2:Column1}\", \"${7:Display Name 1}\")",
+      "Gui.${5:Form}.${6:gsgcMain}.ColumnHeaderText(\"${3:Column2}\", \"${8:Display Name 2}\")",
+      "Gui.${5:Form}.${6:gsgcMain}.ColumnHeaderText(\"${4:Column3}\", \"${9:Display Name 3}\")",
+      "Gui.${5:Form}.${6:gsgcMain}.AutoSizeColumns()",
+      "$0"
+    ],
+    "description": "GAB GsGridControl setup with DataTable binding"
+  },
+
+  "GAB ODBC Query": {
+    "scope": "vb",
+    "prefix": "gabodbc",
+    "body": [
+      "V.Local.sConnStr.Set(V.Caller.ODC)",
+      "V.Local.sSQL.Declare(String)",
+      "Function.Intrinsic.String.Build(\"${1:SELECT * FROM TABLE_NAME WHERE FIELD = '{0}'}\", ${2:V.Local.sParam}, V.Local.sSQL)",
+      "",
+      "Function.Intrinsic.Data.ODBCConnect(V.Local.sConnStr)",
+      "Function.Intrinsic.Data.ODBCExecute(V.Local.sConnStr, V.Local.sSQL)",
+      "",
+      "Function.Intrinsic.Control.DoWhile(V.DataFile.EOF, <>, True)",
+      "  $0",
+      "  Function.Intrinsic.Data.ODBCFetch(V.Local.sConnStr)",
+      "Function.Intrinsic.Control.Loop",
+      "",
+      "Function.Intrinsic.Data.ODBCDisconnect(V.Local.sConnStr)"
+    ],
+    "description": "GAB ODBC Connect/Execute/Fetch/Disconnect pattern"
+  },
+
+  "GAB REST GET": {
+    "scope": "vb",
+    "prefix": "gabrest",
+    "body": [
+      "V.Local.sURL.Declare(String)",
+      "V.Local.sResponse.Declare(String)",
+      "V.Local.sHeaders.Declare(String)",
+      "",
+      "V.Local.sURL.Set(\"${1:https://api.example.com/endpoint}\")",
+      "V.Local.sHeaders.Set(\"Content-Type: application/json\")",
+      "",
+      "Function.Communication.HTTPS.Get(V.Local.sURL, V.Local.sHeaders, V.Local.sResponse)",
+      "$0"
+    ],
+    "description": "GAB HTTPS GET request pattern"
+  },
+
+  "GAB DataTable Create": {
+    "scope": "vb",
+    "prefix": "gabdt",
+    "body": [
+      "V.Local.${1:dtData}.Declare(DataTable)",
+      "Function.Intrinsic.Data.DataTableNew(V.Local.${1:dtData})",
+      "Function.Intrinsic.Data.DataColumnAdd(V.Local.${1:dtData}, \"${2:Col1}\", \"${3:String}\")",
+      "Function.Intrinsic.Data.DataColumnAdd(V.Local.${1:dtData}, \"${4:Col2}\", \"${5:String}\")",
+      "",
+      "Function.Intrinsic.Data.DataRowAdd(V.Local.${1:dtData})",
+      "Function.Intrinsic.Data.DataColumnSetValue(V.Local.${1:dtData}, 0, \"${2:Col1}\", ${6:\"value\"})",
+      "Function.Intrinsic.Data.DataColumnSetValue(V.Local.${1:dtData}, 0, \"${4:Col2}\", ${7:\"value\"})",
+      "$0"
+    ],
+    "description": "GAB DataTable create, add columns, add row"
+  },
+
+  "GAB MsgBox": {
+    "scope": "vb",
+    "prefix": "gabmsgbox",
+    "body": [
+      "V.Local.${1:iResult}.Declare(Long)",
+      "Function.Intrinsic.UI.Msgbox(\"${2:Message text}\", ${3:36}, \"${4:Title}\", V.Local.${1:iResult})",
+      "Function.Intrinsic.Control.If(V.Local.${1:iResult}, =, 6)",
+      "  $0",
+      "Function.Intrinsic.Control.EndIf"
+    ],
+    "description": "GAB MsgBox with Yes/No result handling (36=YesNo+Question, 6=Yes)"
+  },
+
+  "GAB Centralized Error Handler": {
+    "scope": "vb",
+    "prefix": "gaberror",
+    "body": [
+      "Program.Sub.ErrorMessage.Start",
+      "Function.Intrinsic.Control.Try",
+      "",
+      "Function.Intrinsic.Control.If(V.Global.bError)",
+      "  Function.Intrinsic.Control.ExitSub",
+      "Function.Intrinsic.Control.EndIf",
+      "V.Global.bError.Set(True)",
+      "",
+      "V.Local.sError.Declare(String,\"\")",
+      "Function.Intrinsic.String.Build(\"Project: ${1:filename}.g2u{0}{0}Subroutine: {1}{0}Error: {2} - {3}\", V.Ambient.NewLine, V.Ambient.SubroutineCalledFrom, V.Ambient.ErrorNumber, V.Ambient.ErrorDescription, V.Local.sError)",
+      "Function.Intrinsic.UI.Msgbox(V.Local.sError)",
+      "",
+      "V.Global.bError.Set(False)",
+      "",
+      "Function.Intrinsic.Control.Catch",
+      "Function.Intrinsic.Control.EndTry",
+      "Program.Sub.ErrorMessage.End"
+    ],
+    "description": "GAB centralized error handler with recursion guard"
+  },
+
+  "GAB Hook Script Skeleton": {
+    "scope": "vb",
+    "prefix": "gabhook",
+    "body": [
+      "Program.Sub.Preflight.Start",
+      "Program.Sub.Preflight.End",
+      "",
+      "Program.Sub.Main.Start",
+      "Function.Intrinsic.Control.SetErrorHandler(Main_Err)",
+      "",
+      "'-- Read hook context",
+      "V.Local.sHookID.Declare(String)",
+      "V.Local.sHookID.Set(V.Caller.Hook)",
+      "",
+      "'-- Read passed values",
+      "V.Local.sValue.Declare(String)",
+      "V.Local.sValue.Set(V.Passed.${1:FieldName}.Value)",
+      "",
+      "$0",
+      "",
+      "Function.Intrinsic.Control.End",
+      "Program.Sub.Main.End",
+      "",
+      "Program.Sub.Main_Err.Start",
+      "Function.Intrinsic.Control.SetErrorHandler()",
+      "V.Local.sErr.Declare(String)",
+      "Function.Intrinsic.String.Build(\"Error: {0} - {1}\", V.Ambient.ErrorNumber, V.Ambient.ErrorDescription, V.Local.sErr)",
+      "Function.Intrinsic.UI.Msgbox(V.Local.sErr, 16, \"Hook Error\")",
+      "Program.Sub.Main_Err.End",
+      "",
+      "Program.Sub.Comments.Start",
+      "Program.Sub.Comments.End"
+    ],
+    "description": "GAB hook script skeleton with V.Caller.Hook and V.Passed access"
+  }
+}
