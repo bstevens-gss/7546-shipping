@@ -1551,7 +1551,7 @@ Program.Sub.LoadOpenOrders.Start
 	f.Intrinsic.StringBuilder.Append("Query","CASE WHEN F.SHP_HLD_FLAG = 02 OR F.SHP_HLD_FLAG = 04 THEN CONVERT(1,SQL_BIT) WHEN F.SHP_HLD_FLAG IS NULL THEN CONVERT(0,SQL_BIT) ELSE CONVERT(0,SQL_BIT) END AS SHP_HLD_FLAG, ")
 
 	f.Intrinsic.StringBuilder.Append("Query","A.QTY_SHIPPED, '' AS NOTES, '' AS LINE_TEXT,RTRIM(A.USER_1) AS USER_1, RTRIM(A.USER_2) AS USER_2, RTRIM(A.USER_3) AS USER_3, RTRIM(A.USER_4) AS USER_4, ")
-	f.Intrinsic.StringBuilder.Append("Query","RTRIM(A.USER_5) AS USER_5, Cast(Concat(A.Order_No,A.Record_No) as CHAR(10)) As ORDLN, ")
+	f.Intrinsic.StringBuilder.Append("Query","RTRIM(A.USER_5) AS USER_5, RTRIM(A.INFO_1) AS INFO_1, RTRIM(A.INFO_2) AS INFO_2, Cast(Concat(A.Order_No,A.Record_No) as CHAR(10)) As ORDLN, ")
 	f.Intrinsic.StringBuilder.Append("Query","RTRIM(F.USER_1) AS H_USER_1, RTRIM(F.USER_2) AS H_USER_2, RTRIM(F.USER_3) AS H_USER_3, RTRIM(F.USER_4) AS H_USER_4, RTRIM(F.USER_5) AS H_USER_5, ")
 	f.Intrinsic.StringBuilder.Append("Query","E.CARRIER_CD+Cast(E.SHIP_SRVC_TYPE As Char(3)) As CSRV, A.CUSTOMER_PART, rtrim(D.CODE_SOURCE) as CODE_SOURCE, ")
 	f.Intrinsic.StringBuilder.Append("Query","RTRIM(F.CODE_SORT) AS CODE_SORT, RTRIM(F.ORDER_SORT_2) AS ORDER_SORT_2, RTRIM(D.CODE_SORT) AS INV_CODE_SORT, ")
@@ -1652,7 +1652,7 @@ Program.Sub.LoadOpenOrders.Start
 	'linq join orderpicker and dtallship0	
 	'HERE
 	Function.Intrinsic.Control.If(v.DataTable.dtOrderPicker.Exists) 	
-		F.Data.Linq.Join("LeftJoin","datatable","dtAllShip0*!*A","datatable","dtOrderPicker*!*B","A.ORDER_NO = B.ORDER_NO And A.ORDER_SUFFIX = B.ORDER_SUFFIX AND A.ORDER_LINE = B.ORDER_LINE","A.PICKLIST*!*A.CUSTOMER*!*A.NAME_CUSTOMER*!*A.CUSTOMER_PO*!*A.ORDER_NO*!*A.RECORD_NO*!*A.ORDER_LINE*!*A.ORDER_SUFFIX*!*A.PART*!*A.DISPLAY_PART*!*A.LOCATION*!*A.PRODUCT_LINE*!*A.DESCRIPTION*!*A.Description_2*!*A.Description_3*!*A.WEIGHT*!*A.Container Name*!*A.Container Description*!*A.Ind Container Height (In)*!*A.Ind Container Width (In)*!*A.Ind Container Length (In)*!*A.Ind Container Weight*!*A.Est Container Qty*!*A.Est Packaged Weight*!*A.Est Area*!*A.QTY_BO*!*A.QTY_ONHAND*!*A.QTY_90*!*A.EXT_AMT*!*A.QTY_REQUIRED*!*A.DATE_ORDER*!*A.MUST_DLVR_BY_DATE*!*A.DATE_ITEM_PROM*!*A.SHIP_ID*!*A.CITY_SHIP*!*A.STATE_SHIP*!*A.Address_1_Ship*!*A.Address_2_Ship*!*A.Address_3_Ship*!*A.Address_4_Ship*!*A.Address_5_Ship*!*A.Name_Customer_Ship*!*A.Freight_Zone_Ship*!*A.SHIP_VIA_SHIP*!*A.CARRIER_CD*!*A.CARR_SHORT_DESC*!*A.CARR_LONG_DESC*!*A.STAGED*!*A.FLAG_USE_MQD*!*A.SHP_HLD_FLAG*!*A.QTY_SHIPPED*!*A.NOTES*!*A.LINE_TEXT*!*A.USER_1*!*A.USER_2*!*A.USER_3*!*A.USER_4*!*A.USER_5*!*A.H_USER_1*!*A.H_USER_2*!*A.H_USER_3*!*A.H_USER_4*!*A.H_USER_5*!*A.ORDLN*!*A.CSRV*!*A.CUSTOMER_PART*!*A.CODE_SOURCE*!*A.CODE_SORT*!*A.ORDER_SORT_2*!*A.INV_CODE_SORT*!*A.CODE_FOB*!*A.SALESPERSON*!*A.ORDER_TYPE*!*A.LINE_TYPE*!*A.BLANKET_NO*!*A.FLAG_NO_BACKORDER*!*A.STATUS*!*A.ASSIGNPICKER*!*A.CUST_ORDER_NOTES*!*B.Assigned_To*!*A.AllocationFlag*!*A.PROJECT*!*A.PHASE*!*A.CONTACT*!*A.CONTACT_PHONE*!*A.CONTACT_EMAIL*!*A.PARTLOC","","","","dtAllShip1",True)
+		F.Data.Linq.Join("LeftJoin","datatable","dtAllShip0*!*A","datatable","dtOrderPicker*!*B","A.ORDER_NO = B.ORDER_NO And A.ORDER_SUFFIX = B.ORDER_SUFFIX AND A.ORDER_LINE = B.ORDER_LINE","A.PICKLIST*!*A.CUSTOMER*!*A.NAME_CUSTOMER*!*A.CUSTOMER_PO*!*A.ORDER_NO*!*A.RECORD_NO*!*A.ORDER_LINE*!*A.ORDER_SUFFIX*!*A.PART*!*A.DISPLAY_PART*!*A.LOCATION*!*A.PRODUCT_LINE*!*A.DESCRIPTION*!*A.Description_2*!*A.Description_3*!*A.WEIGHT*!*A.Container Name*!*A.Container Description*!*A.Ind Container Height (In)*!*A.Ind Container Width (In)*!*A.Ind Container Length (In)*!*A.Ind Container Weight*!*A.Est Container Qty*!*A.Est Packaged Weight*!*A.Est Area*!*A.QTY_BO*!*A.QTY_ONHAND*!*A.QTY_90*!*A.EXT_AMT*!*A.QTY_REQUIRED*!*A.DATE_ORDER*!*A.MUST_DLVR_BY_DATE*!*A.DATE_ITEM_PROM*!*A.SHIP_ID*!*A.CITY_SHIP*!*A.STATE_SHIP*!*A.Address_1_Ship*!*A.Address_2_Ship*!*A.Address_3_Ship*!*A.Address_4_Ship*!*A.Address_5_Ship*!*A.Name_Customer_Ship*!*A.Freight_Zone_Ship*!*A.SHIP_VIA_SHIP*!*A.CARRIER_CD*!*A.CARR_SHORT_DESC*!*A.CARR_LONG_DESC*!*A.STAGED*!*A.FLAG_USE_MQD*!*A.SHP_HLD_FLAG*!*A.QTY_SHIPPED*!*A.NOTES*!*A.LINE_TEXT*!*A.USER_1*!*A.USER_2*!*A.USER_3*!*A.USER_4*!*A.USER_5*!*A.INFO_1*!*A.INFO_2*!*A.H_USER_1*!*A.H_USER_2*!*A.H_USER_3*!*A.H_USER_4*!*A.H_USER_5*!*A.ORDLN*!*A.CSRV*!*A.CUSTOMER_PART*!*A.CODE_SOURCE*!*A.CODE_SORT*!*A.ORDER_SORT_2*!*A.INV_CODE_SORT*!*A.CODE_FOB*!*A.SALESPERSON*!*A.ORDER_TYPE*!*A.LINE_TYPE*!*A.BLANKET_NO*!*A.FLAG_NO_BACKORDER*!*A.STATUS*!*A.ASSIGNPICKER*!*A.CUST_ORDER_NOTES*!*B.Assigned_To*!*A.AllocationFlag*!*A.PROJECT*!*A.PHASE*!*A.CONTACT*!*A.CONTACT_PHONE*!*A.CONTACT_EMAIL*!*A.PARTLOC","","","","dtAllShip1",True)
 	Function.Intrinsic.Control.Else
 		f.Data.Datatable.Clone("dtAllShip0","dtAllShip1",True)
 	Function.Intrinsic.Control.EndIf
@@ -1800,7 +1800,7 @@ Program.Sub.LoadLoad.Start
 	f.Intrinsic.StringBuilder.Append("Query","CASE WHEN F.SHP_HLD_FLAG IN (2,4) THEN CONVERT(1,SQL_BIT) WHEN F.SHP_HLD_FLAG IS NULL THEN CONVERT(0,SQL_BIT) ELSE CONVERT(0,SQL_BIT) END AS SHP_HLD_FLAG, ")
 	
 	f.Intrinsic.StringBuilder.Append("Query","A.QTY_SHIPPED, '' AS NOTES, '' AS LINE_TEXT,RTRIM(A.USER_1) AS USER_1, RTRIM(A.USER_2) AS USER_2, RTRIM(A.USER_3) AS USER_3, RTRIM(A.USER_4) AS USER_4, ")
-	f.Intrinsic.StringBuilder.Append("Query","RTRIM(A.USER_5) AS USER_5, Cast(Concat(A.Order_No,A.Record_No) as CHAR(10)) As ORDLN,")
+	f.Intrinsic.StringBuilder.Append("Query","RTRIM(A.USER_5) AS USER_5, RTRIM(A.INFO_1) AS INFO_1, RTRIM(A.INFO_2) AS INFO_2, Cast(Concat(A.Order_No,A.Record_No) as CHAR(10)) As ORDLN,")
 	f.Intrinsic.StringBuilder.Append("Query","RTRIM(F.USER_1) AS H_USER_1, RTRIM(F.USER_2) AS H_USER_2, RTRIM(F.USER_3) AS H_USER_3, RTRIM(F.USER_4) AS H_USER_4, RTRIM(F.USER_5) AS H_USER_5, ")
 	f.Intrinsic.StringBuilder.Append("Query","E.CARRIER_CD+Cast(E.SHIP_SRVC_TYPE As Char(3)) As CSRV, A.CUSTOMER_PART, rtrim(D.CODE_SOURCE) as CODE_SOURCE, ")
 	f.Intrinsic.StringBuilder.Append("Query","RTRIM(F.CODE_SORT) AS CODE_SORT, RTRIM(F.ORDER_SORT_2) AS ORDER_SORT_2, RTRIM(D.CODE_SORT) AS INV_CODE_SORT, ")
@@ -1950,7 +1950,7 @@ Program.Sub.LoadLoad.Start
 	'v.Local.sFilter.Set(v.DataTable.dtLoad0.FieldNames)
 	'linq join orderpicker and dtLoad0
 	Function.Intrinsic.Control.If(v.DataTable.dtOrderPicker.Exists) 
-		F.Data.Linq.Join("LeftJoin","datatable","dtLoad0*!*A","datatable","dtOrderPicker*!*B","A.ORDER_NO = B.ORDER_NO And A.ORDER_SUFFIX = B.ORDER_SUFFIX AND A.ORDER_LINE = B.ORDER_LINE","A.Select*!*A.Load Number*!*A.Packing List*!*A.PL Ship Date*!*A.PICKLIST*!*A.TRACKING_NO*!*A.WAY_BILL*!*A.Staged Qty*!*A.Drop Seq*!*A.Carrier Number*!*A.Carrier Load Number*!*A.Carrier Trailer*!*A.Truck Type ID*!*A.Truck Description*!*A.Truck Max Weight(lbs)*!*A.Truck SF Capacity*!*A.Staging Bin*!*A.Dock ID*!*A.Pick By Date*!*A.Ship Date*!*A.Load Notes*!*A.Line_Text*!*A.Ready to Pick*!*A.PICKED*!*A.Container Name*!*A.Container Description*!*A.Ind Container Height (In)*!*A.Ind Container Width (In)*!*A.Ind Container Length (In)*!*A.Ind Container Weight*!*A.Est Container Qty*!*A.Est Packaged Weight*!*A.Est Area*!*A.CUSTOMER*!*A.NAME_CUSTOMER*!*A.CUSTOMER_PO*!*A.ORDER_NO*!*A.RECORD_NO*!*A.ORDER_LINE*!*A.ORDER_SUFFIX*!*A.CURRENT_ORDER_SUFFIX*!*A.PART*!*A.DISPLAY_PART*!*A.LOCATION*!*A.PRODUCT_LINE*!*A.DESCRIPTION*!*A.Description_2*!*A.Description_3*!*A.WEIGHT*!*A.QTY_BO*!*A.QTY_ONHAND*!*A.QTY_90*!*A.EXT_AMT*!*A.QTY_REQUIRED*!*A.DATE_ORDER*!*A.MUST_DLVR_BY_DATE*!*A.DATE_ITEM_PROM*!*A.SHIP_ID*!*A.CITY_SHIP*!*A.STATE_SHIP*!*A.Address_1_Ship*!*A.Address_2_Ship*!*A.Address_3_Ship*!*A.Address_4_Ship*!*A.Address_5_Ship*!*A.Name_Customer_Ship*!*A.Freight_Zone_Ship*!*A.SHIP_VIA_SHIP*!*A.CARRIER_CD*!*A.CARR_SHORT_DESC*!*A.CARR_LONG_DESC*!*A.STAGED*!*A.FLAG_USE_MQD*!*A.SHP_HLD_FLAG*!*A.QTY_SHIPPED*!*A.NOTES*!*A.USER_1*!*A.USER_2*!*A.USER_3*!*A.USER_4*!*A.USER_5*!*A.H_USER_1*!*A.H_USER_2*!*A.H_USER_3*!*A.H_USER_4*!*A.H_USER_5*!*A.ORDLN*!*A.CSRV*!*A.CUSTOMER_PART*!*A.CODE_SOURCE*!*A.CODE_SORT*!*A.ORDER_SORT_2*!*A.INV_CODE_SORT*!*A.CODE_FOB*!*A.SALESPERSON*!*A.ORDER_TYPE*!*A.LINE_TYPE*!*A.BLANKET_NO*!*A.FLAG_NO_BACKORDER*!*A.STATUS*!*A.CUST_ORDER_NOTES*!*B.Assigned_To*!*A.AllocationFlag*!*A.PROJECT*!*A.PHASE*!*A.CONTACT*!*A.CONTACT_PHONE*!*A.CONTACT_EMAIL*!*A.VALIDATED*!*A.POL*!*A.OPOL*!*A.LD*!*A.LOADING_STATUS*!*A.PARTLOC","","","","dtLoad1",True)
+		F.Data.Linq.Join("LeftJoin","datatable","dtLoad0*!*A","datatable","dtOrderPicker*!*B","A.ORDER_NO = B.ORDER_NO And A.ORDER_SUFFIX = B.ORDER_SUFFIX AND A.ORDER_LINE = B.ORDER_LINE","A.Select*!*A.Load Number*!*A.Packing List*!*A.PL Ship Date*!*A.PICKLIST*!*A.TRACKING_NO*!*A.WAY_BILL*!*A.Staged Qty*!*A.Drop Seq*!*A.Carrier Number*!*A.Carrier Load Number*!*A.Carrier Trailer*!*A.Truck Type ID*!*A.Truck Description*!*A.Truck Max Weight(lbs)*!*A.Truck SF Capacity*!*A.Staging Bin*!*A.Dock ID*!*A.Pick By Date*!*A.Ship Date*!*A.Load Notes*!*A.Line_Text*!*A.Ready to Pick*!*A.PICKED*!*A.Container Name*!*A.Container Description*!*A.Ind Container Height (In)*!*A.Ind Container Width (In)*!*A.Ind Container Length (In)*!*A.Ind Container Weight*!*A.Est Container Qty*!*A.Est Packaged Weight*!*A.Est Area*!*A.CUSTOMER*!*A.NAME_CUSTOMER*!*A.CUSTOMER_PO*!*A.ORDER_NO*!*A.RECORD_NO*!*A.ORDER_LINE*!*A.ORDER_SUFFIX*!*A.CURRENT_ORDER_SUFFIX*!*A.PART*!*A.DISPLAY_PART*!*A.LOCATION*!*A.PRODUCT_LINE*!*A.DESCRIPTION*!*A.Description_2*!*A.Description_3*!*A.WEIGHT*!*A.QTY_BO*!*A.QTY_ONHAND*!*A.QTY_90*!*A.EXT_AMT*!*A.QTY_REQUIRED*!*A.DATE_ORDER*!*A.MUST_DLVR_BY_DATE*!*A.DATE_ITEM_PROM*!*A.SHIP_ID*!*A.CITY_SHIP*!*A.STATE_SHIP*!*A.Address_1_Ship*!*A.Address_2_Ship*!*A.Address_3_Ship*!*A.Address_4_Ship*!*A.Address_5_Ship*!*A.Name_Customer_Ship*!*A.Freight_Zone_Ship*!*A.SHIP_VIA_SHIP*!*A.CARRIER_CD*!*A.CARR_SHORT_DESC*!*A.CARR_LONG_DESC*!*A.STAGED*!*A.FLAG_USE_MQD*!*A.SHP_HLD_FLAG*!*A.QTY_SHIPPED*!*A.NOTES*!*A.USER_1*!*A.USER_2*!*A.USER_3*!*A.USER_4*!*A.USER_5*!*A.INFO_1*!*A.INFO_2*!*A.H_USER_1*!*A.H_USER_2*!*A.H_USER_3*!*A.H_USER_4*!*A.H_USER_5*!*A.ORDLN*!*A.CSRV*!*A.CUSTOMER_PART*!*A.CODE_SOURCE*!*A.CODE_SORT*!*A.ORDER_SORT_2*!*A.INV_CODE_SORT*!*A.CODE_FOB*!*A.SALESPERSON*!*A.ORDER_TYPE*!*A.LINE_TYPE*!*A.BLANKET_NO*!*A.FLAG_NO_BACKORDER*!*A.STATUS*!*A.CUST_ORDER_NOTES*!*B.Assigned_To*!*A.AllocationFlag*!*A.PROJECT*!*A.PHASE*!*A.CONTACT*!*A.CONTACT_PHONE*!*A.CONTACT_EMAIL*!*A.VALIDATED*!*A.POL*!*A.OPOL*!*A.LD*!*A.LOADING_STATUS*!*A.PARTLOC","","","","dtLoad1",True)
 	Function.Intrinsic.Control.Else
 		f.Data.Datatable.Clone("dtLoad0","dtLoad1",True)
 	Function.Intrinsic.Control.EndIf
@@ -2673,13 +2673,14 @@ Program.Sub.LoadOpenOrdersGV.Start
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Drop Seq","HeaderHAlignment","Center")
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Drop Seq","CellHAlignment","Center")		
 		
-		'Carrier Number
+		'Carrier Number (read-only; click opens OE_CARRIER browser via RowCellClick)
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Number","Caption","Carrier Number")
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Number","MinWidth","110")
-		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Number","AllowEdit",True)
-		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Number","ReadOnly",False)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Number","AllowEdit",False)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Number","ReadOnly",True)
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Number","HeaderHAlignment","Center")
-		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Number","CellHAlignment","Center")		
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Number","CellHAlignment","Center")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Number","CellForeColor",V.Enum.ThemeColors!AccentColor)		
 		
 		'Carrier Load Number
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Load Number","Caption","Carrier Load Number")
@@ -2947,6 +2948,20 @@ Program.Sub.LoadOpenOrdersGV.Start
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"H_USER_5","HeaderHAlignment","Left")
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"H_USER_5","CellHAlignment","Left")
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"H_USER_5","MaxLength",30)	
+	
+	'INFO_1 (hidden by default, available via Column Chooser)
+	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"INFO_1","Caption","Info 1")
+	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"INFO_1","MinWidth","120")
+	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"INFO_1","AllowEdit",False)
+	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"INFO_1","ReadOnly",True)
+	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"INFO_1","Visible",False)
+	
+	'INFO_2 (hidden by default, available via Column Chooser)
+	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"INFO_2","Caption","Info 2")
+	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"INFO_2","MinWidth","120")
+	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"INFO_2","AllowEdit",False)
+	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"INFO_2","ReadOnly",True)
+	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"INFO_2","Visible",False)
 	
 	'CUSTOMER_PART
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"CUSTOMER_PART","Caption","Customer Part")
@@ -3642,36 +3657,7 @@ Program.Sub.GsGCLoad_CellValueChanged.Start
 			F.Intrinsic.Control.EndIf
 			F.ODBC.con!rstload.Close	
 			
-		F.Intrinsic.Control.CaseAny("Carrier Number","CARRIER NUMBER")			
-			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"ORDER_NO",V.Args.RowIndex,V.Local.sOrder)
-			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"Order_Line",V.Args.RowIndex,V.Local.sLine)
-			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"ORDER_SUFFIX",V.Args.RowIndex,V.Local.sOrderSuffix)
-			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"LOAD NUMBER",V.Args.RowIndex,V.Local.sLoadNo)
-			F.Intrinsic.String.Build("SELECT * FROM LOAD_PLAN WHERE ORDER_NO = '{0}' AND ORDER_LINE = '{1}' AND ORDER_SUFFIX = '{2}' and LOAD_NO NOT IN (0,9999);",V.Local.sOrder,V.Local.sLine,V.Local.sOrderSuffix,V.Local.sSQL)
-			F.ODBC.Connection!con.OpenRecordsetRO("rstcarrierno",V.Local.sSQL)
-			F.Intrinsic.Control.If(V.ODBC.con!rstcarrierno.EOF,=,True)
-				F.ODBC.con!rstcarrierno.Close
-				F.Intrinsic.UI.Msgbox("Load must not be 0 or 9999.")
-				F.Data.Datatable.SetValue("dtLoad",V.Args.RowIndex,"CARRIER NUMBER","")
-				f.Intrinsic.Control.ExitSub
-			F.Intrinsic.Control.Else
-				f.Intrinsic.String.Build("[LOAD NUMBER] = {0} AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999",V.Local.sLoadNo,v.Local.sfilter)
-				F.Data.Datatable.Select("dtLoad",v.Local.sfilter,v.Local.sSel)					
-				Function.Intrinsic.Control.If(v.Local.sSel.Trim,<>,"***NORETURN***")
-					F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
-					F.Intrinsic.Control.For(v.Local.i,0,v.Local.sSel.UBound)
-						'update gridview with carrier number for load number selected
-						F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARRIER NUMBER",V.Args.Value)					
-					F.Intrinsic.Control.Next(v.Local.i)	
-					F.Intrinsic.String.Build("UPDATE LOAD_PLAN SET CARRIER = '{0}' WHERE LOAD_NO = {4};",V.Args.Value,V.Local.sOrder,V.Local.sLine,V.Local.sOrderSuffix,V.Local.sLoadNo,V.Local.sSQL)
-					F.ODBC.Connection!con.Execute(V.Local.sSQL)
-				F.Intrinsic.Control.Else
-					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARRIER NUMBER","")
-					Function.Intrinsic.Control.UnBlockEvents
-					f.Intrinsic.Control.ExitSub
-				F.Intrinsic.Control.EndIf				
-			F.Intrinsic.Control.EndIf
-			F.ODBC.con!rstcarrierno.Close	
+		'-- Carrier Number: removed from CellValueChanged -- column is now read-only (click-to-browse via RowCellClick)
 			
 		F.Intrinsic.Control.CaseAny("Carrier Load Number","CARRIER LOAD NUMBER")
 			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"ORDER_NO",V.Args.RowIndex,V.Local.sOrder)
@@ -4680,6 +4666,17 @@ Program.Sub.GsGCLoad_RowCellClick.Start
 	v.Local.dateyyyymmddnnss.Declare(String)
 	V.Local.sLOADINGSTATUS.Declare
 	V.Local.bHold.Declare
+	V.Local.sCarrierCD.Declare
+	V.Local.iSrvcType.Declare
+	V.Local.sPaymentOption.Declare
+	V.Local.sVIA.Declare
+	V.Local.sShortDesc.Declare
+	V.Local.sLongDesc.Declare
+	V.Local.sCSRV.Declare
+	V.Local.iStagedCount.Declare(Long)
+	V.Local.iNonStagedCount.Declare(Long)
+	V.Local.sConfirmMsg.Declare
+	V.Local.iConfirmBtn.Declare(Long)
 		
 	F.Intrinsic.Control.SelectCase(V.Args.ControlName)
 		F.Intrinsic.Control.Case("GSGCALLSHIP")
@@ -4957,6 +4954,96 @@ Program.Sub.GsGCLoad_RowCellClick.Start
 			Function.Intrinsic.Control.UnBlockEvents
 			f.Intrinsic.Control.ExitSub
 		F.Intrinsic.Control.EndIf	
+		F.Intrinsic.Control.CaseAny("Carrier Number","CARRIER NUMBER")
+		'-- OE_CARRIER browser: select carrier and sync to orders/shipments
+			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"LOAD NUMBER",V.Args.RowIndex,V.Local.sLoadNo)
+			f.Intrinsic.String.Build("[LOAD NUMBER] = {0} and [LOAD NUMBER] <> 0 and [LOAD NUMBER] <> 9999",V.Local.sLoadNo,v.Local.sfilter)
+			F.Data.Datatable.Select("dtLoad",v.Local.sfilter,v.Local.sSel)
+			Function.Intrinsic.Control.If(v.Local.sSel.Trim,<>,"***NORETURN***")
+				'-- Query OE_CARRIER for browser
+				F.Intrinsic.Control.If(V.DataTable.dtCarrier.Exists,=,True)
+					F.Data.DataTable.Close("dtCarrier")
+				F.Intrinsic.Control.EndIf
+				F.Data.Datatable.CreateFromSQL("dtCarrier","con","SELECT RTRIM(CARRIER_CD) AS CARRIER_CD, SRVC_TYPE, RTRIM(SHORT_DESC) AS SHORT_DESC, RTRIM(LONG_DESC) AS LONG_DESC, RTRIM(PAYMENT_OPTION) AS PAYMENT_OPTION, RTRIM(VIA) AS VIA FROM V_OE_CARRIER ORDER BY CARRIER_CD, SRVC_TYPE")
+				F.Intrinsic.UI.BrowserFromDataTable("Select a Carrier","dtCarrier","CARRIER_CD*!*SRVC_TYPE*!*SHORT_DESC*!*LONG_DESC*!*PAYMENT_OPTION*!*VIA","100*!*80*!*200*!*300*!*100*!*60",v.Local.sRet)
+				Function.Intrinsic.Control.If(v.Local.sRet.Trim,<>,"***CANCEL***")
+					f.Intrinsic.String.Split(v.Local.sRet,"*!*",v.Local.sret)
+					V.Local.sCarrierCD.Set(V.Local.sRet(0))
+					V.Local.iSrvcType.Set(V.Local.sRet(1))
+					V.Local.sShortDesc.Set(V.Local.sRet(2))
+					V.Local.sLongDesc.Set(V.Local.sRet(3))
+					V.Local.sPaymentOption.Set(V.Local.sRet(4))
+					V.Local.sVIA.Set(V.Local.sRet(5))
+				f.Intrinsic.Control.Else
+					F.Data.DataTable.Close("dtCarrier")
+					Function.Intrinsic.Control.UnBlockEvents
+					f.Intrinsic.Control.ExitSub
+				f.Intrinsic.Control.EndIf
+				F.Data.DataTable.Close("dtCarrier")
+				'-- Count staged (have packing list) and non-staged for confirmation
+				V.Local.iStagedCount.Set(0)
+				V.Local.iNonStagedCount.Set(0)
+				F.Intrinsic.String.Build("[LOAD NUMBER] = {0} AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999 AND [ORDER_SUFFIX] <> 'P' AND [PACKING LIST] <> ''",V.Local.sLoadNo,v.Local.sfilter)
+				F.Data.Datatable.Select("dtLoad",v.Local.sfilter,v.Local.stemp)
+				F.Intrinsic.Control.If(V.Local.stemp.Trim,<>,"***NORETURN***")
+					F.Data.DataView.Create("dtLoad","dvStagedPLCount")
+					F.Data.DataView.SetFilter("dtLoad","dvStagedPLCount",v.Local.sfilter)
+					F.Data.DataView.ToDataTableDistinct("dtLoad","dvStagedPLCount","dtStagedPLCount","PACKING LIST",)
+					V.Local.iStagedCount.Set(V.DataTable.dtStagedPLCount.RowCount)
+					F.Data.DataTable.Close("dtStagedPLCount")
+					F.Data.DataView.Close("dtLoad","dvStagedPLCount")
+				F.Intrinsic.Control.EndIf
+				F.Intrinsic.String.Build("[LOAD NUMBER] = {0} AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999 AND [ORDER_SUFFIX] <> 'P' AND [PACKING LIST] = ''",V.Local.sLoadNo,v.Local.sfilter)
+				F.Data.Datatable.Select("dtLoad",v.Local.sfilter,v.Local.stemp)
+				F.Intrinsic.Control.If(V.Local.stemp.Trim,<>,"***NORETURN***")
+					F.Data.DataView.Create("dtLoad","dvNonStagedCount")
+					F.Data.DataView.SetFilter("dtLoad","dvNonStagedCount",v.Local.sfilter)
+					F.Data.DataView.ToDataTableDistinct("dtLoad","dvNonStagedCount","dtNonStagedCount","ORDER_NO",)
+					V.Local.iNonStagedCount.Set(V.DataTable.dtNonStagedCount.RowCount)
+					F.Data.DataTable.Close("dtNonStagedCount")
+					F.Data.DataView.Close("dtLoad","dvNonStagedCount")
+				F.Intrinsic.Control.EndIf
+				'-- Confirmation dialog
+				F.Intrinsic.String.Build("Change carrier to {0} / {1} for {2} packing list(s) and {3} order(s)?",V.Local.sCarrierCD,V.Local.sShortDesc,V.Local.iStagedCount,V.Local.iNonStagedCount,V.Local.sConfirmMsg)
+				F.Intrinsic.UI.Msgbox(V.Local.sConfirmMsg,"Confirm Carrier Change",V.Enum.MsgBoxStyle!YesNo,V.Local.iConfirmBtn)
+				F.Intrinsic.Control.If(V.Local.iConfirmBtn,<>,6)
+					Function.Intrinsic.Control.UnBlockEvents
+					f.Intrinsic.Control.ExitSub
+				F.Intrinsic.Control.EndIf
+				'-- Update all dtLoad rows on this load with carrier number
+				f.Intrinsic.String.Build("[LOAD NUMBER] = {0} and [LOAD NUMBER] <> 0 and [LOAD NUMBER] <> 9999",V.Local.sLoadNo,v.Local.sfilter)
+				F.Data.Datatable.Select("dtLoad",v.Local.sfilter,v.Local.sSel)
+				F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
+				'-- Build CSRV key for description dictionary lookup
+				F.Intrinsic.String.Build("{0}{1}",V.Local.sCarrierCD,V.Local.iSrvcType,V.Local.sCSRV)
+				F.Intrinsic.Control.For(v.Local.i,0,v.Local.sSel.UBound)
+					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARRIER NUMBER",V.Local.sCarrierCD)
+					'-- Refresh description columns via dShortDesc/dLongDesc dictionaries (keyed by CSRV = CARRIER_CD+SRVC_TYPE)
+					V.Local.stemp.Set(V.Dictionary.dShortDesc![V.Local.sCSRV])
+					F.Intrinsic.Control.If(V.Local.stemp,<>,"")
+						F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARR_SHORT_DESC",V.Local.stemp)
+					F.Intrinsic.Control.Else
+						F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARR_SHORT_DESC",V.Local.sShortDesc)
+					F.Intrinsic.Control.EndIf
+					V.Local.stemp.Set(V.Dictionary.dLongDesc![V.Local.sCSRV])
+					F.Intrinsic.Control.If(V.Local.stemp,<>,"")
+						F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARR_LONG_DESC",V.Local.stemp)
+					F.Intrinsic.Control.Else
+						F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARR_LONG_DESC",V.Local.sLongDesc)
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.Next(v.Local.i)
+				'-- Update LOAD_PLAN.CARRIER in database
+				F.Intrinsic.String.Build("UPDATE LOAD_PLAN SET CARRIER = '{0}' WHERE LOAD_NO = {1}",V.Local.sCarrierCD,V.Local.sLoadNo,V.Local.sSQL)
+				F.ODBC.Connection!con.Execute(V.Local.sSQL)
+				'-- Sync carrier to orders/shipments via SyncCarrierFromLoad
+				F.Intrinsic.Control.CallSub(SyncCarrierFromLoad,"sLoadNo",V.Local.sLoadNo,"sCarrierCD",V.Local.sCarrierCD,"iSrvcType",V.Local.iSrvcType,"sPaymentOption",V.Local.sPaymentOption,"sVIA",V.Local.sVIA)
+				gui.frmShip.lblRunMRP.Visible(True)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.UI.Msgbox("Load must not be 0 or 9999.")
+				Function.Intrinsic.Control.UnBlockEvents
+				f.Intrinsic.Control.ExitSub
+			F.Intrinsic.Control.EndIf
+			
 		f.Intrinsic.Control.Case("STAGING BIN")
 			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"LOAD NUMBER",V.Args.RowIndex,V.Local.sLoadNo)
 			f.Intrinsic.String.Build("[LOAD NUMBER] = {0} and [LOAD NUMBER] <> 0 and [LOAD NUMBER] <> 9999",V.Local.sLoadNo,v.Local.sfilter)
@@ -9686,9 +9773,126 @@ F.Intrinsic.Control.Catch
 F.Intrinsic.Control.EndTry
 Program.Sub.GsGCSplit_RowCellClick.End
 
+'-- Sync carrier selection from Load tab to orders/shipments.
+'   Staged (have packing list): insert S50 wireless transactions for WIREPOLL to process.
+'   Non-staged (no packing list): UPDATE ORDER_HEADER directly.
+Program.Sub.SyncCarrierFromLoad.Start
+F.Intrinsic.Control.SetErrorHandler("SyncCarrier_Err")
+F.Intrinsic.Control.ClearErrors
+V.Local.sError.Declare(String,"")
+V.Local.sLoadNo.Declare(String)
+V.Local.sCarrierCD.Declare(String)
+V.Local.iSrvcType.Declare(String)
+V.Local.sPaymentOption.Declare(String)
+V.Local.sVIA.Declare(String)
+V.Local.sSQL.Declare(String)
+V.Local.sFilter.Declare(String)
+V.Local.sSel.Declare(String)
+V.Local.i.Declare(Long)
+V.Local.sTransIDNew.Declare(String)
+V.Local.sUserID.Declare(String)
+V.Local.sPL.Declare(String)
+V.Local.sShipViaDesc.Declare(String)
+V.Local.sCarrierAcct.Declare(String)
+V.Local.sOrderNo.Declare(String)
+V.Local.sCustNo.Declare(String)
+V.Local.sTemp.Declare(String)
+
+V.Local.sLoadNo.Set(V.Args.sLoadNo)
+V.Local.sCarrierCD.Set(V.Args.sCarrierCD)
+V.Local.iSrvcType.Set(V.Args.iSrvcType)
+V.Local.sPaymentOption.Set(V.Args.sPaymentOption)
+V.Local.sVIA.Set(V.Args.sVIA)
+V.Local.sUserID.Set(V.Caller.User)
+
+'-- STAGED: collect distinct packing lists where PACKING LIST is not empty
+F.Intrinsic.String.Build("[LOAD NUMBER] = {0} AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999 AND [ORDER_SUFFIX] <> 'P' AND [PACKING LIST] <> ''",V.Local.sLoadNo,V.Local.sFilter)
+F.Data.DataView.Create("dtLoad","dvStagedPL")
+F.Data.DataView.SetFilter("dtLoad","dvStagedPL",V.Local.sFilter)
+F.Data.DataView.ToDataTableDistinct("dtLoad","dvStagedPL","dtStagedPL","PACKING LIST",)
+F.Data.DataView.Close("dtLoad","dvStagedPL")
+
+'-- Insert S50 wireless transaction for each distinct packing list
+F.Intrinsic.Control.If(V.DataTable.dtStagedPL.RowCount,>,0)
+	F.Intrinsic.Math.Sub(V.DataTable.dtStagedPL.RowCount,1,V.Local.i)
+	F.Intrinsic.Control.For(V.Local.i,0,V.Local.i,1)
+		V.Local.sPL.Set(V.DataTable.dtStagedPL(V.Local.i).PACKING LIST!FieldValTrim)
+		F.Intrinsic.Control.If(V.Local.sPL,<>,"")
+			'-- Get next TRANS_ID (same pattern as Click_Load_Ship S40)
+			F.ODBC.Connection!con.ExecuteAndReturn("SELECT TOP 1 RIGHT(CONCAT('000000000',CAST(TRANS_ID AS INT)+1),9) AS TRANS_ID FROM WIRELESS_HDR ORDER BY TRANS_ID DESC",V.Local.sTransIDNew)
+			F.Intrinsic.String.LPad(V.Local.sTransIDNew,"0",9,V.Local.sTransIDNew)
+			'-- INSERT WIRELESS_HDR with ATTEMPTED_FLAG='Y' (locks row until LINE is written)
+			F.Intrinsic.String.Build("INSERT INTO WIRELESS_HDR (TRANS_ID,TRANS_TYPE,ATTEMPTED_DATE,ATTEMPTED_TIME,USER_ID,BATCH,ATTEMPTED_FLAG) VALUES ('{0}','S50','00000000','00000000','{1}',0,'Y')",V.Local.sTransIDNew,V.Local.sUserID,V.Local.sSQL)
+			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+			'-- INSERT WIRELESS_LINE: FIELD_1=PCK_NO, FIELD_2=CARRIER_CD, FIELD_3=SRVC_TYPE
+			F.Intrinsic.String.Build("INSERT INTO WIRELESS_LINE (TRANS_ID,SEQ,TRANS_TYPE,FIELD_1,FIELD_2,FIELD_3,ERROR_ID) VALUES ('{0}','0000','S50','{1}','{2}','{3}',0)",V.Local.sTransIDNew,V.Local.sPL,V.Local.sCarrierCD,V.Local.iSrvcType,V.Local.sSQL)
+			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+			'-- Release for WIREPOLL by clearing ATTEMPTED_FLAG
+			F.Intrinsic.String.Build("UPDATE WIRELESS_HDR SET ATTEMPTED_FLAG='' WHERE TRANS_ID='{0}'",V.Local.sTransIDNew,V.Local.sSQL)
+			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.i)
+F.Intrinsic.Control.EndIf
+F.Data.DataTable.Close("dtStagedPL")
+
+'-- NON-STAGED: collect distinct ORDER_NO where PACKING LIST is empty
+F.Intrinsic.String.Build("[LOAD NUMBER] = {0} AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999 AND [ORDER_SUFFIX] <> 'P' AND [PACKING LIST] = ''",V.Local.sLoadNo,V.Local.sFilter)
+F.Data.DataView.Create("dtLoad","dvNonStaged")
+F.Data.DataView.SetFilter("dtLoad","dvNonStaged",V.Local.sFilter)
+F.Data.DataView.ToDataTableDistinct("dtLoad","dvNonStaged","dtNonStaged","ORDER_NO",)
+F.Data.DataView.Close("dtLoad","dvNonStaged")
+
+F.Intrinsic.Control.If(V.DataTable.dtNonStaged.RowCount,>,0)
+	'-- Resolve SHIP_VIA description from OE_CARRIER.VIA -> SHIP_VIA.MESSAGE
+	V.Local.sShipViaDesc.Set("")
+	F.Intrinsic.Control.If(V.Local.sVIA,<>,"")
+		F.Intrinsic.String.Build("SELECT RTRIM(MESSAGE) FROM SHIP_VIA WHERE ID = '{0}'",V.Local.sVIA,V.Local.sSQL)
+		F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sShipViaDesc)
+		F.Intrinsic.Control.If(V.Ambient.ExecuteAndReturnEOF,=,True)
+			V.Local.sShipViaDesc.Set("")
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Math.Sub(V.DataTable.dtNonStaged.RowCount,1,V.Local.i)
+	F.Intrinsic.Control.For(V.Local.i,0,V.Local.i,1)
+		V.Local.sOrderNo.Set(V.DataTable.dtNonStaged(V.Local.i).ORDER_NO!FieldValTrim)
+		F.Intrinsic.Control.If(V.Local.sOrderNo,<>,"")
+			'-- If collect (CC), look up customer carrier account from AR_CUST_CARRIER
+			F.Intrinsic.Control.If(V.Local.sPaymentOption,=,"CC")
+				'-- Get customer number for this order
+				F.Intrinsic.String.Build("SELECT RTRIM(CUSTOMER) FROM V_ORDER_HEADER WHERE ORDER_NO = '{0}'",V.Local.sOrderNo,V.Local.sSQL)
+				F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sCustNo)
+				V.Local.sCarrierAcct.Set("")
+				F.Intrinsic.Control.If(V.Ambient.ExecuteAndReturnEOF,=,False)
+					F.Intrinsic.String.Build("SELECT RTRIM(ACCT_NO) FROM AR_CUST_CARRIER WHERE CUST_NO = '{0}' AND CARRIER_CD = '{1}' AND SRVC_TYPE = {2}",V.Local.sCustNo,V.Local.sCarrierCD,V.Local.iSrvcType,V.Local.sSQL)
+					F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sCarrierAcct)
+					F.Intrinsic.Control.If(V.Ambient.ExecuteAndReturnEOF,=,True)
+						V.Local.sCarrierAcct.Set("")
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.EndIf
+				'-- UPDATE ORDER_HEADER with carrier + ship via + carrier account
+				F.Intrinsic.String.Build("UPDATE ORDER_HEADER SET CARRIER_CD = '{0}', SRVC_TYPE = {1}, SHIP_VIA = '{2}', CARRIER_ACCT = '{3}' WHERE ORDER_NO = '{4}'",V.Local.sCarrierCD,V.Local.iSrvcType,V.Local.sShipViaDesc,V.Local.sCarrierAcct,V.Local.sOrderNo,V.Local.sSQL)
+				F.ODBC.Connection!con.Execute(V.Local.sSQL)
+			F.Intrinsic.Control.Else
+				'-- Non-collect: UPDATE ORDER_HEADER with carrier + ship via only
+				F.Intrinsic.String.Build("UPDATE ORDER_HEADER SET CARRIER_CD = '{0}', SRVC_TYPE = {1}, SHIP_VIA = '{2}' WHERE ORDER_NO = '{3}'",V.Local.sCarrierCD,V.Local.iSrvcType,V.Local.sShipViaDesc,V.Local.sOrderNo,V.Local.sSQL)
+				F.ODBC.Connection!con.Execute(V.Local.sSQL)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.i)
+F.Intrinsic.Control.EndIf
+F.Data.DataTable.Close("dtNonStaged")
+
+F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.Label("SyncCarrier_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+F.Intrinsic.Control.EndIf
+Program.Sub.SyncCarrierFromLoad.End
+
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260624100539999$}$CursorSigned
-${$7$}$File Version:1.0.20260624170539.0
+${$6$}$bstevens$}$20260630164828974$}$CursorSigned
+${$7$}$File Version:1.0.20260630234828.0
 Program.Sub.Comments.End

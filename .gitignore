@@ -1,5 +1,6 @@
 # Generated GAB artifacts
 *.gaf
+*.gaf.pids
 *.sig
 *.zip
 

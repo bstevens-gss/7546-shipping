@@ -4,28 +4,28 @@ overview: Replace the free-text "Carrier Number" on the Load tab with an OE_CARR
 todos:
   - id: column-readonly
     content: Change Carrier Number column from editable to read-only (AllowEdit=False, ReadOnly=True) in LoadOpenOrdersGV
-    status: pending
+    status: completed
   - id: rowcellclick-browser
     content: "Add RowCellClick case for Carrier Number: OE_CARRIER browser via BrowserFromDataTable, parse selection, update dtLoad grid + LOAD_PLAN"
-    status: pending
+    status: completed
   - id: cellvaluechanged-cleanup
     content: Remove or guard the CellValueChanged case for Carrier Number (no longer needed with click-to-browse)
-    status: pending
+    status: completed
   - id: sync-subroutine
     content: "Create SyncCarrierFromLoad subroutine: branch staged vs non-staged, insert S50 for staged packing lists, UPDATE ORDER_HEADER for non-staged"
-    status: pending
+    status: completed
   - id: grid-desc-refresh
     content: Refresh CARR_SHORT_DESC / CARR_LONG_DESC display columns in dtLoad after carrier change using existing dictionaries
-    status: pending
+    status: completed
   - id: confirmation-dialog
     content: Add user confirmation dialog before syncing carrier showing count of affected packing lists and orders
-    status: pending
+    status: completed
   - id: info-columns
-    content: "Add ORDER_LINES.INFO_1 and INFO_2 to Open Orders, Due Today, and Load tab queries + grid columns (hidden by default)"
-    status: pending
+    content: Add ORDER_LINES.INFO_1 and INFO_2 to Open Orders, Due Today, and Load tab queries + grid columns (hidden by default)
+    status: completed
   - id: test-debug-cycle
     content: Run gab-lint, gab-sign, and gab-test-debug cycle on the modified script
-    status: pending
+    status: completed
 isProject: false
 ---
 
