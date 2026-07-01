@@ -2438,13 +2438,14 @@ Program.Sub.LoadOpenOrdersGV.Start
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Assigned_To","Visible",v.Global.bUseGSMobilePicklist)
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Assigned_To","ShowInColumnChooser",v.Global.bUseGSMobilePicklist)
 
-	'CARRIER_CD
+	'CARRIER_CD (click opens OE_CARRIER browser via RowCellClick)
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"CARRIER_CD","Caption","Carrier")
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"CARRIER_CD","MinWidth","55")
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"CARRIER_CD","AllowEdit",False)
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"CARRIER_CD","ReadOnly",True)
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"CARRIER_CD","HeaderHAlignment","Center")
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"CARRIER_CD","CellHAlignment","Center")
+	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"CARRIER_CD","CellForeColor",V.Enum.ThemeColors!AccentColor)
 	
 	'CARR_SHORT_DESC
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"CARR_SHORT_DESC","Caption","Carrier Short Desc.")
@@ -2673,14 +2674,13 @@ Program.Sub.LoadOpenOrdersGV.Start
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Drop Seq","HeaderHAlignment","Center")
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Drop Seq","CellHAlignment","Center")		
 		
-		'Carrier Number (read-only; click opens OE_CARRIER browser via RowCellClick)
+		'Carrier Number
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Number","Caption","Carrier Number")
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Number","MinWidth","110")
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Number","AllowEdit",False)
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Number","ReadOnly",True)
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Number","HeaderHAlignment","Center")
-		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Number","CellHAlignment","Center")
-		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Number","CellForeColor",V.Enum.ThemeColors!AccentColor)		
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Number","CellHAlignment","Center")		
 		
 		'Carrier Load Number
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Carrier Load Number","Caption","Carrier Load Number")
@@ -4689,7 +4689,7 @@ Program.Sub.GsGCLoad_RowCellClick.Start
 	
 	F.Intrinsic.Control.BlockEvents
 '	Function.Intrinsic.Debug.InvokeDebugger
-	Function.Intrinsic.Debug.Stop
+'	Function.Intrinsic.Debug.Stop
 	
 	F.Intrinsic.Control.SelectCase(V.Args.Column)
 		Function.Intrinsic.Control.Case("PACKING LIST")
@@ -4954,7 +4954,7 @@ Program.Sub.GsGCLoad_RowCellClick.Start
 			Function.Intrinsic.Control.UnBlockEvents
 			f.Intrinsic.Control.ExitSub
 		F.Intrinsic.Control.EndIf	
-		F.Intrinsic.Control.CaseAny("Carrier Number","CARRIER NUMBER")
+		F.Intrinsic.Control.CaseAny("CARRIER_CD","Carrier","CARRIER")
 		'-- OE_CARRIER browser: select carrier and sync to orders/shipments
 			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"LOAD NUMBER",V.Args.RowIndex,V.Local.sLoadNo)
 			f.Intrinsic.String.Build("[LOAD NUMBER] = {0} and [LOAD NUMBER] <> 0 and [LOAD NUMBER] <> 9999",V.Local.sLoadNo,v.Local.sfilter)
@@ -4980,28 +4980,16 @@ Program.Sub.GsGCLoad_RowCellClick.Start
 					f.Intrinsic.Control.ExitSub
 				f.Intrinsic.Control.EndIf
 				F.Data.DataTable.Close("dtCarrier")
-				'-- Count staged (have packing list) and non-staged for confirmation
-				V.Local.iStagedCount.Set(0)
-				V.Local.iNonStagedCount.Set(0)
-				F.Intrinsic.String.Build("[LOAD NUMBER] = {0} AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999 AND [ORDER_SUFFIX] <> 'P' AND [PACKING LIST] <> ''",V.Local.sLoadNo,v.Local.sfilter)
-				F.Data.Datatable.Select("dtLoad",v.Local.sfilter,v.Local.stemp)
-				F.Intrinsic.Control.If(V.Local.stemp.Trim,<>,"***NORETURN***")
-					F.Data.DataView.Create("dtLoad","dvStagedPLCount")
-					F.Data.DataView.SetFilter("dtLoad","dvStagedPLCount",v.Local.sfilter)
-					F.Data.DataView.ToDataTableDistinct("dtLoad","dvStagedPLCount","dtStagedPLCount","PACKING LIST",)
-					V.Local.iStagedCount.Set(V.DataTable.dtStagedPLCount.RowCount)
-					F.Data.DataTable.Close("dtStagedPLCount")
-					F.Data.DataView.Close("dtLoad","dvStagedPLCount")
+				'-- Count staged (have packing list) and non-staged for confirmation via DB query
+				F.Intrinsic.String.Build("SELECT COUNT(DISTINCT H.PCK_NO) FROM LOAD_PLAN G, STAGING_QUANTITY H WHERE G.ORDER_NO = H.ORDER_NO AND G.ORDER_LINE = H.LINE AND G.LOAD_NO = {0} AND G.ORDER_SUFFIX <> 'P' AND H.PCK_NO <> ''",V.Local.sLoadNo,V.Local.sSQL)
+				F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.iStagedCount)
+				F.Intrinsic.Control.If(V.Ambient.ExecuteAndReturnEOF,=,True)
+					V.Local.iStagedCount.Set(0)
 				F.Intrinsic.Control.EndIf
-				F.Intrinsic.String.Build("[LOAD NUMBER] = {0} AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999 AND [ORDER_SUFFIX] <> 'P' AND [PACKING LIST] = ''",V.Local.sLoadNo,v.Local.sfilter)
-				F.Data.Datatable.Select("dtLoad",v.Local.sfilter,v.Local.stemp)
-				F.Intrinsic.Control.If(V.Local.stemp.Trim,<>,"***NORETURN***")
-					F.Data.DataView.Create("dtLoad","dvNonStagedCount")
-					F.Data.DataView.SetFilter("dtLoad","dvNonStagedCount",v.Local.sfilter)
-					F.Data.DataView.ToDataTableDistinct("dtLoad","dvNonStagedCount","dtNonStagedCount","ORDER_NO",)
-					V.Local.iNonStagedCount.Set(V.DataTable.dtNonStagedCount.RowCount)
-					F.Data.DataTable.Close("dtNonStagedCount")
-					F.Data.DataView.Close("dtLoad","dvNonStagedCount")
+				F.Intrinsic.String.Build("SELECT COUNT(DISTINCT G.ORDER_NO) FROM LOAD_PLAN G WHERE G.LOAD_NO = {0} AND G.ORDER_SUFFIX <> 'P' AND NOT EXISTS (SELECT 1 FROM STAGING_QUANTITY H WHERE H.ORDER_NO = G.ORDER_NO AND H.LINE = G.ORDER_LINE AND H.PCK_NO <> '')",V.Local.sLoadNo,V.Local.sSQL)
+				F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.iNonStagedCount)
+				F.Intrinsic.Control.If(V.Ambient.ExecuteAndReturnEOF,=,True)
+					V.Local.iNonStagedCount.Set(0)
 				F.Intrinsic.Control.EndIf
 				'-- Confirmation dialog
 				F.Intrinsic.String.Build("Change carrier to {0} / {1} for {2} packing list(s) and {3} order(s)?",V.Local.sCarrierCD,V.Local.sShortDesc,V.Local.iStagedCount,V.Local.iNonStagedCount,V.Local.sConfirmMsg)
@@ -5010,27 +4998,14 @@ Program.Sub.GsGCLoad_RowCellClick.Start
 					Function.Intrinsic.Control.UnBlockEvents
 					f.Intrinsic.Control.ExitSub
 				F.Intrinsic.Control.EndIf
-				'-- Update all dtLoad rows on this load with carrier number
+				'-- Update all dtLoad rows on this load with selected carrier
 				f.Intrinsic.String.Build("[LOAD NUMBER] = {0} and [LOAD NUMBER] <> 0 and [LOAD NUMBER] <> 9999",V.Local.sLoadNo,v.Local.sfilter)
 				F.Data.Datatable.Select("dtLoad",v.Local.sfilter,v.Local.sSel)
 				F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
-				'-- Build CSRV key for description dictionary lookup
-				F.Intrinsic.String.Build("{0}{1}",V.Local.sCarrierCD,V.Local.iSrvcType,V.Local.sCSRV)
 				F.Intrinsic.Control.For(v.Local.i,0,v.Local.sSel.UBound)
-					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARRIER NUMBER",V.Local.sCarrierCD)
-					'-- Refresh description columns via dShortDesc/dLongDesc dictionaries (keyed by CSRV = CARRIER_CD+SRVC_TYPE)
-					V.Local.stemp.Set(V.Dictionary.dShortDesc![V.Local.sCSRV])
-					F.Intrinsic.Control.If(V.Local.stemp,<>,"")
-						F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARR_SHORT_DESC",V.Local.stemp)
-					F.Intrinsic.Control.Else
-						F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARR_SHORT_DESC",V.Local.sShortDesc)
-					F.Intrinsic.Control.EndIf
-					V.Local.stemp.Set(V.Dictionary.dLongDesc![V.Local.sCSRV])
-					F.Intrinsic.Control.If(V.Local.stemp,<>,"")
-						F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARR_LONG_DESC",V.Local.stemp)
-					F.Intrinsic.Control.Else
-						F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARR_LONG_DESC",V.Local.sLongDesc)
-					F.Intrinsic.Control.EndIf
+					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARRIER_CD",V.Local.sCarrierCD)
+					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARR_SHORT_DESC",V.Local.sShortDesc)
+					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARR_LONG_DESC",V.Local.sLongDesc)
 				F.Intrinsic.Control.Next(v.Local.i)
 				'-- Update LOAD_PLAN.CARRIER in database
 				F.Intrinsic.String.Build("UPDATE LOAD_PLAN SET CARRIER = '{0}' WHERE LOAD_NO = {1}",V.Local.sCarrierCD,V.Local.sLoadNo,V.Local.sSQL)
@@ -9775,7 +9750,7 @@ Program.Sub.GsGCSplit_RowCellClick.End
 
 '-- Sync carrier selection from Load tab to orders/shipments.
 '   Staged (have packing list): insert S50 wireless transactions for WIREPOLL to process.
-'   Non-staged (no packing list): UPDATE ORDER_HEADER directly.
+'   All orders: UPDATE ORDER_HEADER directly.
 Program.Sub.SyncCarrierFromLoad.Start
 F.Intrinsic.Control.SetErrorHandler("SyncCarrier_Err")
 F.Intrinsic.Control.ClearErrors
@@ -9789,6 +9764,7 @@ V.Local.sSQL.Declare(String)
 V.Local.sFilter.Declare(String)
 V.Local.sSel.Declare(String)
 V.Local.i.Declare(Long)
+V.Local.iMax.Declare(Long)
 V.Local.sTransIDNew.Declare(String)
 V.Local.sUserID.Declare(String)
 V.Local.sPL.Declare(String)
@@ -9805,18 +9781,18 @@ V.Local.sPaymentOption.Set(V.Args.sPaymentOption)
 V.Local.sVIA.Set(V.Args.sVIA)
 V.Local.sUserID.Set(V.Caller.User)
 
-'-- STAGED: collect distinct packing lists where PACKING LIST is not empty
-F.Intrinsic.String.Build("[LOAD NUMBER] = {0} AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999 AND [ORDER_SUFFIX] <> 'P' AND [PACKING LIST] <> ''",V.Local.sLoadNo,V.Local.sFilter)
-F.Data.DataView.Create("dtLoad","dvStagedPL")
-F.Data.DataView.SetFilter("dtLoad","dvStagedPL",V.Local.sFilter)
-F.Data.DataView.ToDataTableDistinct("dtLoad","dvStagedPL","dtStagedPL","PACKING LIST",)
-F.Data.DataView.Close("dtLoad","dvStagedPL")
+'-- STAGED: query DB directly for ALL distinct packing lists on this load
+F.Intrinsic.Control.If(V.DataTable.dtStagedPL.Exists,=,True)
+	F.Data.DataTable.Close("dtStagedPL")
+F.Intrinsic.Control.EndIf
+F.Intrinsic.String.Build("SELECT DISTINCT RTRIM(H.PCK_NO) AS PCK_NO FROM LOAD_PLAN G, STAGING_QUANTITY H WHERE G.ORDER_NO = H.ORDER_NO AND G.ORDER_LINE = H.LINE AND G.LOAD_NO = {0} AND G.ORDER_SUFFIX <> 'P' AND H.PCK_NO <> ''",V.Local.sLoadNo,V.Local.sSQL)
+F.Data.DataTable.CreateFromSQL("dtStagedPL","con",V.Local.sSQL,True)
 
 '-- Insert S50 wireless transaction for each distinct packing list
 F.Intrinsic.Control.If(V.DataTable.dtStagedPL.RowCount,>,0)
-	F.Intrinsic.Math.Sub(V.DataTable.dtStagedPL.RowCount,1,V.Local.i)
-	F.Intrinsic.Control.For(V.Local.i,0,V.Local.i,1)
-		V.Local.sPL.Set(V.DataTable.dtStagedPL(V.Local.i).PACKING LIST!FieldValTrim)
+	F.Intrinsic.Math.Sub(V.DataTable.dtStagedPL.RowCount,1,V.Local.iMax)
+	F.Intrinsic.Control.For(V.Local.i,0,V.Local.iMax,1)
+		V.Local.sPL.Set(V.DataTable.dtStagedPL(V.Local.i).PCK_NO!FieldValTrim)
 		F.Intrinsic.Control.If(V.Local.sPL,<>,"")
 			'-- Get next TRANS_ID (same pattern as Click_Load_Ship S40)
 			F.ODBC.Connection!con.ExecuteAndReturn("SELECT TOP 1 RIGHT(CONCAT('000000000',CAST(TRANS_ID AS INT)+1),9) AS TRANS_ID FROM WIRELESS_HDR ORDER BY TRANS_ID DESC",V.Local.sTransIDNew)
@@ -9835,14 +9811,14 @@ F.Intrinsic.Control.If(V.DataTable.dtStagedPL.RowCount,>,0)
 F.Intrinsic.Control.EndIf
 F.Data.DataTable.Close("dtStagedPL")
 
-'-- NON-STAGED: collect distinct ORDER_NO where PACKING LIST is empty
-F.Intrinsic.String.Build("[LOAD NUMBER] = {0} AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999 AND [ORDER_SUFFIX] <> 'P' AND [PACKING LIST] = ''",V.Local.sLoadNo,V.Local.sFilter)
-F.Data.DataView.Create("dtLoad","dvNonStaged")
-F.Data.DataView.SetFilter("dtLoad","dvNonStaged",V.Local.sFilter)
-F.Data.DataView.ToDataTableDistinct("dtLoad","dvNonStaged","dtNonStaged","ORDER_NO",)
-F.Data.DataView.Close("dtLoad","dvNonStaged")
+'-- ALL ORDERS: update ORDER_HEADER for every order on this load
+F.Intrinsic.Control.If(V.DataTable.dtLoadOrders.Exists,=,True)
+	F.Data.DataTable.Close("dtLoadOrders")
+F.Intrinsic.Control.EndIf
+F.Intrinsic.String.Build("SELECT DISTINCT RTRIM(G.ORDER_NO) AS ORDER_NO FROM LOAD_PLAN G WHERE G.LOAD_NO = {0} AND G.ORDER_SUFFIX <> 'P'",V.Local.sLoadNo,V.Local.sSQL)
+F.Data.DataTable.CreateFromSQL("dtLoadOrders","con",V.Local.sSQL,True)
 
-F.Intrinsic.Control.If(V.DataTable.dtNonStaged.RowCount,>,0)
+F.Intrinsic.Control.If(V.DataTable.dtLoadOrders.RowCount,>,0)
 	'-- Resolve SHIP_VIA description from OE_CARRIER.VIA -> SHIP_VIA.MESSAGE
 	V.Local.sShipViaDesc.Set("")
 	F.Intrinsic.Control.If(V.Local.sVIA,<>,"")
@@ -9852,13 +9828,12 @@ F.Intrinsic.Control.If(V.DataTable.dtNonStaged.RowCount,>,0)
 			V.Local.sShipViaDesc.Set("")
 		F.Intrinsic.Control.EndIf
 	F.Intrinsic.Control.EndIf
-	F.Intrinsic.Math.Sub(V.DataTable.dtNonStaged.RowCount,1,V.Local.i)
-	F.Intrinsic.Control.For(V.Local.i,0,V.Local.i,1)
-		V.Local.sOrderNo.Set(V.DataTable.dtNonStaged(V.Local.i).ORDER_NO!FieldValTrim)
+	F.Intrinsic.Math.Sub(V.DataTable.dtLoadOrders.RowCount,1,V.Local.iMax)
+	F.Intrinsic.Control.For(V.Local.i,0,V.Local.iMax,1)
+		V.Local.sOrderNo.Set(V.DataTable.dtLoadOrders(V.Local.i).ORDER_NO!FieldValTrim)
 		F.Intrinsic.Control.If(V.Local.sOrderNo,<>,"")
 			'-- If collect (CC), look up customer carrier account from AR_CUST_CARRIER
 			F.Intrinsic.Control.If(V.Local.sPaymentOption,=,"CC")
-				'-- Get customer number for this order
 				F.Intrinsic.String.Build("SELECT RTRIM(CUSTOMER) FROM V_ORDER_HEADER WHERE ORDER_NO = '{0}'",V.Local.sOrderNo,V.Local.sSQL)
 				F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sCustNo)
 				V.Local.sCarrierAcct.Set("")
@@ -9869,18 +9844,16 @@ F.Intrinsic.Control.If(V.DataTable.dtNonStaged.RowCount,>,0)
 						V.Local.sCarrierAcct.Set("")
 					F.Intrinsic.Control.EndIf
 				F.Intrinsic.Control.EndIf
-				'-- UPDATE ORDER_HEADER with carrier + ship via + carrier account
 				F.Intrinsic.String.Build("UPDATE ORDER_HEADER SET CARRIER_CD = '{0}', SRVC_TYPE = {1}, SHIP_VIA = '{2}', CARRIER_ACCT = '{3}' WHERE ORDER_NO = '{4}'",V.Local.sCarrierCD,V.Local.iSrvcType,V.Local.sShipViaDesc,V.Local.sCarrierAcct,V.Local.sOrderNo,V.Local.sSQL)
 				F.ODBC.Connection!con.Execute(V.Local.sSQL)
 			F.Intrinsic.Control.Else
-				'-- Non-collect: UPDATE ORDER_HEADER with carrier + ship via only
 				F.Intrinsic.String.Build("UPDATE ORDER_HEADER SET CARRIER_CD = '{0}', SRVC_TYPE = {1}, SHIP_VIA = '{2}' WHERE ORDER_NO = '{3}'",V.Local.sCarrierCD,V.Local.iSrvcType,V.Local.sShipViaDesc,V.Local.sOrderNo,V.Local.sSQL)
 				F.ODBC.Connection!con.Execute(V.Local.sSQL)
 			F.Intrinsic.Control.EndIf
 		F.Intrinsic.Control.EndIf
 	F.Intrinsic.Control.Next(V.Local.i)
 F.Intrinsic.Control.EndIf
-F.Data.DataTable.Close("dtNonStaged")
+F.Data.DataTable.Close("dtLoadOrders")
 
 F.Intrinsic.Control.ExitSub
 F.Intrinsic.Control.Label("SyncCarrier_Err")
@@ -9893,6 +9866,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260630164828974$}$CursorSigned
-${$7$}$File Version:1.0.20260630234828.0
+${$6$}$bstevens$}$20260630180344989$}$CursorSigned
+${$7$}$File Version:1.0.20260701010344.0
 Program.Sub.Comments.End
