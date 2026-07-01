@@ -517,6 +517,10 @@ Program.Sub.Main.Start
 	F.Intrinsic.Control.CallSub(CloseSharedDictionaries)
 	F.Intrinsic.Control.CallSub(Deserialize)
 	
+	'-- Deserialized layout may carry old read-only state; force editable after restore
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","TRACKING_NO","AllowEdit",True)
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","TRACKING_NO","ReadOnly",False)
+	
 	F.Intrinsic.Control.UnBlockEvents
 	
 	Gui.frmShip.lblStatus.Visible(False)
@@ -1023,6 +1027,10 @@ Program.Sub.cmdRefresh_Click.Start
 	F.Intrinsic.Control.CallSub(txtAutoRef_LostFocus)
 	F.Intrinsic.Control.CallSub(Deserialize)
 	
+	'-- Deserialized layout may carry old read-only state; force editable after restore
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","TRACKING_NO","AllowEdit",True)
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","TRACKING_NO","ReadOnly",False)
+	
 	'Remove the Allocation Flag for our program 
 	Gui.frmShip.GsGCAllShip.SetColumnProperty(gvallship,"AllocationFlag","Visible",False)	
 	Gui.frmShip.GsGCAllShip.SetColumnProperty(gvallship,"AllocationFlag","ShowInColumnChooser",False)
@@ -1294,6 +1302,7 @@ F.Intrinsic.Control.Try
 		Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","Truck Max Weight(lbs)","CellBackColor",V.Enum.ThemeColors!ColorBlue.Highlight)
 		Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","Truck SF Capacity","CellBackColor",V.Enum.ThemeColors!ColorBlue.Highlight)
 		Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","TRACKING_NO","CellBackColor",V.Enum.ThemeColors!ColorBlue.Highlight)
+		Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","PRO_NO","CellBackColor",V.Enum.ThemeColors!ColorBlue.Highlight)
 		Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","PL SHIP DATE","CellBackColor",V.Enum.ThemeColors!ColorBlue.Highlight)
 		Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","WAY_BILL","CellBackColor",V.Enum.ThemeColors!ColorBlue.Highlight)	
 		Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","VALIDATED","CellBackColor",V.Enum.ThemeColors!ColorBlue.Highlight)
@@ -1810,7 +1819,7 @@ Program.Sub.LoadLoad.Start
 	f.Intrinsic.StringBuilder.Append("Query","RTRIM(F.BLANKET_NO) AS BLANKET_NO, CAST(CASE WHEN F.FLAG_NO_BACKORDER = 'Y' ")
 	f.Intrinsic.StringBuilder.Append("Query","THEN 1 ELSE 0 END AS BIT) AS FLAG_NO_BACKORDER ")
 	f.Intrinsic.StringBuilder.Append("Query",", A.PHASE, F.PROJECT ")
-	f.Intrinsic.StringBuilder.Append("Query",", E.Address_1_Ship, E.Address_2_Ship, E.Address_3_Ship, E.Address_4_Ship, E.Address_5_Ship, E.Name_Customer_Ship,E.Freight_Zone_Ship, M.TRACKING_NO, RTRIM(M.WAY_BILL) AS WAY_BILL ")
+	f.Intrinsic.StringBuilder.Append("Query",", E.Address_1_Ship, E.Address_2_Ship, E.Address_3_Ship, E.Address_4_Ship, E.Address_5_Ship, E.Name_Customer_Ship,E.Freight_Zone_Ship, M.TRACKING_NO, RTRIM(M.PRO_NO) AS PRO_NO, RTRIM(M.WAY_BILL) AS WAY_BILL ")
 	f.Intrinsic.StringBuilder.Append("Query",", D.Description_2, D.Description_3 ")
 	
 	'estimated packing container code.. Assume max container standard packing unit by part
@@ -1950,7 +1959,7 @@ Program.Sub.LoadLoad.Start
 	'v.Local.sFilter.Set(v.DataTable.dtLoad0.FieldNames)
 	'linq join orderpicker and dtLoad0
 	Function.Intrinsic.Control.If(v.DataTable.dtOrderPicker.Exists) 
-		F.Data.Linq.Join("LeftJoin","datatable","dtLoad0*!*A","datatable","dtOrderPicker*!*B","A.ORDER_NO = B.ORDER_NO And A.ORDER_SUFFIX = B.ORDER_SUFFIX AND A.ORDER_LINE = B.ORDER_LINE","A.Select*!*A.Load Number*!*A.Packing List*!*A.PL Ship Date*!*A.PICKLIST*!*A.TRACKING_NO*!*A.WAY_BILL*!*A.Staged Qty*!*A.Drop Seq*!*A.Carrier Number*!*A.Carrier Load Number*!*A.Carrier Trailer*!*A.Truck Type ID*!*A.Truck Description*!*A.Truck Max Weight(lbs)*!*A.Truck SF Capacity*!*A.Staging Bin*!*A.Dock ID*!*A.Pick By Date*!*A.Ship Date*!*A.Load Notes*!*A.Line_Text*!*A.Ready to Pick*!*A.PICKED*!*A.Container Name*!*A.Container Description*!*A.Ind Container Height (In)*!*A.Ind Container Width (In)*!*A.Ind Container Length (In)*!*A.Ind Container Weight*!*A.Est Container Qty*!*A.Est Packaged Weight*!*A.Est Area*!*A.CUSTOMER*!*A.NAME_CUSTOMER*!*A.CUSTOMER_PO*!*A.ORDER_NO*!*A.RECORD_NO*!*A.ORDER_LINE*!*A.ORDER_SUFFIX*!*A.CURRENT_ORDER_SUFFIX*!*A.PART*!*A.DISPLAY_PART*!*A.LOCATION*!*A.PRODUCT_LINE*!*A.DESCRIPTION*!*A.Description_2*!*A.Description_3*!*A.WEIGHT*!*A.QTY_BO*!*A.QTY_ONHAND*!*A.QTY_90*!*A.EXT_AMT*!*A.QTY_REQUIRED*!*A.DATE_ORDER*!*A.MUST_DLVR_BY_DATE*!*A.DATE_ITEM_PROM*!*A.SHIP_ID*!*A.CITY_SHIP*!*A.STATE_SHIP*!*A.Address_1_Ship*!*A.Address_2_Ship*!*A.Address_3_Ship*!*A.Address_4_Ship*!*A.Address_5_Ship*!*A.Name_Customer_Ship*!*A.Freight_Zone_Ship*!*A.SHIP_VIA_SHIP*!*A.CARRIER_CD*!*A.CARR_SHORT_DESC*!*A.CARR_LONG_DESC*!*A.STAGED*!*A.FLAG_USE_MQD*!*A.SHP_HLD_FLAG*!*A.QTY_SHIPPED*!*A.NOTES*!*A.USER_1*!*A.USER_2*!*A.USER_3*!*A.USER_4*!*A.USER_5*!*A.INFO_1*!*A.INFO_2*!*A.H_USER_1*!*A.H_USER_2*!*A.H_USER_3*!*A.H_USER_4*!*A.H_USER_5*!*A.ORDLN*!*A.CSRV*!*A.CUSTOMER_PART*!*A.CODE_SOURCE*!*A.CODE_SORT*!*A.ORDER_SORT_2*!*A.INV_CODE_SORT*!*A.CODE_FOB*!*A.SALESPERSON*!*A.ORDER_TYPE*!*A.LINE_TYPE*!*A.BLANKET_NO*!*A.FLAG_NO_BACKORDER*!*A.STATUS*!*A.CUST_ORDER_NOTES*!*B.Assigned_To*!*A.AllocationFlag*!*A.PROJECT*!*A.PHASE*!*A.CONTACT*!*A.CONTACT_PHONE*!*A.CONTACT_EMAIL*!*A.VALIDATED*!*A.POL*!*A.OPOL*!*A.LD*!*A.LOADING_STATUS*!*A.PARTLOC","","","","dtLoad1",True)
+		F.Data.Linq.Join("LeftJoin","datatable","dtLoad0*!*A","datatable","dtOrderPicker*!*B","A.ORDER_NO = B.ORDER_NO And A.ORDER_SUFFIX = B.ORDER_SUFFIX AND A.ORDER_LINE = B.ORDER_LINE","A.Select*!*A.Load Number*!*A.Packing List*!*A.PL Ship Date*!*A.PICKLIST*!*A.TRACKING_NO*!*A.PRO_NO*!*A.WAY_BILL*!*A.Staged Qty*!*A.Drop Seq*!*A.Carrier Number*!*A.Carrier Load Number*!*A.Carrier Trailer*!*A.Truck Type ID*!*A.Truck Description*!*A.Truck Max Weight(lbs)*!*A.Truck SF Capacity*!*A.Staging Bin*!*A.Dock ID*!*A.Pick By Date*!*A.Ship Date*!*A.Load Notes*!*A.Line_Text*!*A.Ready to Pick*!*A.PICKED*!*A.Container Name*!*A.Container Description*!*A.Ind Container Height (In)*!*A.Ind Container Width (In)*!*A.Ind Container Length (In)*!*A.Ind Container Weight*!*A.Est Container Qty*!*A.Est Packaged Weight*!*A.Est Area*!*A.CUSTOMER*!*A.NAME_CUSTOMER*!*A.CUSTOMER_PO*!*A.ORDER_NO*!*A.RECORD_NO*!*A.ORDER_LINE*!*A.ORDER_SUFFIX*!*A.CURRENT_ORDER_SUFFIX*!*A.PART*!*A.DISPLAY_PART*!*A.LOCATION*!*A.PRODUCT_LINE*!*A.DESCRIPTION*!*A.Description_2*!*A.Description_3*!*A.WEIGHT*!*A.QTY_BO*!*A.QTY_ONHAND*!*A.QTY_90*!*A.EXT_AMT*!*A.QTY_REQUIRED*!*A.DATE_ORDER*!*A.MUST_DLVR_BY_DATE*!*A.DATE_ITEM_PROM*!*A.SHIP_ID*!*A.CITY_SHIP*!*A.STATE_SHIP*!*A.Address_1_Ship*!*A.Address_2_Ship*!*A.Address_3_Ship*!*A.Address_4_Ship*!*A.Address_5_Ship*!*A.Name_Customer_Ship*!*A.Freight_Zone_Ship*!*A.SHIP_VIA_SHIP*!*A.CARRIER_CD*!*A.CARR_SHORT_DESC*!*A.CARR_LONG_DESC*!*A.STAGED*!*A.FLAG_USE_MQD*!*A.SHP_HLD_FLAG*!*A.QTY_SHIPPED*!*A.NOTES*!*A.USER_1*!*A.USER_2*!*A.USER_3*!*A.USER_4*!*A.USER_5*!*A.INFO_1*!*A.INFO_2*!*A.H_USER_1*!*A.H_USER_2*!*A.H_USER_3*!*A.H_USER_4*!*A.H_USER_5*!*A.ORDLN*!*A.CSRV*!*A.CUSTOMER_PART*!*A.CODE_SOURCE*!*A.CODE_SORT*!*A.ORDER_SORT_2*!*A.INV_CODE_SORT*!*A.CODE_FOB*!*A.SALESPERSON*!*A.ORDER_TYPE*!*A.LINE_TYPE*!*A.BLANKET_NO*!*A.FLAG_NO_BACKORDER*!*A.STATUS*!*A.CUST_ORDER_NOTES*!*B.Assigned_To*!*A.AllocationFlag*!*A.PROJECT*!*A.PHASE*!*A.CONTACT*!*A.CONTACT_PHONE*!*A.CONTACT_EMAIL*!*A.VALIDATED*!*A.POL*!*A.OPOL*!*A.LD*!*A.LOADING_STATUS*!*A.PARTLOC","","","","dtLoad1",True)
 	Function.Intrinsic.Control.Else
 		f.Data.Datatable.Clone("dtLoad0","dtLoad1",True)
 	Function.Intrinsic.Control.EndIf
@@ -2620,11 +2629,20 @@ Program.Sub.LoadOpenOrdersGV.Start
 		'TRACKING NUMBER
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"TRACKING_NO","Caption","Tracking Number")
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"TRACKING_NO","MinWidth","125")
-		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"TRACKING_NO","AllowEdit",False)
-		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"TRACKING_NO","ReadOnly",True)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"TRACKING_NO","AllowEdit",True)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"TRACKING_NO","ReadOnly",False)
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"TRACKING_NO","HeaderHAlignment","Center")
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"TRACKING_NO","CellHAlignment","Center")		
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"TRACKING_NO","VisibleIndex","0")
+
+		'PRO NUMBER
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"PRO_NO","Caption","Pro Number")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"PRO_NO","MinWidth","125")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"PRO_NO","AllowEdit",True)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"PRO_NO","ReadOnly",False)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"PRO_NO","HeaderHAlignment","Center")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"PRO_NO","CellHAlignment","Center")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"PRO_NO","VisibleIndex","0")
 
 		'BOL
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"WAY_BILL","Caption","BOL")
@@ -3732,6 +3750,46 @@ Program.Sub.GsGCLoad_CellValueChanged.Start
 				F.Intrinsic.Control.EndIf	
 			F.Intrinsic.Control.EndIf
 			F.ODBC.con!rstcarriertrailer.Close	
+		
+		F.Intrinsic.Control.CaseAny("Tracking Number","TRACKING_NO")
+			'-- Tracking number saves to SHIPMENT_HEADER (staged rows only)
+			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"Packing List",V.Args.RowIndex,V.Local.sPackinglist)
+			F.Intrinsic.Control.If(V.Local.sPackinglist.Trim,=,"")
+				F.Intrinsic.UI.Msgbox("Cannot edit tracking number - no shipment exists for this line.")
+				F.Data.Datatable.SetValue("dtLoad",V.Args.RowIndex,"TRACKING_NO","")
+				F.Intrinsic.Control.ExitSub
+			F.Intrinsic.Control.EndIf
+			'-- Propagate to all rows with the same packing list
+			F.Intrinsic.String.Build("[Packing List] = '{0}'",V.Local.sPackinglist,V.Local.sFilter)
+			F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
+			F.Intrinsic.Control.If(V.Local.sSel.Trim,<>,"***NORETURN***")
+				F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+				F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
+					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"TRACKING_NO",V.Args.Value)
+				F.Intrinsic.Control.Next(V.Local.i)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.String.Build("UPDATE SHIPMENT_HEADER SET TRACKING_NO = '{0}' WHERE PCK_NO = '{1}';",V.Args.Value,V.Local.sPackinglist,V.Local.sSQL.PSQLFriendly)
+			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+		
+		F.Intrinsic.Control.CaseAny("Pro Number","PRO_NO")
+			'-- Pro number saves to SHIPMENT_HEADER (staged rows only)
+			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"Packing List",V.Args.RowIndex,V.Local.sPackinglist)
+			F.Intrinsic.Control.If(V.Local.sPackinglist.Trim,=,"")
+				F.Intrinsic.UI.Msgbox("Cannot edit pro number - no shipment exists for this line.")
+				F.Data.Datatable.SetValue("dtLoad",V.Args.RowIndex,"PRO_NO","")
+				F.Intrinsic.Control.ExitSub
+			F.Intrinsic.Control.EndIf
+			'-- Propagate to all rows with the same packing list
+			F.Intrinsic.String.Build("[Packing List] = '{0}'",V.Local.sPackinglist,V.Local.sFilter)
+			F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
+			F.Intrinsic.Control.If(V.Local.sSel.Trim,<>,"***NORETURN***")
+				F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+				F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
+					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"PRO_NO",V.Args.Value)
+				F.Intrinsic.Control.Next(V.Local.i)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.String.Build("UPDATE SHIPMENT_HEADER SET PRO_NO = '{0}' WHERE PCK_NO = '{1}';",V.Args.Value,V.Local.sPackinglist,V.Local.sSQL.PSQLFriendly)
+			F.ODBC.Connection!con.Execute(V.Local.sSQL)
 			
 		F.Intrinsic.Control.CaseAny("Load Notes","LOAD NOTES")
 			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"ORDER_NO",V.Args.RowIndex,V.Local.sOrder)
@@ -4677,6 +4735,7 @@ Program.Sub.GsGCLoad_RowCellClick.Start
 	V.Local.iNonStagedCount.Declare(Long)
 	V.Local.sConfirmMsg.Declare
 	V.Local.iConfirmBtn.Declare(Long)
+	V.Local.sShipViaDesc.Declare
 		
 	F.Intrinsic.Control.SelectCase(V.Args.ControlName)
 		F.Intrinsic.Control.Case("GSGCALLSHIP")
@@ -4980,23 +5039,30 @@ Program.Sub.GsGCLoad_RowCellClick.Start
 					f.Intrinsic.Control.ExitSub
 				f.Intrinsic.Control.EndIf
 				F.Data.DataTable.Close("dtCarrier")
-				'-- Count staged (have packing list) and non-staged for confirmation via DB query
+				'-- Count distinct packing lists and distinct orders for confirmation
 				F.Intrinsic.String.Build("SELECT COUNT(DISTINCT H.PCK_NO) FROM LOAD_PLAN G, STAGING_QUANTITY H WHERE G.ORDER_NO = H.ORDER_NO AND G.ORDER_LINE = H.LINE AND G.LOAD_NO = {0} AND G.ORDER_SUFFIX <> 'P' AND H.PCK_NO <> ''",V.Local.sLoadNo,V.Local.sSQL)
 				F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.iStagedCount)
 				F.Intrinsic.Control.If(V.Ambient.ExecuteAndReturnEOF,=,True)
 					V.Local.iStagedCount.Set(0)
 				F.Intrinsic.Control.EndIf
-				F.Intrinsic.String.Build("SELECT COUNT(DISTINCT G.ORDER_NO) FROM LOAD_PLAN G WHERE G.LOAD_NO = {0} AND G.ORDER_SUFFIX <> 'P' AND NOT EXISTS (SELECT 1 FROM STAGING_QUANTITY H WHERE H.ORDER_NO = G.ORDER_NO AND H.LINE = G.ORDER_LINE AND H.PCK_NO <> '')",V.Local.sLoadNo,V.Local.sSQL)
+				F.Intrinsic.String.Build("SELECT COUNT(DISTINCT G.ORDER_NO) FROM LOAD_PLAN G WHERE G.LOAD_NO = {0} AND G.ORDER_SUFFIX <> 'P'",V.Local.sLoadNo,V.Local.sSQL)
 				F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.iNonStagedCount)
 				F.Intrinsic.Control.If(V.Ambient.ExecuteAndReturnEOF,=,True)
 					V.Local.iNonStagedCount.Set(0)
 				F.Intrinsic.Control.EndIf
 				'-- Confirmation dialog
-				F.Intrinsic.String.Build("Change carrier to {0} / {1} for {2} packing list(s) and {3} order(s)?",V.Local.sCarrierCD,V.Local.sShortDesc,V.Local.iStagedCount,V.Local.iNonStagedCount,V.Local.sConfirmMsg)
+				F.Intrinsic.String.Build("Change carrier to {0} / {1} for {2} packing list(s) and {3} sales order(s)?",V.Local.sCarrierCD,V.Local.sShortDesc,V.Local.iStagedCount,V.Local.iNonStagedCount,V.Local.sConfirmMsg)
 				F.Intrinsic.UI.Msgbox(V.Local.sConfirmMsg,"Confirm Carrier Change",V.Enum.MsgBoxStyle!YesNo,V.Local.iConfirmBtn)
 				F.Intrinsic.Control.If(V.Local.iConfirmBtn,<>,6)
 					Function.Intrinsic.Control.UnBlockEvents
 					f.Intrinsic.Control.ExitSub
+				F.Intrinsic.Control.EndIf
+				'-- Resolve SHIP_VIA description for grid display
+				V.Local.sShipViaDesc.Set("")
+				F.Intrinsic.String.Build("SELECT RTRIM(MESSAGE) FROM SHIP_VIA WHERE ID = '{0}'",V.Local.sVIA,V.Local.sSQL)
+				F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sShipViaDesc)
+				F.Intrinsic.Control.If(V.Ambient.ExecuteAndReturnEOF,=,True)
+					V.Local.sShipViaDesc.Set("")
 				F.Intrinsic.Control.EndIf
 				'-- Update all dtLoad rows on this load with selected carrier
 				f.Intrinsic.String.Build("[LOAD NUMBER] = {0} and [LOAD NUMBER] <> 0 and [LOAD NUMBER] <> 9999",V.Local.sLoadNo,v.Local.sfilter)
@@ -5006,6 +5072,7 @@ Program.Sub.GsGCLoad_RowCellClick.Start
 					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARRIER_CD",V.Local.sCarrierCD)
 					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARR_SHORT_DESC",V.Local.sShortDesc)
 					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARR_LONG_DESC",V.Local.sLongDesc)
+					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"SHIP_VIA_SHIP",V.Local.sShipViaDesc)
 				F.Intrinsic.Control.Next(v.Local.i)
 				'-- Update LOAD_PLAN.CARRIER in database
 				F.Intrinsic.String.Build("UPDATE LOAD_PLAN SET CARRIER = '{0}' WHERE LOAD_NO = {1}",V.Local.sCarrierCD,V.Local.sLoadNo,V.Local.sSQL)
@@ -9821,12 +9888,10 @@ F.Data.DataTable.CreateFromSQL("dtLoadOrders","con",V.Local.sSQL,True)
 F.Intrinsic.Control.If(V.DataTable.dtLoadOrders.RowCount,>,0)
 	'-- Resolve SHIP_VIA description from OE_CARRIER.VIA -> SHIP_VIA.MESSAGE
 	V.Local.sShipViaDesc.Set("")
-	F.Intrinsic.Control.If(V.Local.sVIA,<>,"")
-		F.Intrinsic.String.Build("SELECT RTRIM(MESSAGE) FROM SHIP_VIA WHERE ID = '{0}'",V.Local.sVIA,V.Local.sSQL)
-		F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sShipViaDesc)
-		F.Intrinsic.Control.If(V.Ambient.ExecuteAndReturnEOF,=,True)
-			V.Local.sShipViaDesc.Set("")
-		F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Build("SELECT RTRIM(MESSAGE) FROM SHIP_VIA WHERE ID = '{0}'",V.Local.sVIA,V.Local.sSQL)
+	F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sShipViaDesc)
+	F.Intrinsic.Control.If(V.Ambient.ExecuteAndReturnEOF,=,True)
+		V.Local.sShipViaDesc.Set("")
 	F.Intrinsic.Control.EndIf
 	F.Intrinsic.Math.Sub(V.DataTable.dtLoadOrders.RowCount,1,V.Local.iMax)
 	F.Intrinsic.Control.For(V.Local.i,0,V.Local.iMax,1)
@@ -9866,6 +9931,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260630180344989$}$CursorSigned
-${$7$}$File Version:1.0.20260701010344.0
+${$6$}$bstevens$}$20260701164206176$}$CursorSigned
+${$7$}$File Version:1.0.20260701234206.0
 Program.Sub.Comments.End
