@@ -517,9 +517,18 @@ Program.Sub.Main.Start
 	F.Intrinsic.Control.CallSub(CloseSharedDictionaries)
 	F.Intrinsic.Control.CallSub(Deserialize)
 	
+	'-- Deserialized layout may carry stale USER field captions; re-apply from dtUserFields
+	F.Intrinsic.Control.CallSub(RefreshUserFieldCaptions)
+
 	'-- Deserialized layout may carry old read-only state; force editable after restore
 	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","TRACKING_NO","AllowEdit",True)
 	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","TRACKING_NO","ReadOnly",False)
+	
+	'-- Ensure FIRST_BIN and BOL_SHIP_FROM are available in Column Chooser after Deserialize
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","FIRST_BIN","Caption","First Bin")
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","FIRST_BIN","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","Caption","BOL Ship From")
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","ShowInColumnChooser",True)
 	
 	F.Intrinsic.Control.UnBlockEvents
 	
@@ -1027,9 +1036,18 @@ Program.Sub.cmdRefresh_Click.Start
 	F.Intrinsic.Control.CallSub(txtAutoRef_LostFocus)
 	F.Intrinsic.Control.CallSub(Deserialize)
 	
+	'-- Deserialized layout may carry stale USER field captions; re-apply from dtUserFields
+	F.Intrinsic.Control.CallSub(RefreshUserFieldCaptions)
+
 	'-- Deserialized layout may carry old read-only state; force editable after restore
 	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","TRACKING_NO","AllowEdit",True)
 	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","TRACKING_NO","ReadOnly",False)
+	
+	'-- Ensure FIRST_BIN and BOL_SHIP_FROM are available in Column Chooser after Deserialize
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","FIRST_BIN","Caption","First Bin")
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","FIRST_BIN","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","Caption","BOL Ship From")
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","ShowInColumnChooser",True)
 	
 	'Remove the Allocation Flag for our program 
 	Gui.frmShip.GsGCAllShip.SetColumnProperty(gvallship,"AllocationFlag","Visible",False)	
@@ -1305,6 +1323,7 @@ F.Intrinsic.Control.Try
 		Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","PRO_NO","CellBackColor",V.Enum.ThemeColors!ColorBlue.Highlight)
 		Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","PL SHIP DATE","CellBackColor",V.Enum.ThemeColors!ColorBlue.Highlight)
 		Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","WAY_BILL","CellBackColor",V.Enum.ThemeColors!ColorBlue.Highlight)	
+		Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","CellBackColor",V.Enum.ThemeColors!ColorBlue.Highlight)
 		Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","VALIDATED","CellBackColor",V.Enum.ThemeColors!ColorBlue.Highlight)
 		Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","LOADING_STATUS","CellBackColor",V.Enum.ThemeColors!ColorBlue.Highlight)
 	F.Intrinsic.Control.Case("CTXSTAGING")
@@ -1486,6 +1505,10 @@ F.Intrinsic.Control.Else
 	F.Data.Dictionary.SetDefaultReturn("d90","0")
 F.Intrinsic.Control.EndIf
 
+'7546 Hultec 07/01/2026: First bin with qty on hand > 0 per part/location
+F.Data.Dictionary.CreateFromSQL("dFirstBin","con","SELECT PART+LOCATION AS PARTLOC, RTRIM(MIN(BIN)) AS FIRST_BIN FROM ITEM_MASTER WHERE QUANTITY > 0 GROUP BY PART, LOCATION;")
+F.Data.Dictionary.SetDefaultReturn("dFirstBin","")
+
 '7546 Hultec 04/06/2026: SO Document Control status (shared, session-lived for split form access)
 V.Local.bDccExists.Declare(Boolean,False)
 F.Data.Dictionary.Exists("dDCC",V.Local.bDccExists)
@@ -1514,6 +1537,7 @@ F.Data.Dictionary.Close("dText")
 F.Data.Dictionary.Close("dShortDesc")
 F.Data.Dictionary.Close("dLongDesc")
 F.Data.Dictionary.Close("d90")
+F.Data.Dictionary.Close("dFirstBin")
 F.Intrinsic.Control.Catch
 	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
 	F.Intrinsic.UI.Msgbox(V.Local.sError)
@@ -1819,7 +1843,7 @@ Program.Sub.LoadLoad.Start
 	f.Intrinsic.StringBuilder.Append("Query","RTRIM(F.BLANKET_NO) AS BLANKET_NO, CAST(CASE WHEN F.FLAG_NO_BACKORDER = 'Y' ")
 	f.Intrinsic.StringBuilder.Append("Query","THEN 1 ELSE 0 END AS BIT) AS FLAG_NO_BACKORDER ")
 	f.Intrinsic.StringBuilder.Append("Query",", A.PHASE, F.PROJECT ")
-	f.Intrinsic.StringBuilder.Append("Query",", E.Address_1_Ship, E.Address_2_Ship, E.Address_3_Ship, E.Address_4_Ship, E.Address_5_Ship, E.Name_Customer_Ship,E.Freight_Zone_Ship, M.TRACKING_NO, RTRIM(M.PRO_NO) AS PRO_NO, RTRIM(M.WAY_BILL) AS WAY_BILL ")
+	f.Intrinsic.StringBuilder.Append("Query",", E.Address_1_Ship, E.Address_2_Ship, E.Address_3_Ship, E.Address_4_Ship, E.Address_5_Ship, E.Name_Customer_Ship,E.Freight_Zone_Ship, RTRIM(M.TRACKING_NO) AS TRACKING_NO, RTRIM(M.PRO_NO) AS PRO_NO, RTRIM(M.WAY_BILL) AS WAY_BILL, N.FROM_NAME AS BOL_SHIP_FROM ")
 	f.Intrinsic.StringBuilder.Append("Query",", D.Description_2, D.Description_3 ")
 	
 	'estimated packing container code.. Assume max container standard packing unit by part
@@ -1867,6 +1891,7 @@ Program.Sub.LoadLoad.Start
 	f.Intrinsic.StringBuilder.Append("Query"," LEFT JOIN BOL_CONTAINERS X ON D.DFLT_PALLET_CD = X.CNTNR_CODE ")
 	f.Intrinsic.StringBuilder.Append("Query"," LEFT JOIN V_STAGING_HEADER L ON H.PCK_NO=L.PCK_NO ")
 	f.Intrinsic.StringBuilder.Append("Query"," LEFT JOIN V_SHIPMENT_HEADER M ON L.PCK_NO=M.PCK_NO AND M.ORDER_NO=H.ORDER_NO ")
+	f.Intrinsic.StringBuilder.Append("Query"," LEFT JOIN (SELECT WAYBILL_NO, RTRIM(FROM_NAME) AS FROM_NAME FROM BOL_HEADER GROUP BY WAYBILL_NO, FROM_NAME) N ON M.WAY_BILL = N.WAYBILL_NO ")
 	
 	' No WHERE needed; filters are in derived table and JOINs above
 	'f.Intrinsic.StringBuilder.Append("Query"," WHERE (F.ORDER_SUFFIX = G.ORDER_SUFFIX OR H.PCK_NO IS NOT NULL) ")
@@ -1917,6 +1942,10 @@ Program.Sub.LoadLoad.Start
 		F.Data.DataTable.FillFromDictionary("dtLoad0","d90","PART","QTY_90")
 	F.Intrinsic.Control.EndIf
 	
+	'7546 Hultec 07/01/2026: First bin with qty on hand > 0
+	F.Data.Datatable.AddColumn("dtLoad0","FIRST_BIN","String","")
+	F.Data.DataTable.FillFromDictionary("dtLoad0","dFirstBin","PARTLOC","FIRST_BIN")
+	
 	'ADD COLUMN FOR LOAD VALIDATION 3/28/25
 	Gui.frmShip.lblStatus.Caption("Loading Load tab Validation....")
 '	F.Data.Dictionary.CreateFromSQL("dValidation","con","select (PCK_NO+ORDER_NO+ORDER_LINE)as POL,min(SHIP_VALIDATE) as VALIDATED from BOL_PACK_DTL group by pck_no,ORDER_NO,ORDER_LINE,SHIP_VALIDATE ORDER BY PCK_NO,ORDER_NO,ORDER_LINE,SHIP_VALIDATE;")
@@ -1959,7 +1988,7 @@ Program.Sub.LoadLoad.Start
 	'v.Local.sFilter.Set(v.DataTable.dtLoad0.FieldNames)
 	'linq join orderpicker and dtLoad0
 	Function.Intrinsic.Control.If(v.DataTable.dtOrderPicker.Exists) 
-		F.Data.Linq.Join("LeftJoin","datatable","dtLoad0*!*A","datatable","dtOrderPicker*!*B","A.ORDER_NO = B.ORDER_NO And A.ORDER_SUFFIX = B.ORDER_SUFFIX AND A.ORDER_LINE = B.ORDER_LINE","A.Select*!*A.Load Number*!*A.Packing List*!*A.PL Ship Date*!*A.PICKLIST*!*A.TRACKING_NO*!*A.PRO_NO*!*A.WAY_BILL*!*A.Staged Qty*!*A.Drop Seq*!*A.Carrier Number*!*A.Carrier Load Number*!*A.Carrier Trailer*!*A.Truck Type ID*!*A.Truck Description*!*A.Truck Max Weight(lbs)*!*A.Truck SF Capacity*!*A.Staging Bin*!*A.Dock ID*!*A.Pick By Date*!*A.Ship Date*!*A.Load Notes*!*A.Line_Text*!*A.Ready to Pick*!*A.PICKED*!*A.Container Name*!*A.Container Description*!*A.Ind Container Height (In)*!*A.Ind Container Width (In)*!*A.Ind Container Length (In)*!*A.Ind Container Weight*!*A.Est Container Qty*!*A.Est Packaged Weight*!*A.Est Area*!*A.CUSTOMER*!*A.NAME_CUSTOMER*!*A.CUSTOMER_PO*!*A.ORDER_NO*!*A.RECORD_NO*!*A.ORDER_LINE*!*A.ORDER_SUFFIX*!*A.CURRENT_ORDER_SUFFIX*!*A.PART*!*A.DISPLAY_PART*!*A.LOCATION*!*A.PRODUCT_LINE*!*A.DESCRIPTION*!*A.Description_2*!*A.Description_3*!*A.WEIGHT*!*A.QTY_BO*!*A.QTY_ONHAND*!*A.QTY_90*!*A.EXT_AMT*!*A.QTY_REQUIRED*!*A.DATE_ORDER*!*A.MUST_DLVR_BY_DATE*!*A.DATE_ITEM_PROM*!*A.SHIP_ID*!*A.CITY_SHIP*!*A.STATE_SHIP*!*A.Address_1_Ship*!*A.Address_2_Ship*!*A.Address_3_Ship*!*A.Address_4_Ship*!*A.Address_5_Ship*!*A.Name_Customer_Ship*!*A.Freight_Zone_Ship*!*A.SHIP_VIA_SHIP*!*A.CARRIER_CD*!*A.CARR_SHORT_DESC*!*A.CARR_LONG_DESC*!*A.STAGED*!*A.FLAG_USE_MQD*!*A.SHP_HLD_FLAG*!*A.QTY_SHIPPED*!*A.NOTES*!*A.USER_1*!*A.USER_2*!*A.USER_3*!*A.USER_4*!*A.USER_5*!*A.INFO_1*!*A.INFO_2*!*A.H_USER_1*!*A.H_USER_2*!*A.H_USER_3*!*A.H_USER_4*!*A.H_USER_5*!*A.ORDLN*!*A.CSRV*!*A.CUSTOMER_PART*!*A.CODE_SOURCE*!*A.CODE_SORT*!*A.ORDER_SORT_2*!*A.INV_CODE_SORT*!*A.CODE_FOB*!*A.SALESPERSON*!*A.ORDER_TYPE*!*A.LINE_TYPE*!*A.BLANKET_NO*!*A.FLAG_NO_BACKORDER*!*A.STATUS*!*A.CUST_ORDER_NOTES*!*B.Assigned_To*!*A.AllocationFlag*!*A.PROJECT*!*A.PHASE*!*A.CONTACT*!*A.CONTACT_PHONE*!*A.CONTACT_EMAIL*!*A.VALIDATED*!*A.POL*!*A.OPOL*!*A.LD*!*A.LOADING_STATUS*!*A.PARTLOC","","","","dtLoad1",True)
+		F.Data.Linq.Join("LeftJoin","datatable","dtLoad0*!*A","datatable","dtOrderPicker*!*B","A.ORDER_NO = B.ORDER_NO And A.ORDER_SUFFIX = B.ORDER_SUFFIX AND A.ORDER_LINE = B.ORDER_LINE","A.Select*!*A.Load Number*!*A.Packing List*!*A.PL Ship Date*!*A.PICKLIST*!*A.TRACKING_NO*!*A.PRO_NO*!*A.WAY_BILL*!*A.BOL_SHIP_FROM*!*A.Staged Qty*!*A.Drop Seq*!*A.Carrier Number*!*A.Carrier Load Number*!*A.Carrier Trailer*!*A.Truck Type ID*!*A.Truck Description*!*A.Truck Max Weight(lbs)*!*A.Truck SF Capacity*!*A.Staging Bin*!*A.Dock ID*!*A.Pick By Date*!*A.Ship Date*!*A.Load Notes*!*A.Line_Text*!*A.Ready to Pick*!*A.PICKED*!*A.Container Name*!*A.Container Description*!*A.Ind Container Height (In)*!*A.Ind Container Width (In)*!*A.Ind Container Length (In)*!*A.Ind Container Weight*!*A.Est Container Qty*!*A.Est Packaged Weight*!*A.Est Area*!*A.CUSTOMER*!*A.NAME_CUSTOMER*!*A.CUSTOMER_PO*!*A.ORDER_NO*!*A.RECORD_NO*!*A.ORDER_LINE*!*A.ORDER_SUFFIX*!*A.CURRENT_ORDER_SUFFIX*!*A.PART*!*A.DISPLAY_PART*!*A.LOCATION*!*A.PRODUCT_LINE*!*A.DESCRIPTION*!*A.Description_2*!*A.Description_3*!*A.WEIGHT*!*A.QTY_BO*!*A.QTY_ONHAND*!*A.QTY_90*!*A.FIRST_BIN*!*A.EXT_AMT*!*A.QTY_REQUIRED*!*A.DATE_ORDER*!*A.MUST_DLVR_BY_DATE*!*A.DATE_ITEM_PROM*!*A.SHIP_ID*!*A.CITY_SHIP*!*A.STATE_SHIP*!*A.Address_1_Ship*!*A.Address_2_Ship*!*A.Address_3_Ship*!*A.Address_4_Ship*!*A.Address_5_Ship*!*A.Name_Customer_Ship*!*A.Freight_Zone_Ship*!*A.SHIP_VIA_SHIP*!*A.CARRIER_CD*!*A.CARR_SHORT_DESC*!*A.CARR_LONG_DESC*!*A.STAGED*!*A.FLAG_USE_MQD*!*A.SHP_HLD_FLAG*!*A.QTY_SHIPPED*!*A.NOTES*!*A.USER_1*!*A.USER_2*!*A.USER_3*!*A.USER_4*!*A.USER_5*!*A.INFO_1*!*A.INFO_2*!*A.H_USER_1*!*A.H_USER_2*!*A.H_USER_3*!*A.H_USER_4*!*A.H_USER_5*!*A.ORDLN*!*A.CSRV*!*A.CUSTOMER_PART*!*A.CODE_SOURCE*!*A.CODE_SORT*!*A.ORDER_SORT_2*!*A.INV_CODE_SORT*!*A.CODE_FOB*!*A.SALESPERSON*!*A.ORDER_TYPE*!*A.LINE_TYPE*!*A.BLANKET_NO*!*A.FLAG_NO_BACKORDER*!*A.STATUS*!*A.CUST_ORDER_NOTES*!*B.Assigned_To*!*A.AllocationFlag*!*A.PROJECT*!*A.PHASE*!*A.CONTACT*!*A.CONTACT_PHONE*!*A.CONTACT_EMAIL*!*A.VALIDATED*!*A.POL*!*A.OPOL*!*A.LD*!*A.LOADING_STATUS*!*A.PARTLOC","","","","dtLoad1",True)
 	Function.Intrinsic.Control.Else
 		f.Data.Datatable.Clone("dtLoad0","dtLoad1",True)
 	Function.Intrinsic.Control.EndIf
@@ -2276,6 +2305,17 @@ Program.Sub.LoadOpenOrdersGV.Start
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"QTY_ONHAND","HeaderHAlignment","Far")
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"QTY_ONHAND","CellHAlignment","Far")
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"QTY_ONHAND","DisplayCustomNumeric","n4")
+	
+	'FIRST_BIN — first bin with qty > 0 from ITEM_MASTER (Load tab only, hidden by default)
+	F.Intrinsic.Control.If(V.Args.GV,=,"gvLoad")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"FIRST_BIN","Caption","First Bin")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"FIRST_BIN","MinWidth","80")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"FIRST_BIN","AllowEdit",False)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"FIRST_BIN","ReadOnly",True)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"FIRST_BIN","HeaderHAlignment","Center")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"FIRST_BIN","CellHAlignment","Center")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"FIRST_BIN","Visible",False)
+	F.Intrinsic.Control.EndIf
 	
 	'QTY_REQUIRED
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"QTY_REQUIRED","Caption","Qty Required")
@@ -2652,6 +2692,17 @@ Program.Sub.LoadOpenOrdersGV.Start
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"WAY_BILL","HeaderHAlignment","Center")
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"WAY_BILL","CellHAlignment","Center")		
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"WAY_BILL","VisibleIndex","0")
+
+	'BOL SHIP FROM (hidden by default, available via Column Chooser) — Load tab only
+	F.Intrinsic.Control.If(V.Args.GV,=,"gvLoad")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"BOL_SHIP_FROM","Caption","BOL Ship From")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"BOL_SHIP_FROM","MinWidth","150")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"BOL_SHIP_FROM","AllowEdit",False)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"BOL_SHIP_FROM","ReadOnly",True)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"BOL_SHIP_FROM","HeaderHAlignment","Center")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"BOL_SHIP_FROM","CellHAlignment","Center")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"BOL_SHIP_FROM","Visible",False)
+	F.Intrinsic.Control.EndIf
 
 		'PL SHIP DATE
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"PL SHIP DATE","Caption","PL Ship Date")
@@ -3624,6 +3675,7 @@ Program.Sub.GsGCLoad_CellValueChanged.Start
 	V.Local.sWaybill.Declare
 	V.Local.sDock.Declare
 	v.Local.dateyyyymmddnnss.Declare(String)
+	V.Local.sRet.Declare
 	
 	F.Intrinsic.Control.SelectCase(V.Args.ControlName)
 		F.Intrinsic.Control.Case("GSGCLOAD")		
@@ -3759,17 +3811,26 @@ Program.Sub.GsGCLoad_CellValueChanged.Start
 				F.Data.Datatable.SetValue("dtLoad",V.Args.RowIndex,"TRACKING_NO","")
 				F.Intrinsic.Control.ExitSub
 			F.Intrinsic.Control.EndIf
+			'-- Trim leading/trailing spaces from input
+			V.Local.sRet.Set(V.Args.Value.Trim)
+			F.Data.Datatable.SetValue("dtLoad",V.Args.RowIndex,"TRACKING_NO",V.Local.sRet)
 			'-- Propagate to all rows with the same packing list
 			F.Intrinsic.String.Build("[Packing List] = '{0}'",V.Local.sPackinglist,V.Local.sFilter)
 			F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
 			F.Intrinsic.Control.If(V.Local.sSel.Trim,<>,"***NORETURN***")
 				F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
 				F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
-					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"TRACKING_NO",V.Args.Value)
+					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"TRACKING_NO",V.Local.sRet)
 				F.Intrinsic.Control.Next(V.Local.i)
 			F.Intrinsic.Control.EndIf
-			F.Intrinsic.String.Build("UPDATE SHIPMENT_HEADER SET TRACKING_NO = '{0}' WHERE PCK_NO = '{1}';",V.Args.Value,V.Local.sPackinglist,V.Local.sSQL.PSQLFriendly)
+			F.Intrinsic.String.Build("UPDATE SHIPMENT_HEADER SET TRACKING_NO = '{0}' WHERE PCK_NO = '{1}';",V.Local.sRet,V.Local.sPackinglist,V.Local.sSQL.PSQLFriendly)
 			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+			'-- Also update BOL_HEADER if a waybill exists
+			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"WAY_BILL",V.Args.RowIndex,V.Local.sWaybill)
+			F.Intrinsic.Control.If(V.Local.sWaybill.Trim,<>,"")
+				F.Intrinsic.String.Build("UPDATE BOL_HEADER SET TRACKING_NO = '{0}' WHERE WAYBILL_NO = '{1}';",V.Local.sRet,V.Local.sWaybill.Trim,V.Local.sSQL)
+				F.ODBC.Connection!con.Execute(V.Local.sSQL)
+			F.Intrinsic.Control.EndIf
 		
 		F.Intrinsic.Control.CaseAny("Pro Number","PRO_NO")
 			'-- Pro number saves to SHIPMENT_HEADER (staged rows only)
@@ -3779,17 +3840,26 @@ Program.Sub.GsGCLoad_CellValueChanged.Start
 				F.Data.Datatable.SetValue("dtLoad",V.Args.RowIndex,"PRO_NO","")
 				F.Intrinsic.Control.ExitSub
 			F.Intrinsic.Control.EndIf
+			'-- Trim leading/trailing spaces from input
+			V.Local.sRet.Set(V.Args.Value.Trim)
+			F.Data.Datatable.SetValue("dtLoad",V.Args.RowIndex,"PRO_NO",V.Local.sRet)
 			'-- Propagate to all rows with the same packing list
 			F.Intrinsic.String.Build("[Packing List] = '{0}'",V.Local.sPackinglist,V.Local.sFilter)
 			F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
 			F.Intrinsic.Control.If(V.Local.sSel.Trim,<>,"***NORETURN***")
 				F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
 				F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
-					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"PRO_NO",V.Args.Value)
+					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"PRO_NO",V.Local.sRet)
 				F.Intrinsic.Control.Next(V.Local.i)
 			F.Intrinsic.Control.EndIf
-			F.Intrinsic.String.Build("UPDATE SHIPMENT_HEADER SET PRO_NO = '{0}' WHERE PCK_NO = '{1}';",V.Args.Value,V.Local.sPackinglist,V.Local.sSQL.PSQLFriendly)
+			F.Intrinsic.String.Build("UPDATE SHIPMENT_HEADER SET PRO_NO = '{0}' WHERE PCK_NO = '{1}';",V.Local.sRet,V.Local.sPackinglist,V.Local.sSQL.PSQLFriendly)
 			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+			'-- Also update BOL_HEADER if a waybill exists
+			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"WAY_BILL",V.Args.RowIndex,V.Local.sWaybill)
+			F.Intrinsic.Control.If(V.Local.sWaybill.Trim,<>,"")
+				F.Intrinsic.String.Build("UPDATE BOL_HEADER SET PRO_NO = '{0}' WHERE WAYBILL_NO = '{1}';",V.Local.sRet,V.Local.sWaybill.Trim,V.Local.sSQL)
+				F.ODBC.Connection!con.Execute(V.Local.sSQL)
+			F.Intrinsic.Control.EndIf
 			
 		F.Intrinsic.Control.CaseAny("Load Notes","LOAD NOTES")
 			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"ORDER_NO",V.Args.RowIndex,V.Local.sOrder)
@@ -4720,6 +4790,7 @@ Program.Sub.GsGCLoad_RowCellClick.Start
 	V.Local.sText.Declare
 	V.Local.sTextTbl.Declare
 	V.Local.sWaybill.Declare
+	V.Local.sLocn.Declare
 	V.Local.sDock.Declare
 	v.Local.dateyyyymmddnnss.Declare(String)
 	V.Local.sLOADINGSTATUS.Declare
@@ -5229,9 +5300,49 @@ Program.Sub.GsGCLoad_RowCellClick.Start
 		F.ODBC.con!rstexist.Close
 		'F.ODBC.con!rsttest.Close		
 			
-			
-			
-			
+		F.Intrinsic.Control.Case("BOL_SHIP_FROM")
+			'-- BOL Ship From: browse LOCATION_ADDRESS and update BOL_HEADER ship-from fields
+			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"WAY_BILL",V.Args.RowIndex,V.Local.sWaybill)
+			'-- Validate: must have a staged BOL/waybill number
+			F.Intrinsic.Control.If(V.Local.sWaybill.Trim,=,"")
+				F.Intrinsic.UI.Msgbox("No BOL exists for this line. Stage the order first.")
+				Function.Intrinsic.Control.UnBlockEvents
+				f.Intrinsic.Control.ExitSub
+			F.Intrinsic.Control.EndIf
+			'-- Query LOCATION_ADDRESS for browser
+			F.Intrinsic.Control.If(V.DataTable.dtLocAddr.Exists,=,True)
+				F.Data.DataTable.Close("dtLocAddr")
+			F.Intrinsic.Control.EndIf
+			F.Data.Datatable.CreateFromSQL("dtLocAddr","con","SELECT RTRIM(LOCN) AS LOCN, RTRIM(NAME) AS NAME, RTRIM(ADRS1) AS ADRS1, RTRIM(CITY) AS CITY, RTRIM(STATE) AS STATE, RTRIM(ZIP) AS ZIP FROM V_LOCATION_ADDRESS ORDER BY LOCN")
+			'-- Browser popup
+			F.Intrinsic.UI.BrowserFromDataTable("Select Ship From Location","dtLocAddr","LOCN*!*NAME*!*ADRS1*!*CITY*!*STATE*!*ZIP","60*!*200*!*200*!*150*!*60*!*100",v.Local.sRet)
+			Function.Intrinsic.Control.If(v.Local.sRet.Trim,<>,"***CANCEL***")
+				f.Intrinsic.String.Split(v.Local.sRet,"*!*",v.Local.sret)
+				V.Local.sLocn.Set(V.Local.sRet(0))
+				'-- Query full address from LOCATION_ADDRESS for the selected LOCN
+				F.Intrinsic.Control.If(V.DataTable.dtLocFull.Exists,=,True)
+					F.Data.DataTable.Close("dtLocFull")
+				F.Intrinsic.Control.EndIf
+				F.Intrinsic.String.Build("SELECT RTRIM(NAME) AS NAME, RTRIM(ADRS1) AS ADRS1, RTRIM(ADRS2) AS ADRS2, RTRIM(ADRS3) AS ADRS3, RTRIM(ADRS4) AS ADRS4, RTRIM(ADRS5) AS ADRS5, RTRIM(CITY) AS CITY, RTRIM(STATE) AS STATE, RTRIM(ZIP) AS ZIP, RTRIM(COUNTRY) AS COUNTRY FROM V_LOCATION_ADDRESS WHERE LOCN = '{0}'",V.Local.sLocn.PSQLFriendly,V.Local.sSQL)
+				F.Data.Datatable.CreateFromSQL("dtLocFull","con",V.Local.sSQL)
+				'-- Build UPDATE for BOL_HEADER with address from selected location
+				F.Intrinsic.String.Build("UPDATE BOL_HEADER SET FROM_NAME = '{0}', FROM_ADRS1 = '{1}', FROM_ADRS2 = '{2}', FROM_ADRS3 = '{3}', FROM_ADRS4 = '{4}', FROM_ADRS5 = '{5}', FROM_CITY = '{6}', FROM_STATE = '{7}', FROM_ZIP = '{8}', FROM_COUNTRY = '{9}' WHERE WAYBILL_NO = '{10}'",V.DataTable.dtLocFull(0).NAME!FieldValTrim,V.DataTable.dtLocFull(0).ADRS1!FieldValTrim,V.DataTable.dtLocFull(0).ADRS2!FieldValTrim,V.DataTable.dtLocFull(0).ADRS3!FieldValTrim,V.DataTable.dtLocFull(0).ADRS4!FieldValTrim,V.DataTable.dtLocFull(0).ADRS5!FieldValTrim,V.DataTable.dtLocFull(0).CITY!FieldValTrim,V.DataTable.dtLocFull(0).STATE!FieldValTrim,V.DataTable.dtLocFull(0).ZIP!FieldValTrim,V.DataTable.dtLocFull(0).COUNTRY!FieldValTrim,V.Local.sWaybill,V.Local.sSQL)
+				F.ODBC.Connection!con.Execute(V.Local.sSQL)
+				'-- Update all grid rows sharing this WAY_BILL
+				F.Intrinsic.String.Build("[WAY_BILL] = '{0}'",V.Local.sWaybill,V.Local.sFilter)
+				F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
+				F.Intrinsic.Control.If(V.Local.sSel.Trim,<>,"***NORETURN***")
+					F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+					F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
+						F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"BOL_SHIP_FROM",V.DataTable.dtLocFull(0).NAME!FieldValTrim)
+					F.Intrinsic.Control.Next(V.Local.i)
+				F.Intrinsic.Control.EndIf
+				F.Data.DataTable.Close("dtLocFull")
+			f.Intrinsic.Control.Else
+				Function.Intrinsic.Control.UnBlockEvents
+				f.Intrinsic.Control.ExitSub
+			f.Intrinsic.Control.EndIf
+			F.Data.DataTable.Close("dtLocAddr")
 			
 		Function.Intrinsic.Control.EndSelect
 	f.Intrinsic.Control.UnBlockEvents
@@ -6134,6 +6245,190 @@ f.Intrinsic.Control.ExitSub
 
 
 Program.Sub.GetUserFields.End
+
+'7546 Hultec 07/13/2026: Re-apply USER_1-5 and H_USER_1-5 captions after Deserialize.
+'Serialization may store stale column titles; this ensures labels always match V_OE_USER_FLDS_LN/HDR.
+Program.Sub.RefreshUserFieldCaptions.Start
+F.Intrinsic.Control.Try
+V.Local.sError.Declare
+V.Local.sRet.Declare(String)
+
+'-- gvAllShip: line user fields
+f.Data.DataTable.Select("dtUserFields","Key_ID='01'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","USER_1","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields","Key_ID='02'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","USER_2","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields","Key_ID='03'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","USER_3","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields","Key_ID='04'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","USER_4","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields","Key_ID='05'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","USER_5","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+
+'-- gvAllShip: header user fields
+f.Data.DataTable.Select("dtUserFields_H","Key_ID='01'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","H_USER_1","Caption",V.DataTable.dtUserFields_H(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields_H","Key_ID='02'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","H_USER_2","Caption",V.DataTable.dtUserFields_H(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields_H","Key_ID='03'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","H_USER_3","Caption",V.DataTable.dtUserFields_H(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields_H","Key_ID='04'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","H_USER_4","Caption",V.DataTable.dtUserFields_H(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields_H","Key_ID='05'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","H_USER_5","Caption",V.DataTable.dtUserFields_H(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+
+'-- gvDue: line user fields
+f.Data.DataTable.Select("dtUserFields","Key_ID='01'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","USER_1","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields","Key_ID='02'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","USER_2","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields","Key_ID='03'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","USER_3","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields","Key_ID='04'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","USER_4","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields","Key_ID='05'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","USER_5","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+
+'-- gvDue: header user fields
+f.Data.DataTable.Select("dtUserFields_H","Key_ID='01'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","H_USER_1","Caption",V.DataTable.dtUserFields_H(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields_H","Key_ID='02'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","H_USER_2","Caption",V.DataTable.dtUserFields_H(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields_H","Key_ID='03'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","H_USER_3","Caption",V.DataTable.dtUserFields_H(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields_H","Key_ID='04'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","H_USER_4","Caption",V.DataTable.dtUserFields_H(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields_H","Key_ID='05'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","H_USER_5","Caption",V.DataTable.dtUserFields_H(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+
+'-- gvLoad: line user fields
+f.Data.DataTable.Select("dtUserFields","Key_ID='01'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","USER_1","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields","Key_ID='02'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","USER_2","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields","Key_ID='03'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","USER_3","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields","Key_ID='04'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","USER_4","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields","Key_ID='05'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","USER_5","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+
+'-- gvLoad: header user fields
+f.Data.DataTable.Select("dtUserFields_H","Key_ID='01'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","H_USER_1","Caption",V.DataTable.dtUserFields_H(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields_H","Key_ID='02'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","H_USER_2","Caption",V.DataTable.dtUserFields_H(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields_H","Key_ID='03'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","H_USER_3","Caption",V.DataTable.dtUserFields_H(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields_H","Key_ID='04'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","H_USER_4","Caption",V.DataTable.dtUserFields_H(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields_H","Key_ID='05'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","H_USER_5","Caption",V.DataTable.dtUserFields_H(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+
+'-- gvShipped: line user fields (LN_USER_1-5)
+f.Data.DataTable.Select("dtUserFields","Key_ID='01'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","LN_USER_1","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields","Key_ID='02'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","LN_USER_2","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields","Key_ID='03'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","LN_USER_3","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields","Key_ID='04'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","LN_USER_4","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+f.Data.DataTable.Select("dtUserFields","Key_ID='05'",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***NORETURN***")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","LN_USER_5","Caption",V.DataTable.dtUserFields(V.Local.sRet).Label!FieldVal)
+F.Intrinsic.Control.EndIf
+
+'-- gvLoad: re-apply Load-tab-only columns that Deserialize may strip
+Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","FIRST_BIN","Caption","First Bin")
+Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","FIRST_BIN","MinWidth","80")
+Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","FIRST_BIN","AllowEdit",False)
+Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","FIRST_BIN","ReadOnly",True)
+Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","FIRST_BIN","HeaderHAlignment","Center")
+Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","FIRST_BIN","CellHAlignment","Center")
+Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","FIRST_BIN","Visible",False)
+
+Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","Caption","BOL Ship From")
+Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","MinWidth","150")
+Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","AllowEdit",False)
+Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","ReadOnly",True)
+Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","HeaderHAlignment","Center")
+Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","CellHAlignment","Center")
+Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","Visible",False)
+
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+F.Intrinsic.Control.EndTry
+Program.Sub.RefreshUserFieldCaptions.End
 
 Program.Sub.ddlCalculateMRPOnHand_SelectedIndexChanged.Start
 F.Intrinsic.Control.Try
@@ -9931,6 +10226,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260701164206176$}$CursorSigned
-${$7$}$File Version:1.0.20260701234206.0
+${$6$}$bstevens$}$20260713164747333$}$CursorSigned
+${$7$}$File Version:1.0.20260713234747.0
 Program.Sub.Comments.End
