@@ -501,7 +501,7 @@ Program.Sub.Main.Start
 	Gui.frmShip..Show	
 	gui.frmShip.tabShip.Enabled(False)
 	F.Intrinsic.Control.CallSub(SetContextMenus)
-	'7546 Hultec 03/25/2026: Load shared dictionaries once for initial startup
+	'7546 UDF 03/25/2026: Load shared dictionaries once for initial startup
 	Gui.frmShip.lblStatus.Caption("Loading Shared Lookups....")
 	F.Intrinsic.Control.CallSub(LoadSharedDictionaries)
 	Gui.frmShip.lblStatus.Caption("Loading Open Orders....")
@@ -595,7 +595,7 @@ Program.Sub.frmShip_UnLoad.Start
 		F.Intrinsic.Control.CallSub(Serialize)
 	F.Intrinsic.Control.EndIf
 	
-	'7546 Hultec 04/06/2026: Close session-lived dDCC dictionary
+	'7546 UDF 04/06/2026: Close session-lived dDCC dictionary
 	V.Local.bDccExists.Declare(Boolean,False)
 	F.Data.Dictionary.Exists("dDCC",V.Local.bDccExists)
 	F.Intrinsic.Control.If(V.Local.bDccExists)
@@ -1024,7 +1024,7 @@ Program.Sub.cmdRefresh_Click.Start
 	F.Intrinsic.Control.EndIf
 	
 	F.Intrinsic.Control.BlockEvents
-	'7546 Hultec 03/25/2026: Load shared dictionaries once, then consume in both LoadOpenOrders and LoadLoad
+	'7546 UDF 03/25/2026: Load shared dictionaries once, then consume in both LoadOpenOrders and LoadLoad
 	F.Intrinsic.Control.CallSub(LoadSharedDictionaries)
 	F.Intrinsic.Control.CallSub(LoadOpenOrders)
 	F.Intrinsic.Control.CallSub(LoadDueOrders)
@@ -1464,12 +1464,12 @@ Program.Sub.txtORD_KeyPressEnter.Start
 	F.Intrinsic.Control.EndTry 
 Program.Sub.txtORD_KeyPressEnter.End
 
-'7546 Hultec 03/25/2026: Shared dictionary optimization — load lookup dictionaries once for both LoadOpenOrders and LoadLoad instead of duplicating each SQL query.
+'7546 UDF 03/25/2026: Shared dictionary optimization — load lookup dictionaries once for both LoadOpenOrders and LoadLoad instead of duplicating each SQL query.
 Program.Sub.LoadSharedDictionaries.Start
 F.Intrinsic.Control.Try
 V.Local.sError.Declare
 
-'7546 Hultec 03/25/2026: Customer order notes (may fail if view does not exist)
+'7546 UDF 03/25/2026: Customer order notes (may fail if view does not exist)
 V.Global.bCustOrderNotesFailedToLoad.Set(False)
 F.Intrinsic.Control.Try
 	F.Data.Dictionary.CreateFromSQL("dCustOrderNotes","con","SELECT RTrim(CUSTOMER) AS CUSTOMER, TEXT AS CUST_ORDER_NOTES FROM V_CUST_ORDER_NOTES")
@@ -1480,15 +1480,15 @@ F.Intrinsic.Control.Catch
 	F.Intrinsic.Debug.SetLA(V.Local.sError)
 F.Intrinsic.Control.EndTry
 
-'7546 Hultec 03/25/2026: Customer SO notes
+'7546 UDF 03/25/2026: Customer SO notes
 F.Data.Dictionary.CreateFromSQL("dNotes","con","Select Cast(Concat(SO,SOLINE) as CHAR(10)),RTrim(Notes) as Notes From GAB_4167_SO_NOTES;")
 F.Data.Dictionary.SetDefaultReturn("dNotes","")
 
-'7546 Hultec 03/25/2026: Order line text (type 9999)
+'7546 UDF 03/25/2026: Order line text (type 9999)
 F.Data.Dictionary.CreateFromSQL("dText","con","Select Cast(Concat(ORDER_NUM,ORDER_LINE) as CHAR(10)),RTrim(Text) as Line_Text From ORDER_LN_TEXT WHERE ORDER_TYPE = 9999;")
 F.Data.Dictionary.SetDefaultReturn("dText","")
 
-'7546 Hultec 03/25/2026: Carrier descriptions
+'7546 UDF 03/25/2026: Carrier descriptions
 F.Data.DataTable.CreateFromSQL("dtCarrDesc","con","Select Carrier_CD+Cast(Srvc_Type As Char(3)) As CSRV,RTrim(Short_Desc) As Short_Desc,RTrim(Long_Desc) As Long_Desc From OE_Carrier;")
 F.Data.Dictionary.CreateFromDataTable("dShortDesc","dtCarrDesc","CSRV","Short_Desc")
 F.Data.Dictionary.CreateFromDataTable("dLongDesc","dtCarrDesc","CSRV","Long_Desc")
@@ -1496,7 +1496,7 @@ F.Data.Dictionary.SetDefaultReturn("dShortDesc","")
 F.Data.Dictionary.SetDefaultReturn("dLongDesc","")
 F.Data.DataTable.Close("dtCarrDesc")
 
-'7546 Hultec 03/25/2026: Location 90 / on-water inventory
+'7546 UDF 03/25/2026: Location 90 / on-water inventory
 F.Intrinsic.Control.If(V.Screen.frmShip!ddlCalculateMRPOnHand.ItemData,=,4)
 	F.Data.Dictionary.CreateFromSQL("d90","con","SELECT part+location as partloc, COALESCE(SUM(QUANTITY),0) AS QTY_ONWATER FROM ITEM_MASTER WHERE BIN LIKE 'O%' GROUP BY PART,LOCATION;")
 	F.Data.Dictionary.SetDefaultReturn("d90","0")
@@ -1505,11 +1505,11 @@ F.Intrinsic.Control.Else
 	F.Data.Dictionary.SetDefaultReturn("d90","0")
 F.Intrinsic.Control.EndIf
 
-'7546 Hultec 07/01/2026: First bin with qty on hand > 0 per part/location
+'7546 UDF 07/01/2026: First bin with qty on hand > 0 per part/location
 F.Data.Dictionary.CreateFromSQL("dFirstBin","con","SELECT PART+LOCATION AS PARTLOC, RTRIM(MIN(BIN)) AS FIRST_BIN FROM ITEM_MASTER WHERE QUANTITY > 0 GROUP BY PART, LOCATION;")
 F.Data.Dictionary.SetDefaultReturn("dFirstBin","")
 
-'7546 Hultec 04/06/2026: SO Document Control status (shared, session-lived for split form access)
+'7546 UDF 04/06/2026: SO Document Control status (shared, session-lived for split form access)
 V.Local.bDccExists.Declare(Boolean,False)
 F.Data.Dictionary.Exists("dDCC",V.Local.bDccExists)
 F.Intrinsic.Control.If(V.Local.bDccExists)
@@ -1525,7 +1525,7 @@ F.Intrinsic.Control.Catch
 F.Intrinsic.Control.EndTry
 Program.Sub.LoadSharedDictionaries.End
 
-'7546 Hultec 03/25/2026: Shared dictionary optimization — close all shared lookup dictionaries after both LoadOpenOrders and LoadLoad have consumed them.
+'7546 UDF 03/25/2026: Shared dictionary optimization — close all shared lookup dictionaries after both LoadOpenOrders and LoadLoad have consumed them.
 Program.Sub.CloseSharedDictionaries.Start
 F.Intrinsic.Control.Try
 V.Local.sError.Declare
@@ -1654,7 +1654,7 @@ Program.Sub.LoadOpenOrders.Start
 							
 	F.Data.DataTable.AddColumn("dtAllShip0","CUST_ORDER_NOTES",String,"")
 	
-	'7546 Hultec 03/25/2026: Shared dictionary optimization — fill from pre-loaded shared dictionaries (loaded in LoadSharedDictionaries)
+	'7546 UDF 03/25/2026: Shared dictionary optimization — fill from pre-loaded shared dictionaries (loaded in LoadSharedDictionaries)
 	F.Intrinsic.Control.If(V.Global.bCustOrderNotesFailedToLoad,=,False)
 		F.Data.DataTable.FillFromDictionary("dtAllShip0","dCustOrderNotes","CUSTOMER","CUST_ORDER_NOTES")
 	F.Intrinsic.Control.EndIf
@@ -1845,6 +1845,7 @@ Program.Sub.LoadLoad.Start
 	f.Intrinsic.StringBuilder.Append("Query",", A.PHASE, F.PROJECT ")
 	f.Intrinsic.StringBuilder.Append("Query",", E.Address_1_Ship, E.Address_2_Ship, E.Address_3_Ship, E.Address_4_Ship, E.Address_5_Ship, E.Name_Customer_Ship,E.Freight_Zone_Ship, RTRIM(M.TRACKING_NO) AS TRACKING_NO, RTRIM(M.PRO_NO) AS PRO_NO, RTRIM(M.WAY_BILL) AS WAY_BILL, N.FROM_NAME AS BOL_SHIP_FROM ")
 	f.Intrinsic.StringBuilder.Append("Query",", D.Description_2, D.Description_3 ")
+	f.Intrinsic.StringBuilder.Append("Query",", RTRIM(BPI.NMFC_NO) AS NMFC_NO, RTRIM(BPI.FRT_CLASS) AS FRT_CLASS, RTRIM(BPI.COMM_DESC_1) AS COMM_DESC_1 ")
 	
 	'estimated packing container code.. Assume max container standard packing unit by part
 	f.Intrinsic.StringBuilder.Append("Query",", CASE WHEN D.PCS_PER_CNTNR <> 0 AND D.PALLET_FLAG = 'Y' THEN X.CNTNR_CODE WHEN D.PCS_PER_CNTNR <> 0 THEN Z.CNTNR_CODE WHEN D.PCS_PER_CNTNR = 0 AND D.PALLET_FLAG = 'Y' THEN X.CNTNR_CODE END AS 'Container Name',CASE WHEN D.PCS_PER_CNTNR <> 0 AND D.PALLET_FLAG = 'Y' THEN X.CNTNR_DESC WHEN D.PCS_PER_CNTNR <> 0 THEN Z.CNTNR_DESC WHEN D.PCS_PER_CNTNR = 0 AND D.PALLET_FLAG = 'Y' THEN X.CNTNR_DESC END AS 'Container Description', CASE WHEN D.PCS_PER_CNTNR <> 0 AND D.PALLET_FLAG = 'Y' THEN X.WEIGHT WHEN D.PCS_PER_CNTNR <> 0 THEN Z.WEIGHT WHEN D.PCS_PER_CNTNR = 0 AND D.PALLET_FLAG = 'Y' THEN X.WEIGHT END  AS 'Ind Container Weight', CASE WHEN D.PCS_PER_CNTNR <> 0 AND D.PALLET_FLAG = 'Y' THEN X.LENGTH WHEN D.PCS_PER_CNTNR <> 0 THEN Z.LENGTH WHEN D.PCS_PER_CNTNR = 0 AND D.PALLET_FLAG = 'Y' THEN X.LENGTH END AS 'Ind Container Length (In)', CASE WHEN D.PCS_PER_CNTNR <> 0 AND D.PALLET_FLAG = 'Y' THEN X.WIDTH WHEN D.PCS_PER_CNTNR <> 0 THEN Z.WIDTH WHEN D.PCS_PER_CNTNR = 0 AND D.PALLET_FLAG = 'Y' THEN X.WIDTH END AS 'Ind Container Width (In)', CASE WHEN D.PCS_PER_CNTNR <> 0 AND D.PALLET_FLAG = 'Y' THEN X.HEIGHT WHEN D.PCS_PER_CNTNR <> 0 THEN Z.HEIGHT WHEN D.PCS_PER_CNTNR = 0 AND D.PALLET_FLAG = 'Y' THEN X.HEIGHT END AS 'Ind Container Height (In)' ")
@@ -1892,6 +1893,7 @@ Program.Sub.LoadLoad.Start
 	f.Intrinsic.StringBuilder.Append("Query"," LEFT JOIN V_STAGING_HEADER L ON H.PCK_NO=L.PCK_NO ")
 	f.Intrinsic.StringBuilder.Append("Query"," LEFT JOIN V_SHIPMENT_HEADER M ON L.PCK_NO=M.PCK_NO AND M.ORDER_NO=H.ORDER_NO ")
 	f.Intrinsic.StringBuilder.Append("Query"," LEFT JOIN (SELECT WAYBILL_NO, RTRIM(FROM_NAME) AS FROM_NAME FROM BOL_HEADER GROUP BY WAYBILL_NO, FROM_NAME) N ON M.WAY_BILL = N.WAYBILL_NO ")
+	f.Intrinsic.StringBuilder.Append("Query"," LEFT JOIN BOL_PART_INFO BPI ON BPI.PCK_NO = H.PCK_NO AND BPI.ORDER_NO = A.ORDER_NO AND BPI.LINE = A.RECORD_NO ")
 	
 	' No WHERE needed; filters are in derived table and JOINs above
 	'f.Intrinsic.StringBuilder.Append("Query"," WHERE (F.ORDER_SUFFIX = G.ORDER_SUFFIX OR H.PCK_NO IS NOT NULL) ")
@@ -1925,7 +1927,7 @@ Program.Sub.LoadLoad.Start
 	F.Data.DataTable.AddColumn("dtLoad0","CUST_ORDER_NOTES",String,"")
 	F.Data.Datatable.AddColumn("dtLoad0","Select","boolean",False)
 	
-	'7546 Hultec 03/25/2026: Shared dictionary optimization — fill from pre-loaded shared dictionaries (loaded in LoadSharedDictionaries)
+	'7546 UDF 03/25/2026: Shared dictionary optimization — fill from pre-loaded shared dictionaries (loaded in LoadSharedDictionaries)
 	F.Intrinsic.Control.If(V.Global.bCustOrderNotesFailedToLoad,=,False)
 		F.Data.DataTable.FillFromDictionary("dtLoad0","dCustOrderNotes","CUSTOMER","CUST_ORDER_NOTES")
 	F.Intrinsic.Control.EndIf
@@ -1942,7 +1944,7 @@ Program.Sub.LoadLoad.Start
 		F.Data.DataTable.FillFromDictionary("dtLoad0","d90","PART","QTY_90")
 	F.Intrinsic.Control.EndIf
 	
-	'7546 Hultec 07/01/2026: First bin with qty on hand > 0
+	'7546 UDF 07/01/2026: First bin with qty on hand > 0
 	F.Data.Datatable.AddColumn("dtLoad0","FIRST_BIN","String","")
 	F.Data.DataTable.FillFromDictionary("dtLoad0","dFirstBin","PARTLOC","FIRST_BIN")
 	
@@ -1988,7 +1990,7 @@ Program.Sub.LoadLoad.Start
 	'v.Local.sFilter.Set(v.DataTable.dtLoad0.FieldNames)
 	'linq join orderpicker and dtLoad0
 	Function.Intrinsic.Control.If(v.DataTable.dtOrderPicker.Exists) 
-		F.Data.Linq.Join("LeftJoin","datatable","dtLoad0*!*A","datatable","dtOrderPicker*!*B","A.ORDER_NO = B.ORDER_NO And A.ORDER_SUFFIX = B.ORDER_SUFFIX AND A.ORDER_LINE = B.ORDER_LINE","A.Select*!*A.Load Number*!*A.Packing List*!*A.PL Ship Date*!*A.PICKLIST*!*A.TRACKING_NO*!*A.PRO_NO*!*A.WAY_BILL*!*A.BOL_SHIP_FROM*!*A.Staged Qty*!*A.Drop Seq*!*A.Carrier Number*!*A.Carrier Load Number*!*A.Carrier Trailer*!*A.Truck Type ID*!*A.Truck Description*!*A.Truck Max Weight(lbs)*!*A.Truck SF Capacity*!*A.Staging Bin*!*A.Dock ID*!*A.Pick By Date*!*A.Ship Date*!*A.Load Notes*!*A.Line_Text*!*A.Ready to Pick*!*A.PICKED*!*A.Container Name*!*A.Container Description*!*A.Ind Container Height (In)*!*A.Ind Container Width (In)*!*A.Ind Container Length (In)*!*A.Ind Container Weight*!*A.Est Container Qty*!*A.Est Packaged Weight*!*A.Est Area*!*A.CUSTOMER*!*A.NAME_CUSTOMER*!*A.CUSTOMER_PO*!*A.ORDER_NO*!*A.RECORD_NO*!*A.ORDER_LINE*!*A.ORDER_SUFFIX*!*A.CURRENT_ORDER_SUFFIX*!*A.PART*!*A.DISPLAY_PART*!*A.LOCATION*!*A.PRODUCT_LINE*!*A.DESCRIPTION*!*A.Description_2*!*A.Description_3*!*A.WEIGHT*!*A.QTY_BO*!*A.QTY_ONHAND*!*A.QTY_90*!*A.FIRST_BIN*!*A.EXT_AMT*!*A.QTY_REQUIRED*!*A.DATE_ORDER*!*A.MUST_DLVR_BY_DATE*!*A.DATE_ITEM_PROM*!*A.SHIP_ID*!*A.CITY_SHIP*!*A.STATE_SHIP*!*A.Address_1_Ship*!*A.Address_2_Ship*!*A.Address_3_Ship*!*A.Address_4_Ship*!*A.Address_5_Ship*!*A.Name_Customer_Ship*!*A.Freight_Zone_Ship*!*A.SHIP_VIA_SHIP*!*A.CARRIER_CD*!*A.CARR_SHORT_DESC*!*A.CARR_LONG_DESC*!*A.STAGED*!*A.FLAG_USE_MQD*!*A.SHP_HLD_FLAG*!*A.QTY_SHIPPED*!*A.NOTES*!*A.USER_1*!*A.USER_2*!*A.USER_3*!*A.USER_4*!*A.USER_5*!*A.INFO_1*!*A.INFO_2*!*A.H_USER_1*!*A.H_USER_2*!*A.H_USER_3*!*A.H_USER_4*!*A.H_USER_5*!*A.ORDLN*!*A.CSRV*!*A.CUSTOMER_PART*!*A.CODE_SOURCE*!*A.CODE_SORT*!*A.ORDER_SORT_2*!*A.INV_CODE_SORT*!*A.CODE_FOB*!*A.SALESPERSON*!*A.ORDER_TYPE*!*A.LINE_TYPE*!*A.BLANKET_NO*!*A.FLAG_NO_BACKORDER*!*A.STATUS*!*A.CUST_ORDER_NOTES*!*B.Assigned_To*!*A.AllocationFlag*!*A.PROJECT*!*A.PHASE*!*A.CONTACT*!*A.CONTACT_PHONE*!*A.CONTACT_EMAIL*!*A.VALIDATED*!*A.POL*!*A.OPOL*!*A.LD*!*A.LOADING_STATUS*!*A.PARTLOC","","","","dtLoad1",True)
+		F.Data.Linq.Join("LeftJoin","datatable","dtLoad0*!*A","datatable","dtOrderPicker*!*B","A.ORDER_NO = B.ORDER_NO And A.ORDER_SUFFIX = B.ORDER_SUFFIX AND A.ORDER_LINE = B.ORDER_LINE","A.Select*!*A.Load Number*!*A.Packing List*!*A.PL Ship Date*!*A.PICKLIST*!*A.TRACKING_NO*!*A.PRO_NO*!*A.WAY_BILL*!*A.BOL_SHIP_FROM*!*A.Staged Qty*!*A.Drop Seq*!*A.Carrier Number*!*A.Carrier Load Number*!*A.Carrier Trailer*!*A.Truck Type ID*!*A.Truck Description*!*A.Truck Max Weight(lbs)*!*A.Truck SF Capacity*!*A.Staging Bin*!*A.Dock ID*!*A.Pick By Date*!*A.Ship Date*!*A.Load Notes*!*A.Line_Text*!*A.Ready to Pick*!*A.PICKED*!*A.Container Name*!*A.Container Description*!*A.Ind Container Height (In)*!*A.Ind Container Width (In)*!*A.Ind Container Length (In)*!*A.Ind Container Weight*!*A.Est Container Qty*!*A.Est Packaged Weight*!*A.Est Area*!*A.CUSTOMER*!*A.NAME_CUSTOMER*!*A.CUSTOMER_PO*!*A.ORDER_NO*!*A.RECORD_NO*!*A.ORDER_LINE*!*A.ORDER_SUFFIX*!*A.CURRENT_ORDER_SUFFIX*!*A.PART*!*A.DISPLAY_PART*!*A.LOCATION*!*A.PRODUCT_LINE*!*A.DESCRIPTION*!*A.Description_2*!*A.Description_3*!*A.WEIGHT*!*A.QTY_BO*!*A.QTY_ONHAND*!*A.QTY_90*!*A.FIRST_BIN*!*A.EXT_AMT*!*A.QTY_REQUIRED*!*A.DATE_ORDER*!*A.MUST_DLVR_BY_DATE*!*A.DATE_ITEM_PROM*!*A.SHIP_ID*!*A.CITY_SHIP*!*A.STATE_SHIP*!*A.Address_1_Ship*!*A.Address_2_Ship*!*A.Address_3_Ship*!*A.Address_4_Ship*!*A.Address_5_Ship*!*A.Name_Customer_Ship*!*A.Freight_Zone_Ship*!*A.SHIP_VIA_SHIP*!*A.CARRIER_CD*!*A.CARR_SHORT_DESC*!*A.CARR_LONG_DESC*!*A.STAGED*!*A.FLAG_USE_MQD*!*A.SHP_HLD_FLAG*!*A.QTY_SHIPPED*!*A.NOTES*!*A.USER_1*!*A.USER_2*!*A.USER_3*!*A.USER_4*!*A.USER_5*!*A.INFO_1*!*A.INFO_2*!*A.H_USER_1*!*A.H_USER_2*!*A.H_USER_3*!*A.H_USER_4*!*A.H_USER_5*!*A.ORDLN*!*A.CSRV*!*A.CUSTOMER_PART*!*A.CODE_SOURCE*!*A.CODE_SORT*!*A.ORDER_SORT_2*!*A.INV_CODE_SORT*!*A.CODE_FOB*!*A.SALESPERSON*!*A.ORDER_TYPE*!*A.LINE_TYPE*!*A.BLANKET_NO*!*A.FLAG_NO_BACKORDER*!*A.STATUS*!*A.CUST_ORDER_NOTES*!*B.Assigned_To*!*A.AllocationFlag*!*A.PROJECT*!*A.PHASE*!*A.CONTACT*!*A.CONTACT_PHONE*!*A.CONTACT_EMAIL*!*A.VALIDATED*!*A.POL*!*A.OPOL*!*A.LD*!*A.LOADING_STATUS*!*A.NMFC_NO*!*A.FRT_CLASS*!*A.COMM_DESC_1*!*A.PARTLOC","","","","dtLoad1",True)
 	Function.Intrinsic.Control.Else
 		f.Data.Datatable.Clone("dtLoad0","dtLoad1",True)
 	Function.Intrinsic.Control.EndIf
@@ -2683,6 +2685,27 @@ Program.Sub.LoadOpenOrdersGV.Start
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"PRO_NO","HeaderHAlignment","Center")
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"PRO_NO","CellHAlignment","Center")
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"PRO_NO","VisibleIndex","0")
+
+		'NMFC
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"NMFC_NO","Caption","NMFC")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"NMFC_NO","MinWidth","80")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"NMFC_NO","AllowEdit",False)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"NMFC_NO","ReadOnly",True)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"NMFC_NO","Visible",False)
+
+		'Freight Class
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"FRT_CLASS","Caption","Freight Class")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"FRT_CLASS","MinWidth","90")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"FRT_CLASS","AllowEdit",False)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"FRT_CLASS","ReadOnly",True)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"FRT_CLASS","Visible",False)
+
+		'Commodity Description
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"COMM_DESC_1","Caption","Commodity Desc")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"COMM_DESC_1","MinWidth","200")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"COMM_DESC_1","AllowEdit",False)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"COMM_DESC_1","ReadOnly",True)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"COMM_DESC_1","Visible",False)
 
 		'BOL
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"WAY_BILL","Caption","BOL")
@@ -5323,10 +5346,10 @@ Program.Sub.GsGCLoad_RowCellClick.Start
 				F.Intrinsic.Control.If(V.DataTable.dtLocFull.Exists,=,True)
 					F.Data.DataTable.Close("dtLocFull")
 				F.Intrinsic.Control.EndIf
-				F.Intrinsic.String.Build("SELECT RTRIM(NAME) AS NAME, RTRIM(ADRS1) AS ADRS1, RTRIM(ADRS2) AS ADRS2, RTRIM(ADRS3) AS ADRS3, RTRIM(ADRS4) AS ADRS4, RTRIM(ADRS5) AS ADRS5, RTRIM(CITY) AS CITY, RTRIM(STATE) AS STATE, RTRIM(ZIP) AS ZIP, RTRIM(COUNTRY) AS COUNTRY FROM V_LOCATION_ADDRESS WHERE LOCN = '{0}'",V.Local.sLocn.PSQLFriendly,V.Local.sSQL)
+				F.Intrinsic.String.Build("SELECT RTRIM(NAME) AS NAME, RTRIM(ADRS1) AS ADRS1, RTRIM(ADRS2) AS ADRS2, RTRIM(ADRS3) AS ADRS3, RTRIM(ADRS4) AS ADRS4, RTRIM(ADRS5) AS ADRS5, RTRIM(CITY) AS CITY, RTRIM(STATE) AS STATE, RTRIM(ZIP) AS ZIP, RTRIM(COUNTRY) AS COUNTRY, RTRIM(TELEPHONE) AS TELEPHONE, RTRIM(FAX) AS FAX FROM V_LOCATION_ADDRESS WHERE LOCN = '{0}'",V.Local.sLocn.PSQLFriendly,V.Local.sSQL)
 				F.Data.Datatable.CreateFromSQL("dtLocFull","con",V.Local.sSQL)
 				'-- Build UPDATE for BOL_HEADER with address from selected location
-				F.Intrinsic.String.Build("UPDATE BOL_HEADER SET FROM_NAME = '{0}', FROM_ADRS1 = '{1}', FROM_ADRS2 = '{2}', FROM_ADRS3 = '{3}', FROM_ADRS4 = '{4}', FROM_ADRS5 = '{5}', FROM_CITY = '{6}', FROM_STATE = '{7}', FROM_ZIP = '{8}', FROM_COUNTRY = '{9}' WHERE WAYBILL_NO = '{10}'",V.DataTable.dtLocFull(0).NAME!FieldValTrim,V.DataTable.dtLocFull(0).ADRS1!FieldValTrim,V.DataTable.dtLocFull(0).ADRS2!FieldValTrim,V.DataTable.dtLocFull(0).ADRS3!FieldValTrim,V.DataTable.dtLocFull(0).ADRS4!FieldValTrim,V.DataTable.dtLocFull(0).ADRS5!FieldValTrim,V.DataTable.dtLocFull(0).CITY!FieldValTrim,V.DataTable.dtLocFull(0).STATE!FieldValTrim,V.DataTable.dtLocFull(0).ZIP!FieldValTrim,V.DataTable.dtLocFull(0).COUNTRY!FieldValTrim,V.Local.sWaybill,V.Local.sSQL)
+				F.Intrinsic.String.Build("UPDATE BOL_HEADER SET FROM_NAME = '{0}', FROM_ADRS1 = '{1}', FROM_ADRS2 = '{2}', FROM_ADRS3 = '{3}', FROM_ADRS4 = '{4}', FROM_ADRS5 = '{5}', FROM_CITY = '{6}', FROM_STATE = '{7}', FROM_ZIP = '{8}', FROM_COUNTRY = '{9}', FROM_TELEPHONE = '{10}', FROM_FAX = '{11}' WHERE WAYBILL_NO = '{12}'",V.DataTable.dtLocFull(0).NAME!FieldValTrim,V.DataTable.dtLocFull(0).ADRS1!FieldValTrim,V.DataTable.dtLocFull(0).ADRS2!FieldValTrim,V.DataTable.dtLocFull(0).ADRS3!FieldValTrim,V.DataTable.dtLocFull(0).ADRS4!FieldValTrim,V.DataTable.dtLocFull(0).ADRS5!FieldValTrim,V.DataTable.dtLocFull(0).CITY!FieldValTrim,V.DataTable.dtLocFull(0).STATE!FieldValTrim,V.DataTable.dtLocFull(0).ZIP!FieldValTrim,V.DataTable.dtLocFull(0).COUNTRY!FieldValTrim,V.DataTable.dtLocFull(0).TELEPHONE!FieldValTrim,V.DataTable.dtLocFull(0).FAX!FieldValTrim,V.Local.sWaybill,V.Local.sSQL)
 				F.ODBC.Connection!con.Execute(V.Local.sSQL)
 				'-- Update all grid rows sharing this WAY_BILL
 				F.Intrinsic.String.Build("[WAY_BILL] = '{0}'",V.Local.sWaybill,V.Local.sFilter)
@@ -6246,7 +6269,7 @@ f.Intrinsic.Control.ExitSub
 
 Program.Sub.GetUserFields.End
 
-'7546 Hultec 07/13/2026: Re-apply USER_1-5 and H_USER_1-5 captions after Deserialize.
+'7546 UDF 07/13/2026: Re-apply USER_1-5 and H_USER_1-5 captions after Deserialize.
 'Serialization may store stale column titles; this ensures labels always match V_OE_USER_FLDS_LN/HDR.
 Program.Sub.RefreshUserFieldCaptions.Start
 F.Intrinsic.Control.Try
@@ -6414,7 +6437,6 @@ Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","FIRST_BIN","AllowEdit",False)
 Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","FIRST_BIN","ReadOnly",True)
 Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","FIRST_BIN","HeaderHAlignment","Center")
 Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","FIRST_BIN","CellHAlignment","Center")
-Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","FIRST_BIN","Visible",False)
 
 Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","Caption","BOL Ship From")
 Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","MinWidth","150")
@@ -6422,7 +6444,6 @@ Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","AllowEdit",Fals
 Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","ReadOnly",True)
 Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","HeaderHAlignment","Center")
 Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","CellHAlignment","Center")
-Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","Visible",False)
 
 F.Intrinsic.Control.Catch
 	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
@@ -9327,7 +9348,7 @@ F.Data.DataTable.AddColumn("dtSplitLines","LOCATION","String","")
 F.Data.DataTable.AddColumn("dtSplitLines","PRODUCT_LINE","String","")
 F.Data.DataTable.AddColumn("dtSplitLines","ORDER_SUFFIX","String","")
 F.Data.DataTable.AddColumn("dtSplitLines","WEIGHT","Float",0)
-'7546 Hultec 04/06/2026: SO Document Control column
+'7546 UDF 04/06/2026: SO Document Control column
 F.Data.DataTable.AddColumn("dtSplitLines","SODocCntrl","String","DCS-OFF")
 
 F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
@@ -9371,7 +9392,7 @@ F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
 	F.Data.DataTable.AddRow("dtSplitLines","CUSTOMER",V.Local.sCust,"NAME_CUSTOMER",V.Local.sNameCust,"ORDER_NO",V.Local.sOrdNo,"RECORD_NO",V.Local.sRecNo,"ORDER_LINE",V.Local.sOrdLn,"DISPLAY_PART",V.Local.sDispPart,"DESCRIPTION",V.Local.sDesc,"SHIP_ID",V.Local.sShipId,"CITY_SHIP",V.Local.sCityShip,"STATE_SHIP",V.Local.sStateShip,"NAME_CUSTOMER_SHIP",V.Local.sNameShip,"QTY_BO",V.Local.fQtyBo,"QTY_SPLIT",0,"NEW_DUE_DATE",V.Ambient.Date,"PART",V.Local.sPart,"LOCATION",V.Local.sLoc,"PRODUCT_LINE",V.Local.sProdLine,"ORDER_SUFFIX",V.Local.sOrdSuffix,"WEIGHT",V.Local.fWeight)
 F.Intrinsic.Control.Next(V.Local.i)
 
-'7546 Hultec 04/06/2026: Fill SO Document Control status from shared dDCC dictionary
+'7546 UDF 04/06/2026: Fill SO Document Control status from shared dDCC dictionary
 F.Data.DataTable.FillFromDictionary("dtSplitLines","dDCC","ORDER_NO","SODocCntrl")
 
 Gui.frmSplitLine.GsGCSplit.AddGridViewFromDataTable("gvSplit","dtSplitLines")
@@ -9476,7 +9497,7 @@ Gui.frmSplitLine.GsGCSplit.SetColumnProperty("gvSplit","PRODUCT_LINE","Visible",
 Gui.frmSplitLine.GsGCSplit.SetColumnProperty("gvSplit","ORDER_SUFFIX","Visible",False)
 Gui.frmSplitLine.GsGCSplit.SetColumnProperty("gvSplit","WEIGHT","Visible",False)
 
-'7546 Hultec 04/06/2026: SO Document Control icon column (mirrors Shipped tab pattern)
+'7546 UDF 04/06/2026: SO Document Control icon column (mirrors Shipped tab pattern)
 Gui.frmSplitLine.GsGCSplit.SetColumnProperty("gvSplit","SODocCntrl","CellHAlignment","Center")
 Gui.frmSplitLine.GsGCSplit.SetColumnProperty("gvSplit","SODocCntrl","HeaderFontBold",True)
 Gui.frmSplitLine.GsGCSplit.SetColumnProperty("gvSplit","SODocCntrl","Icon","DCS-OFF")
@@ -9569,14 +9590,14 @@ V.Local.fOrigWeight.Declare(Float)
 V.Local.fUnitWeight.Declare(Float)
 V.Local.fNewWeight.Declare(Float)
 V.Local.sSer.Declare(String)
-'7546 Hultec 03/25/2026: Variables for dynamic user field lookup from OE_USER_FLDS_LN
+'7546 UDF 03/25/2026: Variables for dynamic user field lookup from OE_USER_FLDS_LN
 V.Local.sUFColumn.Declare(String)
 V.Local.iUFKeyID.Declare(Long)
 V.Local.sUFReturn.Declare(String)
 
 F.Data.DataTable.AcceptChanges("dtSplitLines")
 
-'7546 Hultec 03/25/2026: Dynamic user field lookup — query V_OE_USER_FLDS_LN for label "SPLIT FROM LINE"
+'7546 UDF 03/25/2026: Dynamic user field lookup — query V_OE_USER_FLDS_LN for label "SPLIT FROM LINE"
 '      to determine which ORDER_LINES column to write the original line number to. If not configured, skip.
 V.Local.sUFColumn.Set("")
 F.ODBC.Connection!con.ExecuteAndReturn("SELECT RTRIM(KEY_ID) FROM V_OE_USER_FLDS_LN WHERE RTRIM(LABEL) = 'SPLIT FROM LINE'",V.Local.sUFReturn)
@@ -9783,7 +9804,7 @@ F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.dtSplitLines.RowCount--)
 			F.Intrinsic.File.DeleteFile(V.Local.sFilePath)
 		F.Intrinsic.Control.EndIf
 
-		'7546 Hultec 03/25/2026: Write original line RECORD_NO to the dynamically-resolved user field on the new split line (skip if no "SPLIT FROM LINE" label configured)
+		'7546 UDF 03/25/2026: Write original line RECORD_NO to the dynamically-resolved user field on the new split line (skip if no "SPLIT FROM LINE" label configured)
 		F.Intrinsic.Control.If(V.Local.sUFColumn,<>,"")
 			F.Intrinsic.String.Build("UPDATE ORDER_LINES SET {0} = '{1}' WHERE ORDER_NO = '{2}' AND RECORD_NO = '{3}'",V.Local.sUFColumn,V.Local.sRecNo,V.Local.sOrderNo,V.Local.sNewRecNo,V.Local.sSQL)
 			F.ODBC.Connection!con.Execute(V.Local.sSQL)
@@ -9865,15 +9886,15 @@ F.Intrinsic.Control.Catch
 F.Intrinsic.Control.EndTry
 Program.Sub.SplitSOLine_Cancel.End
 
-'7546 Hultec 03/25/2026: Reset grid serialization for Split SO Line grid. Clears saved layout and rebuilds the grid view from scratch (same pattern as main grid ResetGridColumns + cmdRefresh_Click).
+'7546 UDF 03/25/2026: Reset grid serialization for Split SO Line grid. Clears saved layout and rebuilds the grid view from scratch (same pattern as main grid ResetGridColumns + cmdRefresh_Click).
 Program.Sub.ResetSplitGridColumns.Start
 F.Intrinsic.Control.Try
 V.Local.sError.Declare
 
-'7546 Hultec 03/25/2026: Clear saved layout from registry
+'7546 UDF 03/25/2026: Clear saved layout from registry
 F.Global.Registry.AddValue(V.Caller.User,V.Caller.CompanyCode,"GVSPLIT",7546,1000,False,"Serialize",False,0,-999.0,1/1/1980,12:00:00 AM,"")
 
-'7546 Hultec 03/25/2026: Rebuild grid view from DataTable to get a clean default layout (individual SetColumnProperty calls cannot override a deserialized layout)
+'7546 UDF 03/25/2026: Rebuild grid view from DataTable to get a clean default layout (individual SetColumnProperty calls cannot override a deserialized layout)
 Gui.frmSplitLine.GsGCSplit.AddGridViewFromDataTable("gvSplit","dtSplitLines")
 Gui.frmSplitLine.GsGCSplit.SuspendLayout()
 Gui.frmSplitLine.GsGCSplit.SetGridViewProperty("gvSplit","OptionBehaviorEditable",True)
@@ -9976,7 +9997,7 @@ Gui.frmSplitLine.GsGCSplit.SetColumnProperty("gvSplit","PRODUCT_LINE","Visible",
 Gui.frmSplitLine.GsGCSplit.SetColumnProperty("gvSplit","ORDER_SUFFIX","Visible",False)
 Gui.frmSplitLine.GsGCSplit.SetColumnProperty("gvSplit","WEIGHT","Visible",False)
 
-'7546 Hultec 04/06/2026: SO Document Control icon column (mirrors Shipped tab pattern)
+'7546 UDF 04/06/2026: SO Document Control icon column (mirrors Shipped tab pattern)
 Gui.frmSplitLine.GsGCSplit.SetColumnProperty("gvSplit","SODocCntrl","CellHAlignment","Center")
 Gui.frmSplitLine.GsGCSplit.SetColumnProperty("gvSplit","SODocCntrl","HeaderFontBold",True)
 Gui.frmSplitLine.GsGCSplit.SetColumnProperty("gvSplit","SODocCntrl","Icon","DCS-OFF")
@@ -10079,7 +10100,7 @@ F.Intrinsic.Control.Catch
 F.Intrinsic.Control.EndTry
 Program.Sub.EditSalesOrder_Click.End
 
-'7546 Hultec 04/06/2026: RowCellClick handler for Split SO Line grid — opens Document Control for the SO.
+'7546 UDF 04/06/2026: RowCellClick handler for Split SO Line grid — opens Document Control for the SO.
 Program.Sub.GsGCSplit_RowCellClick.Start
 F.Intrinsic.Control.Try
 V.Local.sError.Declare
@@ -10226,6 +10247,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260713164747333$}$CursorSigned
-${$7$}$File Version:1.0.20260713234747.0
+${$6$}$bstevens$}$20260714110755895$}$CursorSigned
+${$7$}$File Version:1.0.20260714180755.0
 Program.Sub.Comments.End
