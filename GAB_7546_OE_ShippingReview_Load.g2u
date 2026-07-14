@@ -257,6 +257,32 @@ Gui.frmShipSch.GSGCShipSch.Position(30,675)
 Gui.frmShipSch.GSGCShipSch.Enabled(True)
 Gui.frmShipSch.GSGCShipSch.Visible(True)
 Gui.frmShipSch.GSGCShipSch.Zorder(0)
+Gui.frmFrtClass..Create(BaseForm)
+Gui.frmFrtClass..Caption("Freight Class - Pallet Detail")
+Gui.frmFrtClass..Size(12000,5000)
+Gui.frmFrtClass..Position(0,0)
+Gui.frmFrtClass..BackColor(-2147483633)
+Gui.frmFrtClass..MaxButton(False)
+Gui.frmFrtClass..MinButton(False)
+Gui.frmFrtClass..MousePointer(0)
+Gui.frmFrtClass..Event(UnLoad,frmFrtClass_UnLoad)
+Gui.frmFrtClass..Sizeable(True)
+Gui.frmFrtClass..MinX(0)
+Gui.frmFrtClass..MinY(0)
+Gui.frmFrtClass..AlwaysOnTop(False)
+Gui.frmFrtClass..FontName("Tahoma")
+Gui.frmFrtClass..FontSize(8.25)
+Gui.frmFrtClass..ControlBox(True)
+Gui.frmFrtClass..Moveable(True)
+Gui.frmFrtClass..ShowInTaskBar(True)
+Gui.frmFrtClass..TitleBar(True)
+Gui.frmFrtClass.GSGCFrtClass.Create(GsGridControl)
+Gui.frmFrtClass.GSGCFrtClass.Size(11850,4650)
+Gui.frmFrtClass.GSGCFrtClass.Position(30,150)
+Gui.frmFrtClass.GSGCFrtClass.Enabled(True)
+Gui.frmFrtClass.GSGCFrtClass.Visible(True)
+Gui.frmFrtClass.GSGCFrtClass.Zorder(0)
+Gui.frmFrtClass.GSGCFrtClass.Event(CellValueChanged,GSGCFrtClass_CellValueChanged)
 Gui.frmItem..Create(BaseForm)
 Gui.frmItem..Caption("Item Master")
 Gui.frmItem..Size(10140,7995)
@@ -439,6 +465,12 @@ Program.Sub.Preflight.Start
 	V.Global.bIsPOR020.Declare(Boolean,False)
 	V.Global.bLoadHoldBlock.Declare(Boolean,False)
 	'Program.External.Include.Library("PPT_Canny.lib")
+	'7/14/26 BS - Freight Class child grid context
+	V.Global.sFrtClassPckNo.Declare
+	V.Global.sFrtClassOrderNo.Declare
+	V.Global.sFrtClassOrderLine.Declare
+	V.Global.sFrtClassWaybill.Declare
+	V.Global.iFrtClassRowIdx.Declare(Long)
 Program.Sub.Preflight.End
 Program.Sub.Main.Start
 	F.Intrinsic.Control.Try
@@ -3519,6 +3551,172 @@ Program.Sub.LoadShipSched.Start
 	F.Intrinsic.Control.EndTry
 Program.Sub.LoadShipSched.End
 
+Program.Sub.LoadFrtClassDetail.Start
+'-- 7/14/26 BS - Opens child grid showing pallet detail for the clicked order/line
+'-- Allows editing of Freight Class which saves to BOL_PART_INFO and BOL_ITEM
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	V.Local.sSQL.Declare
+	V.Local.iCnt.Declare(Long)
+	V.Local.sColumns.Declare
+
+	'-- Store context in globals for the CellValueChanged handler
+	V.Global.sFrtClassPckNo.Set(V.Args.PckNo)
+	V.Global.sFrtClassOrderNo.Set(V.Args.OrderNo)
+	V.Global.sFrtClassOrderLine.Set(V.Args.OrderLine)
+	V.Global.sFrtClassWaybill.Set(V.Args.Waybill)
+	V.Global.iFrtClassRowIdx.Set(V.Args.RowIdx)
+
+	'-- Close existing DataTable if open
+	F.Intrinsic.Control.If(V.DataTable.dtFrtClass.Exists,=,True)
+		F.Data.DataTable.Close("dtFrtClass")
+	F.Intrinsic.Control.EndIf
+
+	'-- Query all order lines sharing the same pallet(s) as the clicked order/line
+	F.Intrinsic.String.Build("SELECT DISTINCT BPD.ORDER_NO, BPD.ORDER_LINE, BPN.PLLT_NO, BPN.PKGD_WEIGHT, RTRIM(BPN.TRCKNG_NO) AS TRCKNG_NO, RTRIM(BPN.USR_DFND_NO) AS USR_DFND_NO, RTRIM(BPI.FRT_CLASS) AS FRT_CLASS FROM BOL_PACK_DTL BPD JOIN BOL_PALLET_NUM BPN ON BPD.PCK_NO = BPN.PCK_NO AND BPD.PLLT_NO = BPN.PLLT_NO LEFT JOIN BOL_PART_INFO BPI ON BPI.PCK_NO = BPD.PCK_NO AND BPI.ORDER_NO = BPD.ORDER_NO AND BPI.LINE = BPD.ORDER_LINE WHERE BPD.PCK_NO = '{0}' AND BPD.PLLT_NO IN (SELECT PLLT_NO FROM BOL_PACK_DTL WHERE PCK_NO = '{0}' AND ORDER_NO = '{1}' AND ORDER_LINE = '{2}0')",V.Args.PckNo,V.Args.OrderNo,V.Args.OrderLine,V.Local.sSQL)
+	F.Data.DataTable.CreateFromSQL("dtFrtClass","con",V.Local.sSQL,True)
+
+	'-- Bind to grid
+	Gui.frmFrtClass.GSGCFrtClass.AddGridViewFromDataTable("gvFrtClass","dtFrtClass")
+	Gui.frmFrtClass.GSGCFrtClass.SuspendLayout()
+	Gui.frmFrtClass.GSGCFrtClass.SetGridViewProperty("gvFrtClass","MultiSelect",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetGridViewProperty("gvFrtClass","OptionBehaviorEditable",True)
+	Gui.frmFrtClass.GSGCFrtClass.SetGridViewProperty("gvFrtClass","ReadOnly",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetGridViewProperty("gvFrtClass","AllowSort",True)
+	Gui.frmFrtClass.GSGCFrtClass.SetGridViewProperty("gvFrtClass","AllowFilter",True)
+	Gui.frmFrtClass.GSGCFrtClass.SetGridViewProperty("gvFrtClass","OptionsViewShowGroupPanel",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetGridViewProperty("gvFrtClass","AllowColumnMoving",False)
+
+	'-- Bold headers
+	F.Intrinsic.String.Split(V.DataTable.dtFrtClass.FieldNames,"*!*",V.Local.sColumns)
+	F.Intrinsic.Control.For(V.Local.iCnt,0,V.Local.sColumns.UBound,1)
+		Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass",V.Local.sColumns(V.Local.iCnt),"HeaderFontBold",True)
+	F.Intrinsic.Control.Next(V.Local.iCnt)
+
+	'-- ORDER_NO
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","ORDER_NO","Caption","Order")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","ORDER_NO","MinWidth","70")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","ORDER_NO","AllowEdit",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","ORDER_NO","ReadOnly",True)
+
+	'-- ORDER_LINE
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","ORDER_LINE","Caption","Line")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","ORDER_LINE","MinWidth","50")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","ORDER_LINE","AllowEdit",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","ORDER_LINE","ReadOnly",True)
+
+	'-- PLLT_NO
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PLLT_NO","Caption","Pallet No")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PLLT_NO","MinWidth","80")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PLLT_NO","AllowEdit",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PLLT_NO","ReadOnly",True)
+
+	'-- PKGD_WEIGHT
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PKGD_WEIGHT","Caption","Pkgd Weight")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PKGD_WEIGHT","MinWidth","90")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PKGD_WEIGHT","AllowEdit",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PKGD_WEIGHT","ReadOnly",True)
+
+	'-- TRCKNG_NO
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","TRCKNG_NO","Caption","Tracking No")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","TRCKNG_NO","MinWidth","150")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","TRCKNG_NO","AllowEdit",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","TRCKNG_NO","ReadOnly",True)
+
+	'-- USR_DFND_NO
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","USR_DFND_NO","Caption","User Defined No")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","USR_DFND_NO","MinWidth","150")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","USR_DFND_NO","AllowEdit",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","USR_DFND_NO","ReadOnly",True)
+
+	'-- FRT_CLASS (editable)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","FRT_CLASS","Caption","Freight Class")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","FRT_CLASS","MinWidth","80")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","FRT_CLASS","AllowEdit",True)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","FRT_CLASS","ReadOnly",False)
+
+	Gui.frmFrtClass.GSGCFrtClass.ResumeLayout()
+	Gui.frmFrtClass.GSGCFrtClass.MainView("gvFrtClass")
+
+	Gui.frmFrtClass..Show
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndTry
+Program.Sub.LoadFrtClassDetail.End
+
+Program.Sub.GSGCFrtClass_CellValueChanged.Start
+'-- 7/14/26 BS - Save freight class to BOL_PART_INFO and BOL_ITEM when edited in child grid
+'-- Updates ALL order lines on the same pallet in BOL_PART_INFO, child grid, and parent Load grid
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	V.Local.sSQL.Declare
+	V.Local.sNewClass.Declare
+	V.Local.sRowOrderNo.Declare
+	V.Local.sRowOrderLine.Declare
+	V.Local.iRow.Declare(Long)
+	V.Local.iLastRow.Declare(Long)
+	V.Local.sFilter.Declare
+	V.Local.sSel.Declare
+	V.Local.i.Declare(Long)
+
+	F.Intrinsic.Control.If(V.Args.Column,=,"FRT_CLASS")
+		V.Local.sNewClass.Set(V.Args.Value.Trim)
+
+		'-- Loop through all rows in dtFrtClass and update BOL_PART_INFO for each order/line
+		F.Intrinsic.Math.Sub(V.DataTable.dtFrtClass.RowCount,1,V.Local.iLastRow)
+		F.Intrinsic.Control.For(V.Local.iRow,0,V.Local.iLastRow,1)
+			V.Local.sRowOrderNo.Set(V.DataTable.dtFrtClass(V.Local.iRow).ORDER_NO!FieldValTrim)
+			V.Local.sRowOrderLine.Set(V.DataTable.dtFrtClass(V.Local.iRow).ORDER_LINE!FieldValTrim)
+
+			'-- Update BOL_PART_INFO for this order/line with audit trail
+			F.Intrinsic.String.Build("UPDATE BOL_PART_INFO SET FRT_CLASS = '{0}', CHG_PGM = '7546', CHG_BY = '{4}', CHG_DATE = CURDATE(), CHG_TIME = CURTIME() WHERE PCK_NO = '{1}' AND ORDER_NO = '{2}' AND LINE = '{3}'",V.Local.sNewClass,V.Global.sFrtClassPckNo,V.Local.sRowOrderNo,V.Local.sRowOrderLine,V.Caller.User,V.Local.sSQL)
+			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+
+			'-- Update FRT_CLASS in child grid DataTable
+			F.Data.Datatable.SetValue("dtFrtClass",V.Local.iRow,"FRT_CLASS",V.Local.sNewClass)
+		F.Intrinsic.Control.Next(V.Local.iRow)
+
+		'-- Update BOL_ITEM for all SEQ rows on this waybill
+		F.Intrinsic.Control.If(V.Global.sFrtClassWaybill.Trim,<>,"")
+			F.Intrinsic.String.Build("UPDATE BOL_ITEM SET FRT_CLASS = '{0}' WHERE WAYBILL_NO = '{1}'",V.Local.sNewClass,V.Global.sFrtClassWaybill.Trim,V.Local.sSQL)
+			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+		F.Intrinsic.Control.EndIf
+
+		'-- Update parent Load grid for all rows with same packing list
+		F.Intrinsic.String.Build("[Packing List] = '{0}'",V.Global.sFrtClassPckNo,V.Local.sFilter)
+		F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
+		F.Intrinsic.Control.If(V.Local.sSel.Trim,<>,"***NORETURN***")
+			F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+			F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
+				F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"FRT_CLASS",V.Local.sNewClass)
+			F.Intrinsic.Control.Next(V.Local.i)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndTry
+Program.Sub.GSGCFrtClass_CellValueChanged.End
+
+Program.Sub.frmFrtClass_UnLoad.Start
+'-- 7/14/26 BS - Hide freight class child form on close
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+
+	Gui.frmFrtClass..Visible(False)
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndTry
+Program.Sub.frmFrtClass_UnLoad.End
+
 Program.Sub.PrintPickList.Start
 	F.Intrinsic.Control.Try
 	V.Local.sError.Declare
@@ -5367,6 +5565,18 @@ Program.Sub.GsGCLoad_RowCellClick.Start
 			f.Intrinsic.Control.EndIf
 			F.Data.DataTable.Close("dtLocAddr")
 			
+		'7/14/26 BS - Freight Class child grid
+		F.Intrinsic.Control.Case("FRT_CLASS")
+			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"Packing List",V.Args.RowIndex,V.Local.sPackList)
+			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"ORDER_NO",V.Args.RowIndex,V.Local.sOrderNo)
+			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"RECORD_NO",V.Args.RowIndex,V.Local.sOrderLine)
+			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"WAY_BILL",V.Args.RowIndex,V.Local.sWaybill)
+			F.Intrinsic.Control.If(V.Local.sPackList.Trim,<>,"")
+				F.Intrinsic.Control.CallSub(LoadFrtClassDetail,"PckNo",V.Local.sPackList,"OrderNo",V.Local.sOrderNo,"OrderLine",V.Local.sOrderLine,"Waybill",V.Local.sWaybill,"RowIdx",V.Args.RowIndex)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.UnBlockEvents
+			F.Intrinsic.Control.ExitSub
+
 		Function.Intrinsic.Control.EndSelect
 	f.Intrinsic.Control.UnBlockEvents
 	
@@ -10247,6 +10457,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260714110755895$}$CursorSigned
-${$7$}$File Version:1.0.20260714180755.0
+${$6$}$bstevens$}$20260714133548116$}$CursorSigned
+${$7$}$File Version:1.0.20260714203548.0
 Program.Sub.Comments.End
