@@ -276,9 +276,12 @@ Gui.frmFrtClass..ControlBox(True)
 Gui.frmFrtClass..Moveable(True)
 Gui.frmFrtClass..ShowInTaskBar(True)
 Gui.frmFrtClass..TitleBar(True)
+Gui.frmFrtClass.btnCalcClass.Create(Button,"Calculate Class",True,1200,300,30,30,True,0,"Tahoma",8.25)
+Gui.frmFrtClass.btnCalcClass.Enabled(True)
+Gui.frmFrtClass.btnCalcClass.Event(Click,btnCalcClass_Click)
 Gui.frmFrtClass.GSGCFrtClass.Create(GsGridControl)
-Gui.frmFrtClass.GSGCFrtClass.Size(11850,4650)
-Gui.frmFrtClass.GSGCFrtClass.Position(30,150)
+Gui.frmFrtClass.GSGCFrtClass.Size(11850,4350)
+Gui.frmFrtClass.GSGCFrtClass.Position(30,450)
 Gui.frmFrtClass.GSGCFrtClass.Enabled(True)
 Gui.frmFrtClass.GSGCFrtClass.Visible(True)
 Gui.frmFrtClass.GSGCFrtClass.Zorder(0)
@@ -471,6 +474,8 @@ Program.Sub.Preflight.Start
 	V.Global.sFrtClassOrderLine.Declare
 	V.Global.sFrtClassWaybill.Declare
 	V.Global.iFrtClassRowIdx.Declare(Long)
+	V.Global.sFrtClassNMFC.Declare
+	V.Global.sFrtClassWarned.Declare
 Program.Sub.Preflight.End
 Program.Sub.Main.Start
 	F.Intrinsic.Control.Try
@@ -3620,8 +3625,8 @@ Program.Sub.LoadFrtClassDetail.Start
 	'-- TRCKNG_NO
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","TRCKNG_NO","Caption","Tracking No")
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","TRCKNG_NO","MinWidth","150")
-	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","TRCKNG_NO","AllowEdit",False)
-	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","TRCKNG_NO","ReadOnly",True)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","TRCKNG_NO","AllowEdit",True)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","TRCKNG_NO","ReadOnly",False)
 
 	'-- USR_DFND_NO
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","USR_DFND_NO","Caption","User Defined No")
@@ -3638,6 +3643,7 @@ Program.Sub.LoadFrtClassDetail.Start
 	Gui.frmFrtClass.GSGCFrtClass.ResumeLayout()
 	Gui.frmFrtClass.GSGCFrtClass.MainView("gvFrtClass")
 
+	Gui.frmFrtClass.btnCalcClass.Enabled(True)
 	Gui.frmFrtClass..Show
 
 	F.Intrinsic.Control.Catch
@@ -3696,6 +3702,22 @@ Program.Sub.GSGCFrtClass_CellValueChanged.Start
 		F.Intrinsic.Control.EndIf
 	F.Intrinsic.Control.EndIf
 
+	F.Intrinsic.Control.If(V.Args.Column,=,"TRCKNG_NO")
+		'-- Update BOL_PALLET_NUM with new dimensions
+		V.Local.sRowOrderNo.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).PLLT_NO!FieldValTrim)
+		F.Intrinsic.String.Build("UPDATE BOL_PALLET_NUM SET TRCKNG_NO = '{0}', CHG_PGM = '7546', CHG_BY = '{3}', CHG_DATE = CURDATE(), CHG_TIME = CURTIME() WHERE PCK_NO = '{1}' AND PLLT_NO = '{2}'",V.Args.Value.Trim,V.Global.sFrtClassPckNo,V.Local.sRowOrderNo,V.Caller.User,V.Local.sSQL)
+		F.ODBC.Connection!con.Execute(V.Local.sSQL)
+
+		'-- Propagate to all rows in child grid with same pallet number
+		F.Intrinsic.Math.Sub(V.DataTable.dtFrtClass.RowCount,1,V.Local.iLastRow)
+		F.Intrinsic.Control.For(V.Local.iRow,0,V.Local.iLastRow,1)
+			V.Local.sRowOrderLine.Set(V.DataTable.dtFrtClass(V.Local.iRow).PLLT_NO!FieldValTrim)
+			F.Intrinsic.Control.If(V.Local.sRowOrderLine,=,V.Local.sRowOrderNo)
+				F.Data.Datatable.SetValue("dtFrtClass",V.Local.iRow,"TRCKNG_NO",V.Args.Value.Trim)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.Next(V.Local.iRow)
+	F.Intrinsic.Control.EndIf
+
 	F.Intrinsic.Control.Catch
 		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
 		F.Intrinsic.UI.Msgbox(V.Local.sError)
@@ -3716,6 +3738,210 @@ Program.Sub.frmFrtClass_UnLoad.Start
 		F.Intrinsic.Control.End
 	F.Intrinsic.Control.EndTry
 Program.Sub.frmFrtClass_UnLoad.End
+
+Program.Sub.btnCalcClass_Click.Start
+'-- 7/14/26 BS - Delegate to CalcFrtClass subroutine
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+
+	F.Intrinsic.Control.CallSub(CalcFrtClass)
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndTry
+Program.Sub.btnCalcClass_Click.End
+
+Program.Sub.CalcFrtClass.Start
+'-- 7/14/26 BS - Calculate freight class from density (NMFC 57410)
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	V.Local.iRow.Declare(Long)
+	V.Local.iLastRow.Declare(Long)
+	V.Local.sVal.Declare
+	V.Local.sCalcClass.Declare
+	V.Local.sSQL.Declare
+	V.Local.sRows.Declare
+
+	'-- NMFC 57410 guard
+	F.Intrinsic.Control.If(V.Global.sFrtClassNMFC.Trim,<>,"57410")
+		F.Intrinsic.UI.Msgbox("Calculate Class is only available for NMFC 57410.","Information")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+
+	'-- Clear warned-pallets tracker
+	V.Global.sFrtClassWarned.Set("")
+
+	'-- Loop through rows - delegate per-row calculation
+	F.Intrinsic.Math.Sub(V.DataTable.dtFrtClass.RowCount,1,V.Local.iLastRow)
+	F.Intrinsic.Control.For(V.Local.iRow,0,V.Local.iLastRow,1)
+		V.Global.iFrtClassRowIdx.Set(V.Local.iRow)
+		F.Intrinsic.Control.CallSub(CalcOneRow)
+	F.Intrinsic.Control.Next(V.Local.iRow)
+
+	'-- Get calculated class from first row for BOL_ITEM and parent grid
+	V.Local.sCalcClass.Set(V.DataTable.dtFrtClass(0).FRT_CLASS!FieldValTrim)
+	F.Intrinsic.Control.If(V.Local.sCalcClass.Trim,=,"")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+
+	'-- Update BOL_ITEM
+	F.Intrinsic.Control.If(V.Global.sFrtClassWaybill.Trim,<>,"")
+		F.Intrinsic.String.Build("UPDATE BOL_ITEM SET FRT_CLASS = '{0}' WHERE WAYBILL_NO = '{1}'",V.Local.sCalcClass,V.Global.sFrtClassWaybill.Trim,V.Local.sSQL)
+		F.ODBC.Connection!con.Execute(V.Local.sSQL)
+	F.Intrinsic.Control.EndIf
+
+	'-- Update parent Load grid
+	F.Intrinsic.String.Build("[Packing List] = '{0}'",V.Global.sFrtClassPckNo,V.Local.sVal)
+	F.Data.Datatable.Select("dtLoad",V.Local.sVal,V.Local.sRows)
+	F.Intrinsic.Control.If(V.Local.sRows.Trim,<>,"***NORETURN***")
+		F.Intrinsic.String.Split(V.Local.sRows,"*!*",V.Local.sVal)
+		F.Intrinsic.Math.Sub(V.Local.sVal.UBound,0,V.Local.iLastRow)
+		F.Intrinsic.Control.For(V.Local.iRow,0,V.Local.iLastRow,1)
+			F.Data.Datatable.SetValue("dtLoad",V.Local.sVal(V.Local.iRow),"FRT_CLASS",V.Local.sCalcClass)
+		F.Intrinsic.Control.Next(V.Local.iRow)
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndTry
+Program.Sub.CalcFrtClass.End
+
+Program.Sub.CalcOneRow.Start
+'-- 7/14/26 BS - Calculate freight class for one row (no Decimal vars - GAB bug workaround)
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	V.Local.sVal.Declare
+	V.Local.sWeight.Declare
+	V.Local.sVolume.Declare
+	V.Local.sDensity.Declare
+	V.Local.sParts.Declare
+	V.Local.sClass.Declare
+	V.Local.sSQL.Declare
+	V.Local.sOrderNo.Declare
+	V.Local.sOrderLine.Declare
+	V.Local.sPallet.Declare
+	V.Local.bWarned.Declare
+
+	'-- Read pallet number for once-per-pallet warning logic
+	V.Local.sPallet.Set(V.DataTable.dtFrtClass(V.Global.iFrtClassRowIdx).PLLT_NO!FieldValTrim)
+	F.Intrinsic.String.InStr(V.Global.sFrtClassWarned,V.Local.sPallet,V.Local.bWarned)
+
+	'-- Read order/line for warning messages
+	V.Local.sOrderNo.Set(V.DataTable.dtFrtClass(V.Global.iFrtClassRowIdx).ORDER_NO!FieldValTrim)
+	V.Local.sOrderLine.Set(V.DataTable.dtFrtClass(V.Global.iFrtClassRowIdx).ORDER_LINE!FieldValTrim)
+
+	'-- Read weight
+	V.Local.sWeight.Set(V.DataTable.dtFrtClass(V.Global.iFrtClassRowIdx).PKGD_WEIGHT!FieldValTrim)
+	F.Intrinsic.Control.If(V.Local.sWeight,=,"")
+		F.Intrinsic.Control.If(V.Local.bWarned,=,"0")
+			F.Intrinsic.String.Build("Pallet {0} (Order {1}/{2}): Packaged Weight is empty. Cannot calculate class.",V.Local.sPallet,V.Local.sOrderNo,V.Local.sOrderLine,V.Local.sVal)
+			F.Intrinsic.UI.Msgbox(V.Local.sVal,"Validation")
+			F.Intrinsic.String.Build("{0}|{1}",V.Global.sFrtClassWarned,V.Local.sPallet,V.Global.sFrtClassWarned)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sWeight,<=,"0")
+		F.Intrinsic.Control.If(V.Local.bWarned,=,"0")
+			F.Intrinsic.String.Build("Pallet {0} (Order {1}/{2}): Packaged Weight must be > 0. Current value: {3}",V.Local.sPallet,V.Local.sOrderNo,V.Local.sOrderLine,V.Local.sWeight,V.Local.sVal)
+			F.Intrinsic.UI.Msgbox(V.Local.sVal,"Validation")
+			F.Intrinsic.String.Build("{0}|{1}",V.Global.sFrtClassWarned,V.Local.sPallet,V.Global.sFrtClassWarned)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+
+	'-- Read dimensions and validate format (L W H)
+	V.Local.sVal.Set(V.DataTable.dtFrtClass(V.Global.iFrtClassRowIdx).TRCKNG_NO!FieldValTrim)
+	F.Intrinsic.Control.If(V.Local.sVal,=,"")
+		F.Intrinsic.Control.If(V.Local.bWarned,=,"0")
+			F.Intrinsic.String.Build("Pallet {0} (Order {1}/{2}): Tracking No is empty. Must be in format 'L W H' (e.g. '40 40 48').",V.Local.sPallet,V.Local.sOrderNo,V.Local.sOrderLine,V.Local.sError)
+			F.Intrinsic.UI.Msgbox(V.Local.sError,"Validation")
+			F.Intrinsic.String.Build("{0}|{1}",V.Global.sFrtClassWarned,V.Local.sPallet,V.Global.sFrtClassWarned)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Split(V.Local.sVal," ",V.Local.sParts)
+	F.Intrinsic.Control.If(V.Local.sParts.UBound,<>,2)
+		F.Intrinsic.Control.If(V.Local.bWarned,=,"0")
+			F.Intrinsic.String.Build("Pallet {0} (Order {1}/{2}): Tracking No '{3}' is not in required format 'L W H' (3 numeric values separated by spaces).",V.Local.sPallet,V.Local.sOrderNo,V.Local.sOrderLine,V.Local.sVal,V.Local.sError)
+			F.Intrinsic.UI.Msgbox(V.Local.sError,"Validation")
+			F.Intrinsic.String.Build("{0}|{1}",V.Global.sFrtClassWarned,V.Local.sPallet,V.Global.sFrtClassWarned)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Math.IsNumeric(V.Local.sParts(0),V.Local.sError)
+	F.Intrinsic.Control.If(V.Local.sError,=,"False")
+		F.Intrinsic.Control.If(V.Local.bWarned,=,"0")
+			F.Intrinsic.String.Build("Pallet {0} (Order {1}/{2}): Tracking No '{3}' contains non-numeric value. All dimensions must be numeric.",V.Local.sPallet,V.Local.sOrderNo,V.Local.sOrderLine,V.Local.sVal,V.Local.sError)
+			F.Intrinsic.UI.Msgbox(V.Local.sError,"Validation")
+			F.Intrinsic.String.Build("{0}|{1}",V.Global.sFrtClassWarned,V.Local.sPallet,V.Global.sFrtClassWarned)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Math.IsNumeric(V.Local.sParts(1),V.Local.sError)
+	F.Intrinsic.Control.If(V.Local.sError,=,"False")
+		F.Intrinsic.Control.If(V.Local.bWarned,=,"0")
+			F.Intrinsic.String.Build("Pallet {0} (Order {1}/{2}): Tracking No '{3}' contains non-numeric value. All dimensions must be numeric.",V.Local.sPallet,V.Local.sOrderNo,V.Local.sOrderLine,V.Local.sVal,V.Local.sError)
+			F.Intrinsic.UI.Msgbox(V.Local.sError,"Validation")
+			F.Intrinsic.String.Build("{0}|{1}",V.Global.sFrtClassWarned,V.Local.sPallet,V.Global.sFrtClassWarned)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Math.IsNumeric(V.Local.sParts(2),V.Local.sError)
+	F.Intrinsic.Control.If(V.Local.sError,=,"False")
+		F.Intrinsic.Control.If(V.Local.bWarned,=,"0")
+			F.Intrinsic.String.Build("Pallet {0} (Order {1}/{2}): Tracking No '{3}' contains non-numeric value. All dimensions must be numeric.",V.Local.sPallet,V.Local.sOrderNo,V.Local.sOrderLine,V.Local.sVal,V.Local.sError)
+			F.Intrinsic.UI.Msgbox(V.Local.sError,"Validation")
+			F.Intrinsic.String.Build("{0}|{1}",V.Global.sFrtClassWarned,V.Local.sPallet,V.Global.sFrtClassWarned)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+
+	'-- Volume in cubic inches: L * W * H
+	F.Intrinsic.Math.Mult(V.Local.sParts(0),V.Local.sParts(1),V.Local.sVolume)
+	F.Intrinsic.Math.Mult(V.Local.sVolume,V.Local.sParts(2),V.Local.sVolume)
+
+	'-- Convert to cubic feet: volume / 1728
+	F.Intrinsic.Math.Div(V.Local.sVolume,1728,V.Local.sVolume)
+	F.Intrinsic.Control.If(V.Local.sVolume,<=,"0")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+
+	'-- Density: weight / cubic feet
+	F.Intrinsic.Math.Div(V.Local.sWeight,V.Local.sVolume,V.Local.sDensity)
+
+	'-- Density to Class lookup (must check highest first)
+	F.Intrinsic.Control.If(V.Local.sDensity,>=,"15")
+		V.Local.sClass.Set("70")
+	F.Intrinsic.Control.ElseIf(V.Local.sDensity,>=,"12")
+		V.Local.sClass.Set("85")
+	F.Intrinsic.Control.ElseIf(V.Local.sDensity,>=,"10")
+		V.Local.sClass.Set("92.5")
+	F.Intrinsic.Control.ElseIf(V.Local.sDensity,>=,"8")
+		V.Local.sClass.Set("100")
+	F.Intrinsic.Control.ElseIf(V.Local.sDensity,>=,"6")
+		V.Local.sClass.Set("125")
+	F.Intrinsic.Control.ElseIf(V.Local.sDensity,>=,"4")
+		V.Local.sClass.Set("175")
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+
+	'-- Save to DataTable
+	F.Data.Datatable.SetValue("dtFrtClass",V.Global.iFrtClassRowIdx,"FRT_CLASS",V.Local.sClass)
+
+	'-- Update BOL_PART_INFO with audit trail
+	F.Intrinsic.String.Build("UPDATE BOL_PART_INFO SET FRT_CLASS = '{0}', CHG_PGM = '7546', CHG_BY = '{4}', CHG_DATE = CURDATE(), CHG_TIME = CURTIME() WHERE PCK_NO = '{1}' AND ORDER_NO = '{2}' AND LINE = '{3}'",V.Local.sClass,V.Global.sFrtClassPckNo,V.Local.sOrderNo,V.Local.sOrderLine,V.Caller.User,V.Local.sSQL)
+	F.ODBC.Connection!con.Execute(V.Local.sSQL)
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("CalcOneRow error: {0} - {1}",V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.EndTry
+Program.Sub.CalcOneRow.End
 
 Program.Sub.PrintPickList.Start
 	F.Intrinsic.Control.Try
@@ -5571,6 +5797,7 @@ Program.Sub.GsGCLoad_RowCellClick.Start
 			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"ORDER_NO",V.Args.RowIndex,V.Local.sOrderNo)
 			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"RECORD_NO",V.Args.RowIndex,V.Local.sOrderLine)
 			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"WAY_BILL",V.Args.RowIndex,V.Local.sWaybill)
+			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"NMFC_NO",V.Args.RowIndex,V.Global.sFrtClassNMFC)
 			F.Intrinsic.Control.If(V.Local.sPackList.Trim,<>,"")
 				F.Intrinsic.Control.CallSub(LoadFrtClassDetail,"PckNo",V.Local.sPackList,"OrderNo",V.Local.sOrderNo,"OrderLine",V.Local.sOrderLine,"Waybill",V.Local.sWaybill,"RowIdx",V.Args.RowIndex)
 			F.Intrinsic.Control.EndIf
@@ -10457,6 +10684,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260714133548116$}$CursorSigned
-${$7$}$File Version:1.0.20260714203548.0
+${$6$}$bstevens$}$20260714161429917$}$CursorSigned
+${$7$}$File Version:1.0.20260714231429.0
 Program.Sub.Comments.End
