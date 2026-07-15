@@ -259,7 +259,7 @@ Gui.frmShipSch.GSGCShipSch.Visible(True)
 Gui.frmShipSch.GSGCShipSch.Zorder(0)
 Gui.frmFrtClass..Create(BaseForm)
 Gui.frmFrtClass..Caption("Freight Class - Pallet Detail")
-Gui.frmFrtClass..Size(12000,5000)
+Gui.frmFrtClass..Size(14500,5000)
 Gui.frmFrtClass..Position(0,0)
 Gui.frmFrtClass..BackColor(-2147483633)
 Gui.frmFrtClass..MaxButton(False)
@@ -280,7 +280,7 @@ Gui.frmFrtClass.btnCalcClass.Create(Button,"Calculate Class",True,1200,300,30,30
 Gui.frmFrtClass.btnCalcClass.Enabled(True)
 Gui.frmFrtClass.btnCalcClass.Event(Click,btnCalcClass_Click)
 Gui.frmFrtClass.GSGCFrtClass.Create(GsGridControl)
-Gui.frmFrtClass.GSGCFrtClass.Size(11850,4350)
+Gui.frmFrtClass.GSGCFrtClass.Size(14350,4350)
 Gui.frmFrtClass.GSGCFrtClass.Position(30,450)
 Gui.frmFrtClass.GSGCFrtClass.Enabled(True)
 Gui.frmFrtClass.GSGCFrtClass.Visible(True)
@@ -476,6 +476,7 @@ Program.Sub.Preflight.Start
 	V.Global.iFrtClassRowIdx.Declare(Long)
 	V.Global.sFrtClassNMFC.Declare
 	V.Global.sFrtClassWarned.Declare
+	V.Global.sFrtClassWtPallets.Declare
 Program.Sub.Preflight.End
 Program.Sub.Main.Start
 	F.Intrinsic.Control.Try
@@ -3578,7 +3579,7 @@ Program.Sub.LoadFrtClassDetail.Start
 	F.Intrinsic.Control.EndIf
 
 	'-- Query all order lines sharing the same pallet(s) as the clicked order/line
-	F.Intrinsic.String.Build("SELECT DISTINCT BPD.ORDER_NO, BPD.ORDER_LINE, BPN.PLLT_NO, BPN.PKGD_WEIGHT, RTRIM(BPN.TRCKNG_NO) AS TRCKNG_NO, RTRIM(BPN.USR_DFND_NO) AS USR_DFND_NO, RTRIM(BPI.FRT_CLASS) AS FRT_CLASS FROM BOL_PACK_DTL BPD JOIN BOL_PALLET_NUM BPN ON BPD.PCK_NO = BPN.PCK_NO AND BPD.PLLT_NO = BPN.PLLT_NO LEFT JOIN BOL_PART_INFO BPI ON BPI.PCK_NO = BPD.PCK_NO AND BPI.ORDER_NO = BPD.ORDER_NO AND BPI.LINE = BPD.ORDER_LINE WHERE BPD.PCK_NO = '{0}' AND BPD.PLLT_NO IN (SELECT PLLT_NO FROM BOL_PACK_DTL WHERE PCK_NO = '{0}' AND ORDER_NO = '{1}' AND ORDER_LINE = '{2}0')",V.Args.PckNo,V.Args.OrderNo,V.Args.OrderLine,V.Local.sSQL)
+	F.Intrinsic.String.Build("SELECT DISTINCT BPD.ORDER_NO, BPD.ORDER_LINE, RTRIM(BPD.PART) AS PART, RTRIM(BPD.LOCN) AS LOCN, RTRIM(BPD.LOT) AS LOT, RTRIM(BPD.BIN) AS BIN, RTRIM(BPD.HEAT) AS HEAT, RTRIM(BPD.SERIAL) AS SERIAL, BPD.CRTN_NO, BPD.QTY, BPD.LBS_PER_PC, RTRIM(BPD.PLLT_CD) AS PLLT_CD, BPN.PLLT_NO, BPN.PKGD_WEIGHT, RTRIM(BPN.TRCKNG_NO) AS TRCKNG_NO, RTRIM(BPN.USR_DFND_NO) AS USR_DFND_NO, RTRIM(BPI.FRT_CLASS) AS FRT_CLASS FROM BOL_PACK_DTL BPD JOIN BOL_PALLET_NUM BPN ON BPD.PCK_NO = BPN.PCK_NO AND BPD.PLLT_NO = BPN.PLLT_NO LEFT JOIN BOL_PART_INFO BPI ON BPI.PCK_NO = BPD.PCK_NO AND BPI.ORDER_NO = BPD.ORDER_NO AND BPI.LINE = BPD.ORDER_LINE WHERE BPD.PCK_NO = '{0}' AND BPD.PLLT_NO IN (SELECT PLLT_NO FROM BOL_PACK_DTL WHERE PCK_NO = '{0}' AND ORDER_NO = '{1}' AND ORDER_LINE = '{2}0')",V.Args.PckNo,V.Args.OrderNo,V.Args.OrderLine,V.Local.sSQL)
 	F.Data.DataTable.CreateFromSQL("dtFrtClass","con",V.Local.sSQL,True)
 
 	'-- Bind to grid
@@ -3610,6 +3611,28 @@ Program.Sub.LoadFrtClassDetail.Start
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","ORDER_LINE","AllowEdit",False)
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","ORDER_LINE","ReadOnly",True)
 
+	'-- PART
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PART","Caption","Part")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PART","MinWidth","100")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PART","AllowEdit",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PART","ReadOnly",True)
+
+	'-- LOCN
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","LOCN","Caption","Location")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","LOCN","MinWidth","60")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","LOCN","AllowEdit",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","LOCN","ReadOnly",True)
+
+	'-- Hidden S20 context fields
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","LOT","Visible",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","BIN","Visible",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","HEAT","Visible",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","SERIAL","Visible",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","CRTN_NO","Visible",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","QTY","Visible",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","LBS_PER_PC","Visible",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PLLT_CD","Visible",False)
+
 	'-- PLLT_NO
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PLLT_NO","Caption","Pallet No")
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PLLT_NO","MinWidth","80")
@@ -3619,14 +3642,16 @@ Program.Sub.LoadFrtClassDetail.Start
 	'-- PKGD_WEIGHT
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PKGD_WEIGHT","Caption","Pkgd Weight")
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PKGD_WEIGHT","MinWidth","90")
-	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PKGD_WEIGHT","AllowEdit",False)
-	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PKGD_WEIGHT","ReadOnly",True)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PKGD_WEIGHT","AllowEdit",True)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PKGD_WEIGHT","ReadOnly",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PKGD_WEIGHT","CellBackColor","LightYellow")
 
 	'-- TRCKNG_NO
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","TRCKNG_NO","Caption","Tracking No")
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","TRCKNG_NO","MinWidth","150")
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","TRCKNG_NO","AllowEdit",True)
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","TRCKNG_NO","ReadOnly",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","TRCKNG_NO","CellBackColor","LightYellow")
 
 	'-- USR_DFND_NO
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","USR_DFND_NO","Caption","User Defined No")
@@ -3639,11 +3664,13 @@ Program.Sub.LoadFrtClassDetail.Start
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","FRT_CLASS","MinWidth","80")
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","FRT_CLASS","AllowEdit",True)
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","FRT_CLASS","ReadOnly",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","FRT_CLASS","CellBackColor","LightYellow")
 
 	Gui.frmFrtClass.GSGCFrtClass.ResumeLayout()
 	Gui.frmFrtClass.GSGCFrtClass.MainView("gvFrtClass")
 
 	Gui.frmFrtClass.btnCalcClass.Enabled(True)
+	V.Global.sFrtClassWtPallets.Set("")
 	Gui.frmFrtClass..Show
 
 	F.Intrinsic.Control.Catch
@@ -3667,6 +3694,25 @@ Program.Sub.GSGCFrtClass_CellValueChanged.Start
 	V.Local.sFilter.Declare
 	V.Local.sSel.Declare
 	V.Local.i.Declare(Long)
+	V.Local.sTransIDNew.Declare
+	V.Local.sPallet.Declare
+	V.Local.sWtCheck.Declare
+	V.Local.sNowStamp.Declare
+	V.Local.sDateChg.Declare
+	V.Local.sTimeChg.Declare
+	V.Local.sOrderNo.Declare
+	V.Local.sOrderLine.Declare
+	V.Local.sPart.Declare
+	V.Local.sLocn.Declare
+	V.Local.sLot.Declare
+	V.Local.sBin.Declare
+	V.Local.sHeat.Declare
+	V.Local.sSerial.Declare
+	V.Local.sCrtnNo.Declare
+	V.Local.sQty.Declare
+	V.Local.sLbsPerPc.Declare
+	V.Local.sPlltCd.Declare
+	V.Local.sTrckngNo.Declare
 
 	F.Intrinsic.Control.If(V.Args.Column,=,"FRT_CLASS")
 		V.Local.sNewClass.Set(V.Args.Value.Trim)
@@ -3714,6 +3760,107 @@ Program.Sub.GSGCFrtClass_CellValueChanged.Start
 			V.Local.sRowOrderLine.Set(V.DataTable.dtFrtClass(V.Local.iRow).PLLT_NO!FieldValTrim)
 			F.Intrinsic.Control.If(V.Local.sRowOrderLine,=,V.Local.sRowOrderNo)
 				F.Data.Datatable.SetValue("dtFrtClass",V.Local.iRow,"TRCKNG_NO",V.Args.Value.Trim)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.Next(V.Local.iRow)
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.If(V.Args.Column,=,"PKGD_WEIGHT")
+		'-- 7/15/26 BS - Update pallet weight via S20 WirePoll (once per pallet)
+		V.Local.sPallet.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).PLLT_NO!FieldValTrim)
+		V.Local.sOrderNo.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).ORDER_NO!FieldValTrim)
+		V.Local.sOrderLine.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).ORDER_LINE!FieldValTrim)
+		V.Local.sPart.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).PART!FieldValTrim)
+		V.Local.sLocn.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).LOCN!FieldValTrim)
+		V.Local.sLot.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).LOT!FieldValTrim)
+		V.Local.sBin.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).BIN!FieldValTrim)
+		V.Local.sHeat.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).HEAT!FieldValTrim)
+		V.Local.sSerial.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).SERIAL!FieldValTrim)
+		V.Local.sCrtnNo.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).CRTN_NO!FieldValTrim)
+		V.Local.sQty.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).QTY!FieldValTrim)
+		V.Local.sLbsPerPc.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).LBS_PER_PC!FieldValTrim)
+		V.Local.sPlltCd.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).PLLT_CD!FieldValTrim)
+		V.Local.sTrckngNo.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).TRCKNG_NO!FieldValTrim)
+
+		'-- Check if S20 already submitted for this pallet in this session
+		F.Intrinsic.String.InStr(V.Global.sFrtClassWtPallets,V.Local.sPallet,V.Local.sWtCheck)
+		F.Intrinsic.Control.If(V.Local.sWtCheck,=,"0")
+			'-- Derive audit timestamp
+			V.Local.sNowStamp.Set(V.Ambient.Now.FormatYYYYMMDDHHNNSS)
+			F.Intrinsic.String.Mid(V.Local.sNowStamp,1,8,V.Local.sDateChg)
+			F.Intrinsic.String.Mid(V.Local.sNowStamp,9,6,V.Local.sTimeChg)
+			F.Intrinsic.String.Concat(V.Local.sTimeChg,"00",V.Local.sTimeChg)
+
+			'-- Get next TRANS_ID
+			F.ODBC.Connection!con.ExecuteAndReturn("SELECT TOP 1 RIGHT(CONCAT('000000000',CAST(TRANS_ID AS INT)+1),9) AS TRANS_ID FROM WIRELESS_HDR ORDER BY TRANS_ID DESC",V.Local.sTransIDNew)
+			F.Intrinsic.String.LPad(V.Local.sTransIDNew,"0",9,V.Local.sTransIDNew)
+
+			'-- INSERT WIRELESS_HDR
+			F.Intrinsic.String.Build("INSERT INTO WIRELESS_HDR (TRANS_ID,TRANS_TYPE,ATTEMPTED_DATE,ATTEMPTED_TIME,USER_ID,BATCH,ATTEMPTED_FLAG) VALUES ('{0}','S20','00000000','00000000','{1}',0,'Y')",V.Local.sTransIDNew,V.Caller.User,V.Local.sSQL)
+			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+
+			'-- INSERT WIRELESS_LINE: all S20 context fields per mobile form
+			F.Intrinsic.StringBuilder.Create("sbSQL")
+			F.Intrinsic.StringBuilder.Append("sbSQL","INSERT INTO WIRELESS_LINE (TRANS_ID,SEQ,TRANS_TYPE,FIELD_1,FIELD_2,FIELD_3,FIELD_4,FIELD_5,FIELD_6,FIELD_7,FIELD_8,FIELD_9,FIELD_10,FIELD_11,FIELD_13,FIELD_14,FIELD_15,FIELD_18,FIELD_19,FIELD_21,FIELD_23,FIELD_24,ERROR_ID,DATE_LAST_CHG,TIME_LAST_CHG,LAST_CHG_BY) VALUES ('")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sTransIDNew)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','0000','S20','")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Global.sFrtClassPckNo)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sOrderNo)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sOrderLine)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sPart)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sLocn)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sLot)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sBin)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sHeat)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sSerial)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sCrtnNo)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sPallet)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sPlltCd)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sQty)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sLbsPerPc)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Args.Value.Trim)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sTrckngNo)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sPallet)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','N','N',0,'")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sDateChg)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sTimeChg)
+			F.Intrinsic.StringBuilder.Append("sbSQL","','")
+			F.Intrinsic.StringBuilder.Append("sbSQL",V.Caller.User)
+			F.Intrinsic.StringBuilder.Append("sbSQL","')")
+			F.Intrinsic.StringBuilder.ToString("sbSQL",V.Local.sSQL)
+			F.Intrinsic.StringBuilder.Dispose("sbSQL")
+			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+
+			'-- Release for WirePoll
+			F.Intrinsic.String.Build("UPDATE WIRELESS_HDR SET ATTEMPTED_FLAG='' WHERE TRANS_ID='{0}'",V.Local.sTransIDNew,V.Local.sSQL)
+			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+
+			'-- Mark pallet as submitted
+			F.Intrinsic.String.Build("{0}|{1}",V.Global.sFrtClassWtPallets,V.Local.sPallet,V.Global.sFrtClassWtPallets)
+		F.Intrinsic.Control.EndIf
+
+		'-- Propagate to all rows with same pallet number
+		F.Intrinsic.Math.Sub(V.DataTable.dtFrtClass.RowCount,1,V.Local.iLastRow)
+		F.Intrinsic.Control.For(V.Local.iRow,0,V.Local.iLastRow,1)
+			V.Local.sRowOrderLine.Set(V.DataTable.dtFrtClass(V.Local.iRow).PLLT_NO!FieldValTrim)
+			F.Intrinsic.Control.If(V.Local.sRowOrderLine,=,V.Local.sPallet)
+				F.Data.Datatable.SetValue("dtFrtClass",V.Local.iRow,"PKGD_WEIGHT",V.Args.Value.Trim)
 			F.Intrinsic.Control.EndIf
 		F.Intrinsic.Control.Next(V.Local.iRow)
 	F.Intrinsic.Control.EndIf
@@ -3853,20 +4000,21 @@ Program.Sub.CalcOneRow.Start
 		F.Intrinsic.Control.ExitSub
 	F.Intrinsic.Control.EndIf
 
-	'-- Read dimensions and validate format (L W H)
+	'-- Read dimensions and validate format (LxWxH)
 	V.Local.sVal.Set(V.DataTable.dtFrtClass(V.Global.iFrtClassRowIdx).TRCKNG_NO!FieldValTrim)
 	F.Intrinsic.Control.If(V.Local.sVal,=,"")
 		F.Intrinsic.Control.If(V.Local.bWarned,=,"0")
-			F.Intrinsic.String.Build("Pallet {0} (Order {1}/{2}): Tracking No is empty. Must be in format 'L W H' (e.g. '40 40 48').",V.Local.sPallet,V.Local.sOrderNo,V.Local.sOrderLine,V.Local.sError)
+			F.Intrinsic.String.Build("Pallet {0} (Order {1}/{2}): Tracking No is empty. Must be in format 'LxWxH' (e.g. '40x40x48').",V.Local.sPallet,V.Local.sOrderNo,V.Local.sOrderLine,V.Local.sError)
 			F.Intrinsic.UI.Msgbox(V.Local.sError,"Validation")
 			F.Intrinsic.String.Build("{0}|{1}",V.Global.sFrtClassWarned,V.Local.sPallet,V.Global.sFrtClassWarned)
 		F.Intrinsic.Control.EndIf
 		F.Intrinsic.Control.ExitSub
 	F.Intrinsic.Control.EndIf
-	F.Intrinsic.String.Split(V.Local.sVal," ",V.Local.sParts)
+	F.Intrinsic.String.UCase(V.Local.sVal,V.Local.sVal)
+	F.Intrinsic.String.Split(V.Local.sVal,"X",V.Local.sParts)
 	F.Intrinsic.Control.If(V.Local.sParts.UBound,<>,2)
 		F.Intrinsic.Control.If(V.Local.bWarned,=,"0")
-			F.Intrinsic.String.Build("Pallet {0} (Order {1}/{2}): Tracking No '{3}' is not in required format 'L W H' (3 numeric values separated by spaces).",V.Local.sPallet,V.Local.sOrderNo,V.Local.sOrderLine,V.Local.sVal,V.Local.sError)
+			F.Intrinsic.String.Build("Pallet {0} (Order {1}/{2}): Tracking No '{3}' is not in required format 'LxWxH' (3 numeric values separated by x).",V.Local.sPallet,V.Local.sOrderNo,V.Local.sOrderLine,V.Local.sVal,V.Local.sError)
 			F.Intrinsic.UI.Msgbox(V.Local.sError,"Validation")
 			F.Intrinsic.String.Build("{0}|{1}",V.Global.sFrtClassWarned,V.Local.sPallet,V.Global.sFrtClassWarned)
 		F.Intrinsic.Control.EndIf
@@ -10684,6 +10832,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260714161429917$}$CursorSigned
-${$7$}$File Version:1.0.20260714231429.0
+${$6$}$bstevens$}$20260715091700589$}$CursorSigned
+${$7$}$File Version:1.0.20260715161700.0
 Program.Sub.Comments.End
