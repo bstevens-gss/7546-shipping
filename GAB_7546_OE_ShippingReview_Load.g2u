@@ -286,6 +286,7 @@ Gui.frmFrtClass.GSGCFrtClass.Enabled(True)
 Gui.frmFrtClass.GSGCFrtClass.Visible(True)
 Gui.frmFrtClass.GSGCFrtClass.Zorder(0)
 Gui.frmFrtClass.GSGCFrtClass.Event(CellValueChanged,GSGCFrtClass_CellValueChanged)
+Gui.frmFrtClass.GSGCFrtClass.Event(RowCellClick,GSGCFrtClass_RowCellClick)
 Gui.frmItem..Create(BaseForm)
 Gui.frmItem..Caption("Item Master")
 Gui.frmItem..Size(10140,7995)
@@ -567,6 +568,10 @@ Program.Sub.Main.Start
 	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","FIRST_BIN","ShowInColumnChooser",True)
 	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","Caption","BOL Ship From")
 	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","Staged PL Weight","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","Staged PL Cartons","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","Staged PL Pallets","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","Staged PL Mixed","ShowInColumnChooser",True)
 	
 	F.Intrinsic.Control.UnBlockEvents
 	
@@ -1086,6 +1091,10 @@ Program.Sub.cmdRefresh_Click.Start
 	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","FIRST_BIN","ShowInColumnChooser",True)
 	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","Caption","BOL Ship From")
 	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","Staged PL Weight","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","Staged PL Cartons","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","Staged PL Pallets","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","Staged PL Mixed","ShowInColumnChooser",True)
 	
 	'Remove the Allocation Flag for our program 
 	Gui.frmShip.GsGCAllShip.SetColumnProperty(gvallship,"AllocationFlag","Visible",False)	
@@ -1884,6 +1893,7 @@ Program.Sub.LoadLoad.Start
 	f.Intrinsic.StringBuilder.Append("Query",", E.Address_1_Ship, E.Address_2_Ship, E.Address_3_Ship, E.Address_4_Ship, E.Address_5_Ship, E.Name_Customer_Ship,E.Freight_Zone_Ship, RTRIM(M.TRACKING_NO) AS TRACKING_NO, RTRIM(M.PRO_NO) AS PRO_NO, RTRIM(M.WAY_BILL) AS WAY_BILL, N.FROM_NAME AS BOL_SHIP_FROM ")
 	f.Intrinsic.StringBuilder.Append("Query",", D.Description_2, D.Description_3 ")
 	f.Intrinsic.StringBuilder.Append("Query",", RTRIM(BPI.NMFC_NO) AS NMFC_NO, RTRIM(BPI.FRT_CLASS) AS FRT_CLASS, RTRIM(BPI.COMM_DESC_1) AS COMM_DESC_1 ")
+	f.Intrinsic.StringBuilder.Append("Query",", COALESCE(M.WEIGHT, 0) AS 'Staged PL Weight', COALESCE(M.CARTONS, 0) AS 'Staged PL Cartons', COALESCE(M.PALLETS, 0) AS 'Staged PL Pallets' ")
 	
 	'estimated packing container code.. Assume max container standard packing unit by part
 	f.Intrinsic.StringBuilder.Append("Query",", CASE WHEN D.PCS_PER_CNTNR <> 0 AND D.PALLET_FLAG = 'Y' THEN X.CNTNR_CODE WHEN D.PCS_PER_CNTNR <> 0 THEN Z.CNTNR_CODE WHEN D.PCS_PER_CNTNR = 0 AND D.PALLET_FLAG = 'Y' THEN X.CNTNR_CODE END AS 'Container Name',CASE WHEN D.PCS_PER_CNTNR <> 0 AND D.PALLET_FLAG = 'Y' THEN X.CNTNR_DESC WHEN D.PCS_PER_CNTNR <> 0 THEN Z.CNTNR_DESC WHEN D.PCS_PER_CNTNR = 0 AND D.PALLET_FLAG = 'Y' THEN X.CNTNR_DESC END AS 'Container Description', CASE WHEN D.PCS_PER_CNTNR <> 0 AND D.PALLET_FLAG = 'Y' THEN X.WEIGHT WHEN D.PCS_PER_CNTNR <> 0 THEN Z.WEIGHT WHEN D.PCS_PER_CNTNR = 0 AND D.PALLET_FLAG = 'Y' THEN X.WEIGHT END  AS 'Ind Container Weight', CASE WHEN D.PCS_PER_CNTNR <> 0 AND D.PALLET_FLAG = 'Y' THEN X.LENGTH WHEN D.PCS_PER_CNTNR <> 0 THEN Z.LENGTH WHEN D.PCS_PER_CNTNR = 0 AND D.PALLET_FLAG = 'Y' THEN X.LENGTH END AS 'Ind Container Length (In)', CASE WHEN D.PCS_PER_CNTNR <> 0 AND D.PALLET_FLAG = 'Y' THEN X.WIDTH WHEN D.PCS_PER_CNTNR <> 0 THEN Z.WIDTH WHEN D.PCS_PER_CNTNR = 0 AND D.PALLET_FLAG = 'Y' THEN X.WIDTH END AS 'Ind Container Width (In)', CASE WHEN D.PCS_PER_CNTNR <> 0 AND D.PALLET_FLAG = 'Y' THEN X.HEIGHT WHEN D.PCS_PER_CNTNR <> 0 THEN Z.HEIGHT WHEN D.PCS_PER_CNTNR = 0 AND D.PALLET_FLAG = 'Y' THEN X.HEIGHT END AS 'Ind Container Height (In)' ")
@@ -2025,10 +2035,33 @@ Program.Sub.LoadLoad.Start
 	F.Data.Datatable.AddColumn("dtLoad0","ASSIGNPICKER","Boolean",False)
 	'load Order Picker Information
 	F.Intrinsic.Control.CallSub(LoadPicker)
+
+	'-- Dedup staged PL columns: zero out duplicates so footer SUM is correct for mixed-packing
+	F.Data.DataTable.AddColumn("dtLoad0","Staged PL Mixed",String,"")
+	V.Local.sSeenPL.Declare(String)
+	V.Local.sPLKey.Declare(String)
+	V.Local.iPos.Declare(Long)
+	V.Local.iRow.Declare(Long)
+	V.Local.iLastRow.Declare(Long)
+	V.Local.sSeenPL.Set("")
+	F.Intrinsic.Math.Sub(V.DataTable.dtLoad0.RowCount,1,V.Local.iLastRow)
+	F.Intrinsic.Control.For(V.Local.iRow,0,V.Local.iLastRow)
+		V.Local.sPLKey.Set(V.DataTable.dtLoad0(V.Local.iRow).Packing List!FieldValTrim)
+		F.Intrinsic.Control.If(V.Local.sPLKey,<>,"")
+			F.Intrinsic.String.Build("[{0}]",V.Local.sPLKey,V.Local.sPLKey)
+			F.Intrinsic.String.InStr(V.Local.sSeenPL,V.Local.sPLKey,V.Local.iPos)
+			F.Intrinsic.Control.If(V.Local.iPos,>,0)
+				F.Data.Datatable.SetValue("dtLoad0",V.Local.iRow,"Staged PL Weight",0,"Staged PL Cartons",0,"Staged PL Pallets",0,"Staged PL Mixed","M")
+			F.Intrinsic.Control.Else
+				F.Intrinsic.String.Concat(V.Local.sSeenPL,V.Local.sPLKey,V.Local.sSeenPL)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iRow)
+
 	'v.Local.sFilter.Set(v.DataTable.dtLoad0.FieldNames)
 	'linq join orderpicker and dtLoad0
 	Function.Intrinsic.Control.If(v.DataTable.dtOrderPicker.Exists) 
-		F.Data.Linq.Join("LeftJoin","datatable","dtLoad0*!*A","datatable","dtOrderPicker*!*B","A.ORDER_NO = B.ORDER_NO And A.ORDER_SUFFIX = B.ORDER_SUFFIX AND A.ORDER_LINE = B.ORDER_LINE","A.Select*!*A.Load Number*!*A.Packing List*!*A.PL Ship Date*!*A.PICKLIST*!*A.TRACKING_NO*!*A.PRO_NO*!*A.WAY_BILL*!*A.BOL_SHIP_FROM*!*A.Staged Qty*!*A.Drop Seq*!*A.Carrier Number*!*A.Carrier Load Number*!*A.Carrier Trailer*!*A.Truck Type ID*!*A.Truck Description*!*A.Truck Max Weight(lbs)*!*A.Truck SF Capacity*!*A.Staging Bin*!*A.Dock ID*!*A.Pick By Date*!*A.Ship Date*!*A.Load Notes*!*A.Line_Text*!*A.Ready to Pick*!*A.PICKED*!*A.Container Name*!*A.Container Description*!*A.Ind Container Height (In)*!*A.Ind Container Width (In)*!*A.Ind Container Length (In)*!*A.Ind Container Weight*!*A.Est Container Qty*!*A.Est Packaged Weight*!*A.Est Area*!*A.CUSTOMER*!*A.NAME_CUSTOMER*!*A.CUSTOMER_PO*!*A.ORDER_NO*!*A.RECORD_NO*!*A.ORDER_LINE*!*A.ORDER_SUFFIX*!*A.CURRENT_ORDER_SUFFIX*!*A.PART*!*A.DISPLAY_PART*!*A.LOCATION*!*A.PRODUCT_LINE*!*A.DESCRIPTION*!*A.Description_2*!*A.Description_3*!*A.WEIGHT*!*A.QTY_BO*!*A.QTY_ONHAND*!*A.QTY_90*!*A.FIRST_BIN*!*A.EXT_AMT*!*A.QTY_REQUIRED*!*A.DATE_ORDER*!*A.MUST_DLVR_BY_DATE*!*A.DATE_ITEM_PROM*!*A.SHIP_ID*!*A.CITY_SHIP*!*A.STATE_SHIP*!*A.Address_1_Ship*!*A.Address_2_Ship*!*A.Address_3_Ship*!*A.Address_4_Ship*!*A.Address_5_Ship*!*A.Name_Customer_Ship*!*A.Freight_Zone_Ship*!*A.SHIP_VIA_SHIP*!*A.CARRIER_CD*!*A.CARR_SHORT_DESC*!*A.CARR_LONG_DESC*!*A.STAGED*!*A.FLAG_USE_MQD*!*A.SHP_HLD_FLAG*!*A.QTY_SHIPPED*!*A.NOTES*!*A.USER_1*!*A.USER_2*!*A.USER_3*!*A.USER_4*!*A.USER_5*!*A.INFO_1*!*A.INFO_2*!*A.H_USER_1*!*A.H_USER_2*!*A.H_USER_3*!*A.H_USER_4*!*A.H_USER_5*!*A.ORDLN*!*A.CSRV*!*A.CUSTOMER_PART*!*A.CODE_SOURCE*!*A.CODE_SORT*!*A.ORDER_SORT_2*!*A.INV_CODE_SORT*!*A.CODE_FOB*!*A.SALESPERSON*!*A.ORDER_TYPE*!*A.LINE_TYPE*!*A.BLANKET_NO*!*A.FLAG_NO_BACKORDER*!*A.STATUS*!*A.CUST_ORDER_NOTES*!*B.Assigned_To*!*A.AllocationFlag*!*A.PROJECT*!*A.PHASE*!*A.CONTACT*!*A.CONTACT_PHONE*!*A.CONTACT_EMAIL*!*A.VALIDATED*!*A.POL*!*A.OPOL*!*A.LD*!*A.LOADING_STATUS*!*A.NMFC_NO*!*A.FRT_CLASS*!*A.COMM_DESC_1*!*A.PARTLOC","","","","dtLoad1",True)
+		F.Data.Linq.Join("LeftJoin","datatable","dtLoad0*!*A","datatable","dtOrderPicker*!*B","A.ORDER_NO = B.ORDER_NO And A.ORDER_SUFFIX = B.ORDER_SUFFIX AND A.ORDER_LINE = B.ORDER_LINE","A.Select*!*A.Load Number*!*A.Packing List*!*A.PL Ship Date*!*A.PICKLIST*!*A.TRACKING_NO*!*A.PRO_NO*!*A.WAY_BILL*!*A.BOL_SHIP_FROM*!*A.Staged Qty*!*A.Drop Seq*!*A.Carrier Number*!*A.Carrier Load Number*!*A.Carrier Trailer*!*A.Truck Type ID*!*A.Truck Description*!*A.Truck Max Weight(lbs)*!*A.Truck SF Capacity*!*A.Staging Bin*!*A.Dock ID*!*A.Pick By Date*!*A.Ship Date*!*A.Load Notes*!*A.Line_Text*!*A.Ready to Pick*!*A.PICKED*!*A.Container Name*!*A.Container Description*!*A.Ind Container Height (In)*!*A.Ind Container Width (In)*!*A.Ind Container Length (In)*!*A.Ind Container Weight*!*A.Est Container Qty*!*A.Est Packaged Weight*!*A.Est Area*!*A.CUSTOMER*!*A.NAME_CUSTOMER*!*A.CUSTOMER_PO*!*A.ORDER_NO*!*A.RECORD_NO*!*A.ORDER_LINE*!*A.ORDER_SUFFIX*!*A.CURRENT_ORDER_SUFFIX*!*A.PART*!*A.DISPLAY_PART*!*A.LOCATION*!*A.PRODUCT_LINE*!*A.DESCRIPTION*!*A.Description_2*!*A.Description_3*!*A.WEIGHT*!*A.QTY_BO*!*A.QTY_ONHAND*!*A.QTY_90*!*A.FIRST_BIN*!*A.EXT_AMT*!*A.QTY_REQUIRED*!*A.DATE_ORDER*!*A.MUST_DLVR_BY_DATE*!*A.DATE_ITEM_PROM*!*A.SHIP_ID*!*A.CITY_SHIP*!*A.STATE_SHIP*!*A.Address_1_Ship*!*A.Address_2_Ship*!*A.Address_3_Ship*!*A.Address_4_Ship*!*A.Address_5_Ship*!*A.Name_Customer_Ship*!*A.Freight_Zone_Ship*!*A.SHIP_VIA_SHIP*!*A.CARRIER_CD*!*A.CARR_SHORT_DESC*!*A.CARR_LONG_DESC*!*A.STAGED*!*A.FLAG_USE_MQD*!*A.SHP_HLD_FLAG*!*A.QTY_SHIPPED*!*A.NOTES*!*A.USER_1*!*A.USER_2*!*A.USER_3*!*A.USER_4*!*A.USER_5*!*A.INFO_1*!*A.INFO_2*!*A.H_USER_1*!*A.H_USER_2*!*A.H_USER_3*!*A.H_USER_4*!*A.H_USER_5*!*A.ORDLN*!*A.CSRV*!*A.CUSTOMER_PART*!*A.CODE_SOURCE*!*A.CODE_SORT*!*A.ORDER_SORT_2*!*A.INV_CODE_SORT*!*A.CODE_FOB*!*A.SALESPERSON*!*A.ORDER_TYPE*!*A.LINE_TYPE*!*A.BLANKET_NO*!*A.FLAG_NO_BACKORDER*!*A.STATUS*!*A.CUST_ORDER_NOTES*!*B.Assigned_To*!*A.AllocationFlag*!*A.PROJECT*!*A.PHASE*!*A.CONTACT*!*A.CONTACT_PHONE*!*A.CONTACT_EMAIL*!*A.VALIDATED*!*A.POL*!*A.OPOL*!*A.LD*!*A.LOADING_STATUS*!*A.NMFC_NO*!*A.FRT_CLASS*!*A.COMM_DESC_1*!*A.Staged PL Weight*!*A.Staged PL Cartons*!*A.Staged PL Pallets*!*A.Staged PL Mixed*!*A.PARTLOC","","","","dtLoad1",True)
 	Function.Intrinsic.Control.Else
 		f.Data.Datatable.Clone("dtLoad0","dtLoad1",True)
 	Function.Intrinsic.Control.EndIf
@@ -2608,6 +2641,41 @@ Program.Sub.LoadOpenOrdersGV.Start
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Est Area","ReadOnly",True)
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Est Area","HeaderHAlignment","Right")
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Est Area","CellHAlignment","Right")
+
+	'Staged PL Weight, Cartons, Pallets — Load tab only
+	F.Intrinsic.Control.If(V.Args.GV,=,"gvLoad")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Weight","Caption","Staged PL Weight")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Weight","MinWidth","145")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Weight","AllowEdit",False)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Weight","ReadOnly",True)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Weight","HeaderHAlignment","Right")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Weight","CellHAlignment","Right")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Weight","Visible",False)
+
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Cartons","Caption","Staged PL Cartons")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Cartons","MinWidth","110")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Cartons","AllowEdit",False)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Cartons","ReadOnly",True)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Cartons","HeaderHAlignment","Right")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Cartons","CellHAlignment","Right")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Cartons","Visible",False)
+
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Pallets","Caption","Staged PL Pallets")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Pallets","MinWidth","110")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Pallets","AllowEdit",False)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Pallets","ReadOnly",True)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Pallets","HeaderHAlignment","Right")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Pallets","CellHAlignment","Right")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Pallets","Visible",False)
+
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Mixed","Caption","Staged PL Mixed")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Mixed","MinWidth","60")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Mixed","AllowEdit",False)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Mixed","ReadOnly",True)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Mixed","HeaderHAlignment","Center")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Mixed","CellHAlignment","Center")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Mixed","Visible",False)
+	F.Intrinsic.Control.EndIf
 	
 	'Container Name
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Container Name","Caption","Container Name")
@@ -3288,6 +3356,11 @@ Program.Sub.LoadOpenOrdersGV.Start
 	Gui.frmShip.[V.Args.GSGC].AddSummaryItem(V.Args.GV,"Weight","","Sum","Total Est. Unpackaged Weight = (",")","n0")
 	Gui.frmShip.[V.Args.GSGC].AddSummaryItem(V.Args.GV,"Est Packaged Weight","","Sum","Total Est. Packaged Weight = (",")","n0")
 	Gui.frmShip.[V.Args.GSGC].AddSummaryItem(V.Args.GV,"Est Area","","Sum","Total Est. Area (Ft) = (",")","n0")
+	F.Intrinsic.Control.If(V.Args.GV,=,"gvLoad")
+		Gui.frmShip.[V.Args.GSGC].AddSummaryItem(V.Args.GV,"Staged PL Weight","","Sum","Total Staged PL Weight = (",")","n0")
+		Gui.frmShip.[V.Args.GSGC].AddSummaryItem(V.Args.GV,"Staged PL Cartons","","Sum","Total Staged PL Cartons = (",")","n0")
+		Gui.frmShip.[V.Args.GSGC].AddSummaryItem(V.Args.GV,"Staged PL Pallets","","Sum","Total Staged PL Pallets = (",")","n0")
+	F.Intrinsic.Control.EndIf
 	
 	Gui.frmShip.[V.Args.GSGC].ResumeLayout()
 	Gui.frmShip.[V.Args.GSGC].MainView(V.Args.GV)
@@ -3564,6 +3637,7 @@ Program.Sub.LoadFrtClassDetail.Start
 	V.Local.sError.Declare
 	V.Local.sSQL.Declare
 	V.Local.iCnt.Declare(Long)
+	V.Local.iLastRow.Declare(Long)
 	V.Local.sColumns.Declare
 
 	'-- Store context in globals for the CellValueChanged handler
@@ -3581,6 +3655,13 @@ Program.Sub.LoadFrtClassDetail.Start
 	'-- Query all order lines sharing the same pallet(s) as the clicked order/line
 	F.Intrinsic.String.Build("SELECT DISTINCT BPD.ORDER_NO, BPD.ORDER_LINE, RTRIM(BPD.PART) AS PART, RTRIM(BPD.LOCN) AS LOCN, RTRIM(BPD.LOT) AS LOT, RTRIM(BPD.BIN) AS BIN, RTRIM(BPD.HEAT) AS HEAT, RTRIM(BPD.SERIAL) AS SERIAL, BPD.CRTN_NO, BPD.QTY, BPD.LBS_PER_PC, RTRIM(BPD.PLLT_CD) AS PLLT_CD, BPN.PLLT_NO, BPN.PKGD_WEIGHT, RTRIM(BPN.TRCKNG_NO) AS TRCKNG_NO, RTRIM(BPN.USR_DFND_NO) AS USR_DFND_NO, RTRIM(BPI.FRT_CLASS) AS FRT_CLASS FROM BOL_PACK_DTL BPD JOIN BOL_PALLET_NUM BPN ON BPD.PCK_NO = BPN.PCK_NO AND BPD.PLLT_NO = BPN.PLLT_NO LEFT JOIN BOL_PART_INFO BPI ON BPI.PCK_NO = BPD.PCK_NO AND BPI.ORDER_NO = BPD.ORDER_NO AND BPI.LINE = BPD.ORDER_LINE WHERE BPD.PCK_NO = '{0}' AND BPD.PLLT_NO IN (SELECT PLLT_NO FROM BOL_PACK_DTL WHERE PCK_NO = '{0}' AND ORDER_NO = '{1}' AND ORDER_LINE = '{2}0')",V.Args.PckNo,V.Args.OrderNo,V.Args.OrderLine,V.Local.sSQL)
 	F.Data.DataTable.CreateFromSQL("dtFrtClass","con",V.Local.sSQL,True)
+
+	'-- Add Print Label column and fill with "Print" text
+	F.Data.DataTable.AddColumn("dtFrtClass","PRINT_LABEL","String")
+	F.Intrinsic.Math.Sub(V.DataTable.dtFrtClass.RowCount,1,V.Local.iLastRow)
+	F.Intrinsic.Control.For(V.Local.iCnt,0,V.Local.iLastRow,1)
+		F.Data.DataTable.SetValue("dtFrtClass",V.Local.iCnt,"PRINT_LABEL","Print")
+	F.Intrinsic.Control.Next(V.Local.iCnt)
 
 	'-- Bind to grid
 	Gui.frmFrtClass.GSGCFrtClass.AddGridViewFromDataTable("gvFrtClass","dtFrtClass")
@@ -3666,6 +3747,13 @@ Program.Sub.LoadFrtClassDetail.Start
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","FRT_CLASS","ReadOnly",False)
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","FRT_CLASS","CellBackColor","LightYellow")
 
+	'-- Print Label column (click to print)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PRINT_LABEL","Caption","Print Label")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PRINT_LABEL","MinWidth","70")
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PRINT_LABEL","AllowEdit",False)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PRINT_LABEL","ReadOnly",True)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PRINT_LABEL","CellBackColor","LightGray")
+
 	Gui.frmFrtClass.GSGCFrtClass.ResumeLayout()
 	Gui.frmFrtClass.GSGCFrtClass.MainView("gvFrtClass")
 
@@ -3713,6 +3801,13 @@ Program.Sub.GSGCFrtClass_CellValueChanged.Start
 	V.Local.sLbsPerPc.Declare
 	V.Local.sPlltCd.Declare
 	V.Local.sTrckngNo.Declare
+	V.Local.iLabelAnswer.Declare(Long)
+	V.Local.sLabelRet.Declare
+	V.Local.sLabelParts.Declare
+	V.Local.sLabelPrinter.Declare
+	V.Local.sCurrentWt.Declare
+	V.Local.fCurrentWt.Declare(Float)
+	V.Local.fNewWt.Declare(Float)
 
 	F.Intrinsic.Control.If(V.Args.Column,=,"FRT_CLASS")
 		V.Local.sNewClass.Set(V.Args.Value.Trim)
@@ -3767,6 +3862,16 @@ Program.Sub.GSGCFrtClass_CellValueChanged.Start
 	F.Intrinsic.Control.If(V.Args.Column,=,"PKGD_WEIGHT")
 		'-- 7/15/26 BS - Update pallet weight via S20 WirePoll (once per pallet)
 		V.Local.sPallet.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).PLLT_NO!FieldValTrim)
+
+		'-- Skip S20 if weight did not actually change
+		F.Intrinsic.String.Build("SELECT PKGD_WEIGHT FROM BOL_PALLET_NUM WHERE PCK_NO='{0}' AND PLLT_NO='{1}'",V.Global.sFrtClassPckNo,V.Local.sPallet,V.Local.sSQL)
+		F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sCurrentWt)
+		V.Local.fCurrentWt.Set(V.Local.sCurrentWt)
+		V.Local.fNewWt.Set(V.Args.Value.Trim)
+		F.Intrinsic.Control.If(V.Local.fCurrentWt,=,V.Local.fNewWt)
+			F.Intrinsic.Control.ExitSub
+		F.Intrinsic.Control.EndIf
+
 		V.Local.sOrderNo.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).ORDER_NO!FieldValTrim)
 		V.Local.sOrderLine.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).ORDER_LINE!FieldValTrim)
 		V.Local.sPart.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).PART!FieldValTrim)
@@ -3836,7 +3941,7 @@ Program.Sub.GSGCFrtClass_CellValueChanged.Start
 			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sTrckngNo)
 			F.Intrinsic.StringBuilder.Append("sbSQL","','")
 			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sPallet)
-			F.Intrinsic.StringBuilder.Append("sbSQL","','N','N',0,'")
+			F.Intrinsic.StringBuilder.Append("sbSQL","','N','',0,'")
 			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sDateChg)
 			F.Intrinsic.StringBuilder.Append("sbSQL","','")
 			F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sTimeChg)
@@ -3846,6 +3951,33 @@ Program.Sub.GSGCFrtClass_CellValueChanged.Start
 			F.Intrinsic.StringBuilder.ToString("sbSQL",V.Local.sSQL)
 			F.Intrinsic.StringBuilder.Dispose("sbSQL")
 			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+
+			'-- Reset all pallets LABEL_FLAG to N for this packing list
+			F.Intrinsic.String.Build("UPDATE BOL_PALLET_NUM SET LABEL_FLAG='N' WHERE PCK_NO='{0}'",V.Global.sFrtClassPckNo,V.Local.sSQL)
+			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+
+			'-- Prompt to print label after weight update
+			F.Intrinsic.UI.Msgbox("Print a new pallet label?","Print Label?",V.Enum.MsgBoxStyle!YesNo,V.Local.iLabelAnswer)
+			F.Intrinsic.Control.If(V.Local.iLabelAnswer,=,6)
+				F.ODBC.Connection!conC.OpenCommonConnection
+				F.Data.DataTable.CreateFromSQL("dtPrinters","conC","SELECT RTRIM(SENTINELALIAS) AS SENTINELALIAS, RTRIM(PRINTERNAME) AS PRINTERNAME FROM SERVER_PRINTERS WHERE SENTINELENABLED = 1 AND SENTINELALIAS IS NOT NULL AND RTRIM(SENTINELALIAS) <> '' ORDER BY SENTINELALIAS")
+				F.ODBC.Connection!conC.Close
+				F.Intrinsic.Control.If(V.DataTable.dtPrinters.RowCount,>,0)
+					F.Intrinsic.UI.BrowserFromDataTable("Select Label Printer","dtPrinters","Sentinel Alias*!*Printer Name","200*!*300",V.Local.sLabelRet)
+					F.Intrinsic.Control.If(V.Local.sLabelRet.Trim,<>,"***CANCEL***")
+						F.Intrinsic.String.Split(V.Local.sLabelRet,"*!*",V.Local.sLabelParts)
+						V.Local.sLabelPrinter.Set(V.Local.sLabelParts(0).Trim)
+						F.Intrinsic.String.Build("UPDATE WIRELESS_HDR SET LABEL_PRINTER='{0}' WHERE TRANS_ID='{1}'",V.Local.sLabelPrinter,V.Local.sTransIDNew,V.Local.sSQL)
+						F.ODBC.Connection!con.Execute(V.Local.sSQL)
+						F.Intrinsic.String.Build("UPDATE WIRELESS_LINE SET FIELD_24='Y', FIELD_25='' WHERE TRANS_ID='{0}'",V.Local.sTransIDNew,V.Local.sSQL)
+						F.ODBC.Connection!con.Execute(V.Local.sSQL)
+						'-- Set LABEL_FLAG=Y for this pallet
+						F.Intrinsic.String.Build("UPDATE BOL_PALLET_NUM SET LABEL_FLAG='Y' WHERE PCK_NO='{0}' AND PLLT_NO='{1}'",V.Global.sFrtClassPckNo,V.Local.sPallet,V.Local.sSQL)
+						F.ODBC.Connection!con.Execute(V.Local.sSQL)
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.EndIf
+				F.Data.DataTable.Close("dtPrinters")
+			F.Intrinsic.Control.EndIf
 
 			'-- Release for WirePoll
 			F.Intrinsic.String.Build("UPDATE WIRELESS_HDR SET ATTEMPTED_FLAG='' WHERE TRANS_ID='{0}'",V.Local.sTransIDNew,V.Local.sSQL)
@@ -3885,6 +4017,173 @@ Program.Sub.frmFrtClass_UnLoad.Start
 		F.Intrinsic.Control.End
 	F.Intrinsic.Control.EndTry
 Program.Sub.frmFrtClass_UnLoad.End
+
+
+Program.Sub.GSGCFrtClass_RowCellClick.Start
+'-- 7/16/26 BS; UDF - Print Label button column: submit S20 with print flag
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	V.Local.sSQL.Declare
+	V.Local.sTransIDNew.Declare
+	V.Local.sPallet.Declare
+	V.Local.sOrderNo.Declare
+	V.Local.sOrderLine.Declare
+	V.Local.sPart.Declare
+	V.Local.sLocn.Declare
+	V.Local.sLot.Declare
+	V.Local.sBin.Declare
+	V.Local.sHeat.Declare
+	V.Local.sSerial.Declare
+	V.Local.sCrtnNo.Declare
+	V.Local.sQty.Declare
+	V.Local.sLbsPerPc.Declare
+	V.Local.sPlltCd.Declare
+	V.Local.sTrckngNo.Declare
+	V.Local.sWeight.Declare
+	V.Local.sNowStamp.Declare
+	V.Local.sDateChg.Declare
+	V.Local.sTimeChg.Declare
+	V.Local.sLabelQty.Declare
+	V.Local.sRet.Declare
+	V.Local.sParts.Declare
+	V.Local.sPRID.Declare
+	V.Local.sHdrMax.Declare
+	V.Local.sLineMax.Declare
+	V.Local.iHdrMax.Declare(Long)
+	V.Local.iLineMax.Declare(Long)
+
+	F.Intrinsic.Control.If(V.Args.Column,<>,"PRINT_LABEL")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+
+	'-- Browse for label printer (exit if cancelled)
+	F.ODBC.Connection!conC.OpenCommonConnection
+	F.Data.DataTable.CreateFromSQL("dtPrinters","conC","SELECT RTRIM(SENTINELALIAS) AS SENTINELALIAS, RTRIM(PRINTERNAME) AS PRINTERNAME FROM SERVER_PRINTERS WHERE SENTINELENABLED = 1 AND SENTINELALIAS IS NOT NULL AND RTRIM(SENTINELALIAS) <> '' ORDER BY SENTINELALIAS")
+	F.ODBC.Connection!conC.Close
+
+	F.Intrinsic.Control.If(V.DataTable.dtPrinters.RowCount,=,0)
+		F.Intrinsic.UI.Msgbox("No Sentinel label printers are configured.","No Printers")
+		F.Data.DataTable.Close("dtPrinters")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.UI.BrowserFromDataTable("Select Label Printer","dtPrinters","Sentinel Alias*!*Printer Name","200*!*300",V.Local.sRet)
+	F.Data.DataTable.Close("dtPrinters")
+
+	F.Intrinsic.Control.If(V.Local.sRet.Trim,=,"***CANCEL***")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.String.Split(V.Local.sRet,"*!*",V.Local.sParts)
+	V.Local.sPRID.Set(V.Local.sParts(0).Trim)
+
+	'-- Gather row context
+	V.Local.sPallet.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).PLLT_NO!FieldValTrim)
+	V.Local.sOrderNo.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).ORDER_NO!FieldValTrim)
+	V.Local.sOrderLine.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).ORDER_LINE!FieldValTrim)
+	V.Local.sPart.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).PART!FieldValTrim)
+	V.Local.sLocn.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).LOCN!FieldValTrim)
+	V.Local.sLot.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).LOT!FieldValTrim)
+	V.Local.sBin.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).BIN!FieldValTrim)
+	V.Local.sHeat.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).HEAT!FieldValTrim)
+	V.Local.sSerial.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).SERIAL!FieldValTrim)
+	V.Local.sCrtnNo.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).CRTN_NO!FieldValTrim)
+	V.Local.sQty.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).QTY!FieldValTrim)
+	V.Local.sLbsPerPc.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).LBS_PER_PC!FieldValTrim)
+	V.Local.sPlltCd.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).PLLT_CD!FieldValTrim)
+	V.Local.sTrckngNo.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).TRCKNG_NO!FieldValTrim)
+	V.Local.sWeight.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).PKGD_WEIGHT!FieldValTrim)
+
+	'-- Derive audit timestamp
+	V.Local.sNowStamp.Set(V.Ambient.Now.FormatYYYYMMDDHHNNSS)
+	F.Intrinsic.String.Mid(V.Local.sNowStamp,1,8,V.Local.sDateChg)
+	F.Intrinsic.String.Mid(V.Local.sNowStamp,9,6,V.Local.sTimeChg)
+	F.Intrinsic.String.Concat(V.Local.sTimeChg,"00",V.Local.sTimeChg)
+
+	'-- Get next TRANS_ID (check both HDR and LINE for max to avoid duplicates)
+	F.ODBC.Connection!con.ExecuteAndReturn("SELECT TOP 1 CAST(TRANS_ID AS INT) FROM WIRELESS_HDR ORDER BY TRANS_ID DESC",V.Local.sHdrMax)
+	F.ODBC.Connection!con.ExecuteAndReturn("SELECT TOP 1 CAST(TRANS_ID AS INT) FROM WIRELESS_LINE ORDER BY TRANS_ID DESC",V.Local.sLineMax)
+	V.Local.iHdrMax.Set(V.Local.sHdrMax)
+	V.Local.iLineMax.Set(V.Local.sLineMax)
+	F.Intrinsic.Control.If(V.Local.iLineMax,>,V.Local.iHdrMax)
+		F.Intrinsic.Math.Add(V.Local.iLineMax,1,V.Local.iHdrMax)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Math.Add(V.Local.iHdrMax,1,V.Local.iHdrMax)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Build("{0}",V.Local.iHdrMax,V.Local.sTransIDNew)
+	F.Intrinsic.String.LPad(V.Local.sTransIDNew,"0",9,V.Local.sTransIDNew)
+
+	'-- INSERT WIRELESS_HDR with LABEL_PRINTER (Sentinel alias name)
+	F.Intrinsic.String.Build("INSERT INTO WIRELESS_HDR (TRANS_ID,TRANS_TYPE,ATTEMPTED_DATE,ATTEMPTED_TIME,USER_ID,BATCH,ATTEMPTED_FLAG,LABEL_PRINTER) VALUES ('{0}','S20','00000000','00000000','{1}',0,'Y','{2}')",V.Local.sTransIDNew,V.Caller.User,V.Local.sPRID,V.Local.sSQL)
+	F.ODBC.Connection!con.Execute(V.Local.sSQL)
+
+	'-- INSERT WIRELESS_LINE with print flag Y and label quantity
+	F.Intrinsic.StringBuilder.Create("sbSQL")
+	F.Intrinsic.StringBuilder.Append("sbSQL","INSERT INTO WIRELESS_LINE (TRANS_ID,SEQ,TRANS_TYPE,FIELD_1,FIELD_2,FIELD_3,FIELD_4,FIELD_5,FIELD_6,FIELD_7,FIELD_8,FIELD_9,FIELD_10,FIELD_11,FIELD_13,FIELD_14,FIELD_15,FIELD_18,FIELD_19,FIELD_21,FIELD_23,FIELD_24,FIELD_25,ERROR_ID,DATE_LAST_CHG,TIME_LAST_CHG,LAST_CHG_BY) VALUES ('")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sTransIDNew)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','0000','S20','")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Global.sFrtClassPckNo)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sOrderNo)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sOrderLine)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sPart)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sLocn)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sLot)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sBin)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sHeat)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sSerial)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sCrtnNo)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sPallet)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sPlltCd)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sQty)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sLbsPerPc)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sWeight)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sTrckngNo)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sPallet)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','N','Y','',0,'")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sDateChg)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Local.sTimeChg)
+	F.Intrinsic.StringBuilder.Append("sbSQL","','")
+	F.Intrinsic.StringBuilder.Append("sbSQL",V.Caller.User)
+	F.Intrinsic.StringBuilder.Append("sbSQL","')")
+	F.Intrinsic.StringBuilder.ToString("sbSQL",V.Local.sSQL)
+	F.Intrinsic.StringBuilder.Dispose("sbSQL")
+	F.ODBC.Connection!con.Execute(V.Local.sSQL)
+
+	'-- Reset all pallets LABEL_FLAG to N, then set Y for this pallet
+	F.Intrinsic.String.Build("UPDATE BOL_PALLET_NUM SET LABEL_FLAG='N' WHERE PCK_NO='{0}'",V.Global.sFrtClassPckNo,V.Local.sSQL)
+	F.ODBC.Connection!con.Execute(V.Local.sSQL)
+	F.Intrinsic.String.Build("UPDATE BOL_PALLET_NUM SET LABEL_FLAG='Y' WHERE PCK_NO='{0}' AND PLLT_NO='{1}'",V.Global.sFrtClassPckNo,V.Local.sPallet,V.Local.sSQL)
+	F.ODBC.Connection!con.Execute(V.Local.sSQL)
+
+	'-- Release for WirePoll
+	F.Intrinsic.String.Build("UPDATE WIRELESS_HDR SET ATTEMPTED_FLAG='' WHERE TRANS_ID='{0}'",V.Local.sTransIDNew,V.Local.sSQL)
+	F.ODBC.Connection!con.Execute(V.Local.sSQL)
+
+	F.Intrinsic.UI.Msgbox("Label print submitted.","Print Label")
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndTry
+Program.Sub.GSGCFrtClass_RowCellClick.End
 
 Program.Sub.btnCalcClass_Click.Start
 '-- 7/14/26 BS - Delegate to CalcFrtClass subroutine
@@ -10832,6 +11131,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260715091700589$}$CursorSigned
-${$7$}$File Version:1.0.20260715161700.0
+${$6$}$bstevens$}$20260716155350560$}$CursorSigned
+${$7$}$File Version:1.0.20260716225350.0
 Program.Sub.Comments.End
