@@ -9177,7 +9177,32 @@ f.Data.DataView.Create("dtLoad","dvloadshipdate",22,v.Local.sFilterString,"")
 	Function.Intrinsic.Control.EndIf
 	f.Data.DataView.Close("dtLoad","dvloadshipdate")
 	f.Data.Datatable.Close("dtloadshipdate")	
-	
+
+'validate if any selected rows have a carrier flagged for shipping interface
+v.Local.sFilterString.Set("[SELECT] = 1 AND [CARRIER_CD] <> ''")
+f.Data.DataView.Create("dtLoad","dvloadshipcarr",22,v.Local.sFilterString,"")
+	f.Data.DataView.ToDataTableDistinct("dtload","dvloadshipcarr","dtloadshipcarr","CARRIER_CD",True)
+	F.Data.Datatable.Select("dtloadshipcarr","[CARRIER_CD] <> ''",v.Local.sSel)
+	Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
+		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSel)
+		F.Intrinsic.Control.For(v.Local.i,0,v.Local.sSel.UBound)
+			F.Intrinsic.String.Build("SELECT SOFTWARE, RTRIM(SHORT_DESC) AS SHORT_DESC FROM OE_CARRIER WHERE CARRIER_CD='{0}' AND SOFTWARE<>0",V.DataTable.dtloadshipcarr(V.Local.sSel(V.Local.i)).CARRIER_CD!FieldValTrim,V.Local.sSQL)
+			F.Data.DataTable.CreateFromSQL("dtCarrChk","con",V.Local.sSQL)
+			F.Intrinsic.Control.If(V.DataTable.dtCarrChk.RowCount,>,0)
+				F.Intrinsic.String.Build("Carrier '{0}' ({1}) is configured for Shipping Interface/Integrator. Ship Load is not permitted for carriers with an active shipping interface. Please ship through the staged packing list.",V.DataTable.dtloadshipcarr(V.Local.sSel(V.Local.i)).CARRIER_CD!FieldValTrim,V.DataTable.dtCarrChk(0).SHORT_DESC!FieldValTrim,V.Local.sQuery)
+				F.Intrinsic.UI.Msgbox(V.Local.sQuery,"Shipping Interface Active")
+				f.Data.Datatable.Close("dtCarrChk")
+				f.Data.DataView.Close("dtLoad","dvloadshipcarr")
+				f.Data.Datatable.Close("dtloadshipcarr")
+				v.Local.sSel.Set("")
+				f.Intrinsic.Control.ExitSub
+			F.Intrinsic.Control.EndIf
+			f.Data.Datatable.Close("dtCarrChk")
+		F.Intrinsic.Control.Next(v.Local.i)
+	Function.Intrinsic.Control.EndIf
+	f.Data.DataView.Close("dtLoad","dvloadshipcarr")
+	f.Data.Datatable.Close("dtloadshipcarr")
+
 'filter for selected rows to process
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
@@ -11145,6 +11170,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260717140302170$}$CursorSigned
-${$7$}$File Version:1.0.20260717210302.0
+${$6$}$bstevens$}$20260717151103241$}$CursorSigned
+${$7$}$File Version:1.0.20260717221103.0
 Program.Sub.Comments.End
