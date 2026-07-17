@@ -3808,6 +3808,9 @@ Program.Sub.GSGCFrtClass_CellValueChanged.Start
 	V.Local.sCurrentWt.Declare
 	V.Local.fCurrentWt.Declare(Float)
 	V.Local.fNewWt.Declare(Float)
+	V.Local.fDelta.Declare(Float)
+	V.Local.fStagedWt.Declare(Float)
+	V.Local.fNewStagedWt.Declare(Float)
 
 	F.Intrinsic.Control.If(V.Args.Column,=,"FRT_CLASS")
 		V.Local.sNewClass.Set(V.Args.Value.Trim)
@@ -3995,6 +3998,17 @@ Program.Sub.GSGCFrtClass_CellValueChanged.Start
 				F.Data.Datatable.SetValue("dtFrtClass",V.Local.iRow,"PKGD_WEIGHT",V.Args.Value.Trim)
 			F.Intrinsic.Control.EndIf
 		F.Intrinsic.Control.Next(V.Local.iRow)
+
+		'-- Update Staged PL Weight in parent Load grid by delta
+		F.Intrinsic.Math.Sub(V.Local.fNewWt,V.Local.fCurrentWt,V.Local.fDelta)
+		F.Intrinsic.String.Build("[Packing List] = '{0}' AND [Staged PL Mixed] = ''",V.Global.sFrtClassPckNo,V.Local.sFilter)
+		F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
+		F.Intrinsic.Control.If(V.Local.sSel.Trim,<>,"***NORETURN***")
+			F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+			V.Local.fStagedWt.Set(V.DataTable.dtLoad(V.Local.sSel(0)).Staged PL Weight!FieldVal)
+			F.Intrinsic.Math.Add(V.Local.fStagedWt,V.Local.fDelta,V.Local.fNewStagedWt)
+			F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(0),"Staged PL Weight",V.Local.fNewStagedWt)
+		F.Intrinsic.Control.EndIf
 	F.Intrinsic.Control.EndIf
 
 	F.Intrinsic.Control.Catch
@@ -11131,6 +11145,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260716155350560$}$CursorSigned
-${$7$}$File Version:1.0.20260716225350.0
+${$6$}$bstevens$}$20260717140302170$}$CursorSigned
+${$7$}$File Version:1.0.20260717210302.0
 Program.Sub.Comments.End
