@@ -9672,7 +9672,7 @@ F.Intrinsic.Control.If(V.Global.bLoadHoldBlock,=,True)
 	F.Intrinsic.Control.ExitSub
 F.Intrinsic.Control.EndIf
 
-'filter for selected rows
+'filter for selected rows — block events only during data extraction
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
 'verify that we have a checked value in SELECT and load is not 0. 
@@ -9680,6 +9680,9 @@ v.Local.sFilterString.Set("[SELECT] = 1 and [PACKING LIST] <> ''")
 f.Data.DataView.Create("dtLoad","dvloadPL",22,v.Local.sFilterString,"")
 f.Data.DataView.ToDataTableDistinct("dtload","dvloadPL","dtloadPL","PACKING LIST",)
 F.Data.Datatable.Select("dtLoadPL","[PACKING LIST] <> ''",v.Local.sSel)
+'7/23/26 BS - Close DataView and unblock events before print loop so the print pipeline can process
+f.Data.DataView.Close("dtLoad","dvloadPL")
+Function.Intrinsic.Control.UnBlockEvents
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
@@ -9694,13 +9697,15 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 			F.Global.Callwrapper.SetProperty("PL","PackingListNumber",v.DataTable.dtLoadPL(v.Local.sSel(v.Local.i)).PACKING LIST!FieldVal)
 			F.Global.Callwrapper.SetProperty("PL","Staged",True)
 			F.Global.CallWrapper.Run("PL")
+			'7/23/26 BS - 3s delay between PL prints; uses Sleep (not SleepMS) to pump the message loop
+			F.Intrinsic.Control.If(V.Local.i,<,V.Local.sSel.UBound)
+				F.Intrinsic.UI.Sleep(3)
+			F.Intrinsic.Control.EndIf
 		F.Intrinsic.Control.Next(v.Local.i)	
 f.Intrinsic.Control.Else
 	F.Intrinsic.UI.Msgbox("Please select rows from load with packing lists.  Click OK to Exit.","Warning")
 Function.Intrinsic.Control.EndIf
 f.Data.Datatable.Close("dtloadPL")
-f.Data.DataView.Close("dtLoad","dvloadPL")
-Function.Intrinsic.Control.UnBlockEvents
 f.Intrinsic.Control.ExitSub
 Function.Intrinsic.Control.Catch
 	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
@@ -9960,7 +9965,7 @@ v.Local.sQuery.Declare(String)
 v.Local.iCnt.Declare
 v.Local.sParam.Declare
 
-'filter for selected rows
+'filter for selected rows — block events only during data extraction
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
 'verify that we have a checked value in SELECT and load is not 0. 
@@ -9969,19 +9974,24 @@ v.Local.sFilterString.Set("[SELECT] = 1 and [WAY_BILL] <> ''")
 f.Data.DataView.Create("dtLoad","dvloadbol",22,v.Local.sFilterString,"")
 f.Data.DataView.ToDataTableDistinct("dtload","dvloadbol","dtloadbol","WAY_BILL",)
 F.Data.Datatable.Select("dtLoadbol","[WAY_BILL] <> ''",v.Local.sSel)
+'7/23/26 BS - Close DataView and unblock events before print loop so the print pipeline can process
+f.Data.DataView.Close("dtLoad","dvloadbol")
+Function.Intrinsic.Control.UnBlockEvents
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
 		F.Intrinsic.Control.For(v.Local.i,0,v.Local.sSel.UBound)
 			'Print BOL
 			f.Global.General.CallWrapperSync(910060,v.DataTable.dtLoadbol(v.Local.sSel(v.Local.i)).WAY_BILL!FieldValTRIM)
+			'7/23/26 BS - 3s delay between BOL prints to allow print pipeline to fully complete
+			F.Intrinsic.Control.If(V.Local.i,<,V.Local.sSel.UBound)
+				F.Intrinsic.UI.Sleep(3)
+			F.Intrinsic.Control.EndIf
 		F.Intrinsic.Control.Next(v.Local.i)	
 f.Intrinsic.Control.Else
-	F.Intrinsic.UI.Msgbox("Please select rows from load with packing lists.  Click OK to Exit.","Warning")
+	F.Intrinsic.UI.Msgbox("No BOL/Waybill number found for the selected rows. Please ensure a BOL exists before printing.  Click OK to Exit.","Warning")
 Function.Intrinsic.Control.EndIf
 f.Data.Datatable.Close("dtloadbol")
-f.Data.DataView.Close("dtLoad","dvloadbol")
-Function.Intrinsic.Control.UnBlockEvents
 f.Intrinsic.Control.ExitSub
 Function.Intrinsic.Control.Catch
 	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
@@ -11170,6 +11180,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260717151103241$}$CursorSigned
-${$7$}$File Version:1.0.20260717221103.0
+${$6$}$bstevens$}$20260723114832874$}$CursorSigned
+${$7$}$File Version:1.0.20260723184832.0
 Program.Sub.Comments.End
