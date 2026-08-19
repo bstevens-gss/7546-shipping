@@ -4584,6 +4584,7 @@ Program.Sub.GsGCLoad_CellValueChanged.Start
 	V.Local.sDock.Declare
 	v.Local.dateyyyymmddnnss.Declare(String)
 	V.Local.sRet.Declare
+	V.Local.sSafe.Declare
 	
 	F.Intrinsic.Control.SelectCase(V.Args.ControlName)
 		F.Intrinsic.Control.Case("GSGCLOAD")		
@@ -4712,62 +4713,58 @@ Program.Sub.GsGCLoad_CellValueChanged.Start
 			F.ODBC.con!rstcarriertrailer.Close	
 		
 		F.Intrinsic.Control.CaseAny("Tracking Number","TRACKING_NO")
-			'-- Tracking number saves to SHIPMENT_HEADER (staged rows only)
-			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"Packing List",V.Args.RowIndex,V.Local.sPackinglist)
-			F.Intrinsic.Control.If(V.Local.sPackinglist.Trim,=,"")
-				F.Intrinsic.UI.Msgbox("Cannot edit tracking number - no shipment exists for this line.")
+			'-- Tracking number: copy to all rows on this load; persist to staged PLs and BOLs
+			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"LOAD NUMBER",V.Args.RowIndex,V.Local.sLoadNo)
+			F.Intrinsic.String.Build("[LOAD NUMBER] = {0} AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999",V.Local.sLoadNo,V.Local.sFilter)
+			F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
+			F.Intrinsic.Control.If(V.Local.sSel.Trim,=,"***NORETURN***")
+				F.Intrinsic.UI.Msgbox("Load must not be 0 or 9999.")
 				F.Data.Datatable.SetValue("dtLoad",V.Args.RowIndex,"TRACKING_NO","")
 				F.Intrinsic.Control.ExitSub
 			F.Intrinsic.Control.EndIf
-			'-- Trim leading/trailing spaces from input
 			V.Local.sRet.Set(V.Args.Value.Trim)
-			F.Data.Datatable.SetValue("dtLoad",V.Args.RowIndex,"TRACKING_NO",V.Local.sRet)
-			'-- Propagate to all rows with the same packing list
-			F.Intrinsic.String.Build("[Packing List] = '{0}'",V.Local.sPackinglist,V.Local.sFilter)
-			F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
-			F.Intrinsic.Control.If(V.Local.sSel.Trim,<>,"***NORETURN***")
-				F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
-				F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
-					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"TRACKING_NO",V.Local.sRet)
-				F.Intrinsic.Control.Next(V.Local.i)
-			F.Intrinsic.Control.EndIf
-			F.Intrinsic.String.Build("UPDATE SHIPMENT_HEADER SET TRACKING_NO = '{0}' WHERE PCK_NO = '{1}';",V.Local.sRet,V.Local.sPackinglist,V.Local.sSQL.PSQLFriendly)
-			F.ODBC.Connection!con.Execute(V.Local.sSQL)
-			'-- Also update BOL_HEADER if a waybill exists
-			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"WAY_BILL",V.Args.RowIndex,V.Local.sWaybill)
-			F.Intrinsic.Control.If(V.Local.sWaybill.Trim,<>,"")
-				F.Intrinsic.String.Build("UPDATE BOL_HEADER SET TRACKING_NO = '{0}' WHERE WAYBILL_NO = '{1}';",V.Local.sRet,V.Local.sWaybill.Trim,V.Local.sSQL)
-				F.ODBC.Connection!con.Execute(V.Local.sSQL)
-			F.Intrinsic.Control.EndIf
+			V.Local.sSafe.Set(V.Local.sRet.PSQLFriendly)
+			F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+			F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
+				F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"TRACKING_NO",V.Local.sRet)
+				V.Local.sPackinglist.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).Packing List!FieldValTrim)
+				F.Intrinsic.Control.If(V.Local.sPackinglist,<>,"")
+					F.Intrinsic.String.Build("UPDATE SHIPMENT_HEADER SET TRACKING_NO = '{0}' WHERE PCK_NO = '{1}';",V.Local.sSafe,V.Local.sPackinglist,V.Local.sSQL)
+					F.ODBC.Connection!con.Execute(V.Local.sSQL)
+				F.Intrinsic.Control.EndIf
+				V.Local.sWaybill.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).WAY_BILL!FieldValTrim)
+				F.Intrinsic.Control.If(V.Local.sWaybill,<>,"")
+					F.Intrinsic.String.Build("UPDATE BOL_HEADER SET TRACKING_NO = '{0}' WHERE WAYBILL_NO = '{1}';",V.Local.sSafe,V.Local.sWaybill,V.Local.sSQL)
+					F.ODBC.Connection!con.Execute(V.Local.sSQL)
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.Next(V.Local.i)
 		
 		F.Intrinsic.Control.CaseAny("Pro Number","PRO_NO")
-			'-- Pro number saves to SHIPMENT_HEADER (staged rows only)
-			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"Packing List",V.Args.RowIndex,V.Local.sPackinglist)
-			F.Intrinsic.Control.If(V.Local.sPackinglist.Trim,=,"")
-				F.Intrinsic.UI.Msgbox("Cannot edit pro number - no shipment exists for this line.")
+			'-- Pro number: copy to all rows on this load; persist to staged PLs and BOLs
+			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"LOAD NUMBER",V.Args.RowIndex,V.Local.sLoadNo)
+			F.Intrinsic.String.Build("[LOAD NUMBER] = {0} AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999",V.Local.sLoadNo,V.Local.sFilter)
+			F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
+			F.Intrinsic.Control.If(V.Local.sSel.Trim,=,"***NORETURN***")
+				F.Intrinsic.UI.Msgbox("Load must not be 0 or 9999.")
 				F.Data.Datatable.SetValue("dtLoad",V.Args.RowIndex,"PRO_NO","")
 				F.Intrinsic.Control.ExitSub
 			F.Intrinsic.Control.EndIf
-			'-- Trim leading/trailing spaces from input
 			V.Local.sRet.Set(V.Args.Value.Trim)
-			F.Data.Datatable.SetValue("dtLoad",V.Args.RowIndex,"PRO_NO",V.Local.sRet)
-			'-- Propagate to all rows with the same packing list
-			F.Intrinsic.String.Build("[Packing List] = '{0}'",V.Local.sPackinglist,V.Local.sFilter)
-			F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
-			F.Intrinsic.Control.If(V.Local.sSel.Trim,<>,"***NORETURN***")
-				F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
-				F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
-					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"PRO_NO",V.Local.sRet)
-				F.Intrinsic.Control.Next(V.Local.i)
-			F.Intrinsic.Control.EndIf
-			F.Intrinsic.String.Build("UPDATE SHIPMENT_HEADER SET PRO_NO = '{0}' WHERE PCK_NO = '{1}';",V.Local.sRet,V.Local.sPackinglist,V.Local.sSQL.PSQLFriendly)
-			F.ODBC.Connection!con.Execute(V.Local.sSQL)
-			'-- Also update BOL_HEADER if a waybill exists
-			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"WAY_BILL",V.Args.RowIndex,V.Local.sWaybill)
-			F.Intrinsic.Control.If(V.Local.sWaybill.Trim,<>,"")
-				F.Intrinsic.String.Build("UPDATE BOL_HEADER SET PRO_NO = '{0}' WHERE WAYBILL_NO = '{1}';",V.Local.sRet,V.Local.sWaybill.Trim,V.Local.sSQL)
-				F.ODBC.Connection!con.Execute(V.Local.sSQL)
-			F.Intrinsic.Control.EndIf
+			V.Local.sSafe.Set(V.Local.sRet.PSQLFriendly)
+			F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+			F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
+				F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"PRO_NO",V.Local.sRet)
+				V.Local.sPackinglist.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).Packing List!FieldValTrim)
+				F.Intrinsic.Control.If(V.Local.sPackinglist,<>,"")
+					F.Intrinsic.String.Build("UPDATE SHIPMENT_HEADER SET PRO_NO = '{0}' WHERE PCK_NO = '{1}';",V.Local.sSafe,V.Local.sPackinglist,V.Local.sSQL)
+					F.ODBC.Connection!con.Execute(V.Local.sSQL)
+				F.Intrinsic.Control.EndIf
+				V.Local.sWaybill.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).WAY_BILL!FieldValTrim)
+				F.Intrinsic.Control.If(V.Local.sWaybill,<>,"")
+					F.Intrinsic.String.Build("UPDATE BOL_HEADER SET PRO_NO = '{0}' WHERE WAYBILL_NO = '{1}';",V.Local.sSafe,V.Local.sWaybill,V.Local.sSQL)
+					F.ODBC.Connection!con.Execute(V.Local.sSQL)
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.Next(V.Local.i)
 			
 		F.Intrinsic.Control.CaseAny("Load Notes","LOAD NOTES")
 			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"ORDER_NO",V.Args.RowIndex,V.Local.sOrder)
@@ -5715,6 +5712,8 @@ Program.Sub.GsGCLoad_RowCellClick.Start
 	V.Local.sConfirmMsg.Declare
 	V.Local.iConfirmBtn.Declare(Long)
 	V.Local.sShipViaDesc.Declare
+	V.Local.sSafe.Declare
+	V.Local.bHasWaybill.Declare
 		
 	F.Intrinsic.Control.SelectCase(V.Args.ControlName)
 		F.Intrinsic.Control.Case("GSGCALLSHIP")
@@ -6209,13 +6208,27 @@ Program.Sub.GsGCLoad_RowCellClick.Start
 		'F.ODBC.con!rsttest.Close		
 			
 		F.Intrinsic.Control.Case("BOL_SHIP_FROM")
-			'-- BOL Ship From: browse LOCATION_ADDRESS and update BOL_HEADER ship-from fields
-			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"WAY_BILL",V.Args.RowIndex,V.Local.sWaybill)
-			'-- Validate: must have a staged BOL/waybill number
-			F.Intrinsic.Control.If(V.Local.sWaybill.Trim,=,"")
-				F.Intrinsic.UI.Msgbox("No BOL exists for this line. Stage the order first.")
+			'-- BOL Ship From: browse LOCATION_ADDRESS and apply to all BOLs on this load
+			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"LOAD NUMBER",V.Args.RowIndex,V.Local.sLoadNo)
+			F.Intrinsic.String.Build("[LOAD NUMBER] = {0} AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999",V.Local.sLoadNo,V.Local.sFilter)
+			F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
+			F.Intrinsic.Control.If(V.Local.sSel.Trim,=,"***NORETURN***")
+				F.Intrinsic.UI.Msgbox("Load must not be 0 or 9999.")
 				Function.Intrinsic.Control.UnBlockEvents
-				f.Intrinsic.Control.ExitSub
+				F.Intrinsic.Control.ExitSub
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+			V.Local.bHasWaybill.Set(False)
+			F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
+				V.Local.sWaybill.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).WAY_BILL!FieldValTrim)
+				F.Intrinsic.Control.If(V.Local.sWaybill,<>,"")
+					V.Local.bHasWaybill.Set(True)
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.Next(V.Local.i)
+			F.Intrinsic.Control.If(V.Local.bHasWaybill,=,False)
+				F.Intrinsic.UI.Msgbox("No BOL exists on this load. Stage the order first.")
+				Function.Intrinsic.Control.UnBlockEvents
+				F.Intrinsic.Control.ExitSub
 			F.Intrinsic.Control.EndIf
 			'-- Query LOCATION_ADDRESS for browser
 			F.Intrinsic.Control.If(V.DataTable.dtLocAddr.Exists,=,True)
@@ -6231,20 +6244,20 @@ Program.Sub.GsGCLoad_RowCellClick.Start
 				F.Intrinsic.Control.If(V.DataTable.dtLocFull.Exists,=,True)
 					F.Data.DataTable.Close("dtLocFull")
 				F.Intrinsic.Control.EndIf
-				F.Intrinsic.String.Build("SELECT RTRIM(NAME) AS NAME, RTRIM(ADRS1) AS ADRS1, RTRIM(ADRS2) AS ADRS2, RTRIM(ADRS3) AS ADRS3, RTRIM(ADRS4) AS ADRS4, RTRIM(ADRS5) AS ADRS5, RTRIM(CITY) AS CITY, RTRIM(STATE) AS STATE, RTRIM(ZIP) AS ZIP, RTRIM(COUNTRY) AS COUNTRY, RTRIM(TELEPHONE) AS TELEPHONE, RTRIM(FAX) AS FAX FROM V_LOCATION_ADDRESS WHERE LOCN = '{0}'",V.Local.sLocn.PSQLFriendly,V.Local.sSQL)
+				V.Local.sSafe.Set(V.Local.sLocn.PSQLFriendly)
+				F.Intrinsic.String.Build("SELECT RTRIM(NAME) AS NAME, RTRIM(ADRS1) AS ADRS1, RTRIM(ADRS2) AS ADRS2, RTRIM(ADRS3) AS ADRS3, RTRIM(ADRS4) AS ADRS4, RTRIM(ADRS5) AS ADRS5, RTRIM(CITY) AS CITY, RTRIM(STATE) AS STATE, RTRIM(ZIP) AS ZIP, RTRIM(COUNTRY) AS COUNTRY, RTRIM(TELEPHONE) AS TELEPHONE, RTRIM(FAX) AS FAX FROM V_LOCATION_ADDRESS WHERE LOCN = '{0}'",V.Local.sSafe,V.Local.sSQL)
 				F.Data.Datatable.CreateFromSQL("dtLocFull","con",V.Local.sSQL)
-				'-- Build UPDATE for BOL_HEADER with address from selected location
-				F.Intrinsic.String.Build("UPDATE BOL_HEADER SET FROM_NAME = '{0}', FROM_ADRS1 = '{1}', FROM_ADRS2 = '{2}', FROM_ADRS3 = '{3}', FROM_ADRS4 = '{4}', FROM_ADRS5 = '{5}', FROM_CITY = '{6}', FROM_STATE = '{7}', FROM_ZIP = '{8}', FROM_COUNTRY = '{9}', FROM_TELEPHONE = '{10}', FROM_FAX = '{11}' WHERE WAYBILL_NO = '{12}'",V.DataTable.dtLocFull(0).NAME!FieldValTrim,V.DataTable.dtLocFull(0).ADRS1!FieldValTrim,V.DataTable.dtLocFull(0).ADRS2!FieldValTrim,V.DataTable.dtLocFull(0).ADRS3!FieldValTrim,V.DataTable.dtLocFull(0).ADRS4!FieldValTrim,V.DataTable.dtLocFull(0).ADRS5!FieldValTrim,V.DataTable.dtLocFull(0).CITY!FieldValTrim,V.DataTable.dtLocFull(0).STATE!FieldValTrim,V.DataTable.dtLocFull(0).ZIP!FieldValTrim,V.DataTable.dtLocFull(0).COUNTRY!FieldValTrim,V.DataTable.dtLocFull(0).TELEPHONE!FieldValTrim,V.DataTable.dtLocFull(0).FAX!FieldValTrim,V.Local.sWaybill,V.Local.sSQL)
-				F.ODBC.Connection!con.Execute(V.Local.sSQL)
-				'-- Update all grid rows sharing this WAY_BILL
-				F.Intrinsic.String.Build("[WAY_BILL] = '{0}'",V.Local.sWaybill,V.Local.sFilter)
-				F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
-				F.Intrinsic.Control.If(V.Local.sSel.Trim,<>,"***NORETURN***")
-					F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
-					F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
-						F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"BOL_SHIP_FROM",V.DataTable.dtLocFull(0).NAME!FieldValTrim)
-					F.Intrinsic.Control.Next(V.Local.i)
-				F.Intrinsic.Control.EndIf
+				V.Local.sText.Set(V.DataTable.dtLocFull(0).NAME!FieldValTrim)
+				'-- Apply ship-from to every load row; persist to each waybill on the load
+				F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
+					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"BOL_SHIP_FROM",V.Local.sText)
+					V.Local.sWaybill.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).WAY_BILL!FieldValTrim)
+					F.Intrinsic.Control.If(V.Local.sWaybill,<>,"")
+						V.Local.sSafe.Set(V.Local.sWaybill.PSQLFriendly)
+						F.Intrinsic.String.Build("UPDATE BOL_HEADER SET FROM_NAME = '{0}', FROM_ADRS1 = '{1}', FROM_ADRS2 = '{2}', FROM_ADRS3 = '{3}', FROM_ADRS4 = '{4}', FROM_ADRS5 = '{5}', FROM_CITY = '{6}', FROM_STATE = '{7}', FROM_ZIP = '{8}', FROM_COUNTRY = '{9}', FROM_TELEPHONE = '{10}', FROM_FAX = '{11}' WHERE WAYBILL_NO = '{12}'",V.DataTable.dtLocFull(0).NAME!FieldValTrim,V.DataTable.dtLocFull(0).ADRS1!FieldValTrim,V.DataTable.dtLocFull(0).ADRS2!FieldValTrim,V.DataTable.dtLocFull(0).ADRS3!FieldValTrim,V.DataTable.dtLocFull(0).ADRS4!FieldValTrim,V.DataTable.dtLocFull(0).ADRS5!FieldValTrim,V.DataTable.dtLocFull(0).CITY!FieldValTrim,V.DataTable.dtLocFull(0).STATE!FieldValTrim,V.DataTable.dtLocFull(0).ZIP!FieldValTrim,V.DataTable.dtLocFull(0).COUNTRY!FieldValTrim,V.DataTable.dtLocFull(0).TELEPHONE!FieldValTrim,V.DataTable.dtLocFull(0).FAX!FieldValTrim,V.Local.sSafe,V.Local.sSQL)
+						F.ODBC.Connection!con.Execute(V.Local.sSQL)
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.Next(V.Local.i)
 				F.Data.DataTable.Close("dtLocFull")
 			f.Intrinsic.Control.Else
 				Function.Intrinsic.Control.UnBlockEvents
@@ -11180,6 +11193,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260723114832874$}$CursorSigned
-${$7$}$File Version:1.0.20260723184832.0
+${$6$}$bstevens$}$20260819125529972$}$CursorSigned
+${$7$}$File Version:1.0.20260819195529.0
 Program.Sub.Comments.End
