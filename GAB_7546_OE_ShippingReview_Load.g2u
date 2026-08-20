@@ -4713,58 +4713,58 @@ Program.Sub.GsGCLoad_CellValueChanged.Start
 			F.ODBC.con!rstcarriertrailer.Close	
 		
 		F.Intrinsic.Control.CaseAny("Tracking Number","TRACKING_NO")
-			'-- Tracking number: copy to all rows on this load; persist to staged PLs and BOLs
-			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"LOAD NUMBER",V.Args.RowIndex,V.Local.sLoadNo)
-			F.Intrinsic.String.Build("[LOAD NUMBER] = {0} AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999",V.Local.sLoadNo,V.Local.sFilter)
-			F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
-			F.Intrinsic.Control.If(V.Local.sSel.Trim,=,"***NORETURN***")
-				F.Intrinsic.UI.Msgbox("Load must not be 0 or 9999.")
+			'-- Tracking number: copy to all rows with the same packing list; persist to SHIPMENT_HEADER and BOL
+			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"Packing List",V.Args.RowIndex,V.Local.sPackinglist)
+			F.Intrinsic.Control.If(V.Local.sPackinglist.Trim,=,"")
+				F.Intrinsic.UI.Msgbox("Cannot edit tracking number - no shipment exists for this line.")
 				F.Data.Datatable.SetValue("dtLoad",V.Args.RowIndex,"TRACKING_NO","")
 				F.Intrinsic.Control.ExitSub
 			F.Intrinsic.Control.EndIf
 			V.Local.sRet.Set(V.Args.Value.Trim)
 			V.Local.sSafe.Set(V.Local.sRet.PSQLFriendly)
-			F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
-			F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
-				F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"TRACKING_NO",V.Local.sRet)
-				V.Local.sPackinglist.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).Packing List!FieldValTrim)
-				F.Intrinsic.Control.If(V.Local.sPackinglist,<>,"")
-					F.Intrinsic.String.Build("UPDATE SHIPMENT_HEADER SET TRACKING_NO = '{0}' WHERE PCK_NO = '{1}';",V.Local.sSafe,V.Local.sPackinglist,V.Local.sSQL)
-					F.ODBC.Connection!con.Execute(V.Local.sSQL)
-				F.Intrinsic.Control.EndIf
-				V.Local.sWaybill.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).WAY_BILL!FieldValTrim)
-				F.Intrinsic.Control.If(V.Local.sWaybill,<>,"")
-					F.Intrinsic.String.Build("UPDATE BOL_HEADER SET TRACKING_NO = '{0}' WHERE WAYBILL_NO = '{1}';",V.Local.sSafe,V.Local.sWaybill,V.Local.sSQL)
-					F.ODBC.Connection!con.Execute(V.Local.sSQL)
-				F.Intrinsic.Control.EndIf
-			F.Intrinsic.Control.Next(V.Local.i)
+			F.Data.Datatable.SetValue("dtLoad",V.Args.RowIndex,"TRACKING_NO",V.Local.sRet)
+			F.Intrinsic.String.Build("[Packing List] = '{0}'",V.Local.sPackinglist,V.Local.sFilter)
+			F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
+			F.Intrinsic.Control.If(V.Local.sSel.Trim,<>,"***NORETURN***")
+				F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+				F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
+					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"TRACKING_NO",V.Local.sRet)
+				F.Intrinsic.Control.Next(V.Local.i)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.String.Build("UPDATE SHIPMENT_HEADER SET TRACKING_NO = '{0}' WHERE PCK_NO = '{1}';",V.Local.sSafe,V.Local.sPackinglist,V.Local.sSQL)
+			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"WAY_BILL",V.Args.RowIndex,V.Local.sWaybill)
+			F.Intrinsic.Control.If(V.Local.sWaybill.Trim,<>,"")
+				F.Intrinsic.String.Build("UPDATE BOL_HEADER SET TRACKING_NO = '{0}' WHERE WAYBILL_NO = '{1}';",V.Local.sSafe,V.Local.sWaybill.Trim,V.Local.sSQL)
+				F.ODBC.Connection!con.Execute(V.Local.sSQL)
+			F.Intrinsic.Control.EndIf
 		
 		F.Intrinsic.Control.CaseAny("Pro Number","PRO_NO")
-			'-- Pro number: copy to all rows on this load; persist to staged PLs and BOLs
-			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"LOAD NUMBER",V.Args.RowIndex,V.Local.sLoadNo)
-			F.Intrinsic.String.Build("[LOAD NUMBER] = {0} AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999",V.Local.sLoadNo,V.Local.sFilter)
-			F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
-			F.Intrinsic.Control.If(V.Local.sSel.Trim,=,"***NORETURN***")
-				F.Intrinsic.UI.Msgbox("Load must not be 0 or 9999.")
+			'-- Pro number: copy to all rows with the same packing list; persist to SHIPMENT_HEADER and BOL
+			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"Packing List",V.Args.RowIndex,V.Local.sPackinglist)
+			F.Intrinsic.Control.If(V.Local.sPackinglist.Trim,=,"")
+				F.Intrinsic.UI.Msgbox("Cannot edit pro number - no shipment exists for this line.")
 				F.Data.Datatable.SetValue("dtLoad",V.Args.RowIndex,"PRO_NO","")
 				F.Intrinsic.Control.ExitSub
 			F.Intrinsic.Control.EndIf
 			V.Local.sRet.Set(V.Args.Value.Trim)
 			V.Local.sSafe.Set(V.Local.sRet.PSQLFriendly)
-			F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
-			F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
-				F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"PRO_NO",V.Local.sRet)
-				V.Local.sPackinglist.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).Packing List!FieldValTrim)
-				F.Intrinsic.Control.If(V.Local.sPackinglist,<>,"")
-					F.Intrinsic.String.Build("UPDATE SHIPMENT_HEADER SET PRO_NO = '{0}' WHERE PCK_NO = '{1}';",V.Local.sSafe,V.Local.sPackinglist,V.Local.sSQL)
-					F.ODBC.Connection!con.Execute(V.Local.sSQL)
-				F.Intrinsic.Control.EndIf
-				V.Local.sWaybill.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).WAY_BILL!FieldValTrim)
-				F.Intrinsic.Control.If(V.Local.sWaybill,<>,"")
-					F.Intrinsic.String.Build("UPDATE BOL_HEADER SET PRO_NO = '{0}' WHERE WAYBILL_NO = '{1}';",V.Local.sSafe,V.Local.sWaybill,V.Local.sSQL)
-					F.ODBC.Connection!con.Execute(V.Local.sSQL)
-				F.Intrinsic.Control.EndIf
-			F.Intrinsic.Control.Next(V.Local.i)
+			F.Data.Datatable.SetValue("dtLoad",V.Args.RowIndex,"PRO_NO",V.Local.sRet)
+			F.Intrinsic.String.Build("[Packing List] = '{0}'",V.Local.sPackinglist,V.Local.sFilter)
+			F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
+			F.Intrinsic.Control.If(V.Local.sSel.Trim,<>,"***NORETURN***")
+				F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+				F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
+					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"PRO_NO",V.Local.sRet)
+				F.Intrinsic.Control.Next(V.Local.i)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.String.Build("UPDATE SHIPMENT_HEADER SET PRO_NO = '{0}' WHERE PCK_NO = '{1}';",V.Local.sSafe,V.Local.sPackinglist,V.Local.sSQL)
+			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"WAY_BILL",V.Args.RowIndex,V.Local.sWaybill)
+			F.Intrinsic.Control.If(V.Local.sWaybill.Trim,<>,"")
+				F.Intrinsic.String.Build("UPDATE BOL_HEADER SET PRO_NO = '{0}' WHERE WAYBILL_NO = '{1}';",V.Local.sSafe,V.Local.sWaybill.Trim,V.Local.sSQL)
+				F.ODBC.Connection!con.Execute(V.Local.sSQL)
+			F.Intrinsic.Control.EndIf
 			
 		F.Intrinsic.Control.CaseAny("Load Notes","LOAD NOTES")
 			Gui.frmShip.[V.Args.ControlName].GetCellValueByColumnName(V.Local.sGV,"ORDER_NO",V.Args.RowIndex,V.Local.sOrder)
@@ -9976,6 +9976,8 @@ v.Local.dPickDate.Declare(Date)
 v.Local.sSQL.Declare(String)
 v.Local.sQuery.Declare(String)
 v.Local.iCnt.Declare
+v.Local.iWait.Declare(Long)
+v.Local.iLeft.Declare(Long)
 v.Local.sParam.Declare
 
 'filter for selected rows — block events only during data extraction
@@ -9993,12 +9995,22 @@ Function.Intrinsic.Control.UnBlockEvents
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
-		F.Intrinsic.Control.For(v.Local.i,0,v.Local.sSel.UBound)
+		V.Local.iCnt.Set(V.Local.sSel.UBound)
+		F.Intrinsic.Control.For(v.Local.i,0,V.Local.iCnt)
 			'Print BOL
 			f.Global.General.CallWrapperSync(910060,v.DataTable.dtLoadbol(v.Local.sSel(v.Local.i)).WAY_BILL!FieldValTRIM)
-			'7/23/26 BS - 3s delay between BOL prints to allow print pipeline to fully complete
-			F.Intrinsic.Control.If(V.Local.i,<,V.Local.sSel.UBound)
-				F.Intrinsic.UI.Sleep(3)
+			'8/20/26 BS - 5s delay between BOL prints; 1s Sleep ticks pump the message loop (not SleepMS)
+			F.Intrinsic.Control.If(V.Local.i,<,V.Local.iCnt)
+				V.Local.sRet.Set("Waiting 5 seconds before next BOL print...")
+				F.Intrinsic.UI.InvokeWaitDialog(V.Local.sRet)
+				F.Intrinsic.Control.For(V.Local.iWait,1,5)
+					F.Intrinsic.Math.Sub(6,V.Local.iWait,V.Local.iLeft)
+					F.Intrinsic.String.Build("Waiting {0} seconds before next BOL print...",V.Local.iLeft,V.Local.sRet)
+					F.Intrinsic.UI.ChangeWaitStatus(V.Local.sRet)
+					F.Intrinsic.UI.Sleep(1)
+					F.Intrinsic.UI.DoEvents
+				F.Intrinsic.Control.Next(V.Local.iWait)
+				F.Intrinsic.UI.CloseWaitDialog
 			F.Intrinsic.Control.EndIf
 		F.Intrinsic.Control.Next(v.Local.i)	
 f.Intrinsic.Control.Else
@@ -10007,6 +10019,7 @@ Function.Intrinsic.Control.EndIf
 f.Data.Datatable.Close("dtloadbol")
 f.Intrinsic.Control.ExitSub
 Function.Intrinsic.Control.Catch
+	F.Intrinsic.UI.CloseWaitDialog
 	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
 	F.Intrinsic.UI.Msgbox(V.Local.sError)
 	F.Intrinsic.Control.CallSub(frmShip_UnLoad)	
@@ -11193,6 +11206,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260819125529972$}$CursorSigned
-${$7$}$File Version:1.0.20260819195529.0
+${$6$}$bstevens$}$20260820133741432$}$CursorSigned
+${$7$}$File Version:1.0.20260820203741.0
 Program.Sub.Comments.End
