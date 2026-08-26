@@ -10507,7 +10507,7 @@ Program.Sub.SplitSOLine_Click.End
 Program.Sub.SplitSOLine_Save.Start
 '7546 Hultec 03/23/2026: Save handler for Split SO Line. Validates qty/date, checks order lock,
 '      ship schedule (V_OE_SHIP_SCHED), and staged shipment (STAGING_QUANTITY) before processing.
-'      Creates new SO lines via ORDADCMD, sets user field (dynamic from OE_USER_FLDS_LN "SPLIT FROM LINE" label)/dates on new lines,
+'      Creates new SO lines via ORDADCMD, copies USER_1-USER_5 from the original line, overlays SPLIT FROM LINE only if that column was empty,
 '      and updates original line qty/weight via Sales.UpdateOrderLinesByFile CallWrapper.
 F.Intrinsic.Control.Try
 V.Local.sError.Declare
@@ -10553,6 +10553,11 @@ V.Local.sSer.Declare(String)
 V.Local.sUFColumn.Declare(String)
 V.Local.iUFKeyID.Declare(Long)
 V.Local.sUFReturn.Declare(String)
+V.Local.sUser1.Declare(String)
+V.Local.sUser2.Declare(String)
+V.Local.sUser3.Declare(String)
+V.Local.sUser4.Declare(String)
+V.Local.sUser5.Declare(String)
 
 F.Data.DataTable.AcceptChanges("dtSplitLines")
 
@@ -10651,22 +10656,35 @@ F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.dtSplitLines.RowCount--)
 		F.Intrinsic.Control.EndIf
 		F.Intrinsic.String.Build("{0}0",V.Local.sNewLine,V.Local.sNewRecNo)
 
-		F.Intrinsic.String.Build("SELECT PRICE, COST, DATE_ORDER, QTY_ORDERED, WEIGHT FROM ORDER_LINES WHERE ORDER_NO = '{0}' AND RECORD_NO = '{1}'",V.Local.sOrderNo,V.Local.sOrderLine,V.Local.sSQL)
-		F.ODBC.Connection!con.OpenRecordsetRO("rstSplitOL",V.Local.sSQL)
-		F.Intrinsic.Control.If(V.ODBC.con!rstSplitOL.EOF,=,False)
-			V.Local.fPrice.Set(V.ODBC.con!rstSplitOL.FieldValFloat!PRICE)
-			V.Local.fCost.Set(V.ODBC.con!rstSplitOL.FieldValFloat!COST)
-			V.Local.sDateOrder.Set(V.ODBC.con!rstSplitOL.FieldVal!DATE_ORDER)
-			V.Local.fLineQty.Set(V.ODBC.con!rstSplitOL.FieldValFloat!QTY_ORDERED)
-			V.Local.fOrigWeight.Set(V.ODBC.con!rstSplitOL.FieldValFloat!WEIGHT)
+		F.Intrinsic.String.Build("SELECT PRICE, COST, DATE_ORDER, QTY_ORDERED, WEIGHT, USER_1, USER_2, USER_3, USER_4, USER_5 FROM ORDER_LINES WHERE ORDER_NO = '{0}' AND RECORD_NO = '{1}'",V.Local.sOrderNo,V.Local.sOrderLine,V.Local.sSQL)
+		F.Intrinsic.Control.If(V.DataTable.dtSplitOL.Exists)
+			F.Data.DataTable.Close("dtSplitOL")
+		F.Intrinsic.Control.EndIf
+		F.Data.DataTable.CreateFromSQL("dtSplitOL","con",V.Local.sSQL)
+		F.Intrinsic.Control.If(V.DataTable.dtSplitOL.RowCount,>,0)
+			V.Local.fPrice.Set(V.DataTable.dtSplitOL(0).PRICE!FieldValFloat)
+			V.Local.fCost.Set(V.DataTable.dtSplitOL(0).COST!FieldValFloat)
+			V.Local.sDateOrder.Set(V.DataTable.dtSplitOL(0).DATE_ORDER!FieldVal)
+			V.Local.fLineQty.Set(V.DataTable.dtSplitOL(0).QTY_ORDERED!FieldValFloat)
+			V.Local.fOrigWeight.Set(V.DataTable.dtSplitOL(0).WEIGHT!FieldValFloat)
+			V.Local.sUser1.Set(V.DataTable.dtSplitOL(0).USER_1!FieldVal)
+			V.Local.sUser2.Set(V.DataTable.dtSplitOL(0).USER_2!FieldVal)
+			V.Local.sUser3.Set(V.DataTable.dtSplitOL(0).USER_3!FieldVal)
+			V.Local.sUser4.Set(V.DataTable.dtSplitOL(0).USER_4!FieldVal)
+			V.Local.sUser5.Set(V.DataTable.dtSplitOL(0).USER_5!FieldVal)
 		F.Intrinsic.Control.Else
 			V.Local.fPrice.Set(0)
 			V.Local.fCost.Set(0)
 			V.Local.sDateOrder.Set("")
 			V.Local.fLineQty.Set(0)
 			V.Local.fOrigWeight.Set(0)
+			V.Local.sUser1.Set("")
+			V.Local.sUser2.Set("")
+			V.Local.sUser3.Set("")
+			V.Local.sUser4.Set("")
+			V.Local.sUser5.Set("")
 		F.Intrinsic.Control.EndIf
-		F.ODBC.con!rstSplitOL.Close
+		F.Data.DataTable.Close("dtSplitOL")
 		F.Intrinsic.Control.If(V.Local.fLineQty,>,0)
 			F.Intrinsic.Math.Div(V.Local.fOrigWeight,V.Local.fLineQty,V.Local.fUnitWeight)
 		F.Intrinsic.Control.Else
@@ -10763,11 +10781,39 @@ F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.dtSplitLines.RowCount--)
 			F.Intrinsic.File.DeleteFile(V.Local.sFilePath)
 		F.Intrinsic.Control.EndIf
 
-		'7546 UDF 03/25/2026: Write original line RECORD_NO to the dynamically-resolved user field on the new split line (skip if no "SPLIT FROM LINE" label configured)
-		F.Intrinsic.Control.If(V.Local.sUFColumn,<>,"")
-			F.Intrinsic.String.Build("UPDATE ORDER_LINES SET {0} = '{1}' WHERE ORDER_NO = '{2}' AND RECORD_NO = '{3}'",V.Local.sUFColumn,V.Local.sRecNo,V.Local.sOrderNo,V.Local.sNewRecNo,V.Local.sSQL)
-			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+		' Overlay original RECORD_NO onto the SPLIT FROM LINE column only when that user field was empty on the original line (do not wipe EDI PO / PCK note).
+		F.Intrinsic.Control.If(V.Local.sUFColumn,=,"USER_1")
+			F.Intrinsic.Control.If(V.Local.sUser1.RTrim,=,"")
+				V.Local.sUser1.Set(V.Local.sRecNo)
+			F.Intrinsic.Control.EndIf
 		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Local.sUFColumn,=,"USER_2")
+			F.Intrinsic.Control.If(V.Local.sUser2.RTrim,=,"")
+				V.Local.sUser2.Set(V.Local.sRecNo)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Local.sUFColumn,=,"USER_3")
+			F.Intrinsic.Control.If(V.Local.sUser3.RTrim,=,"")
+				V.Local.sUser3.Set(V.Local.sRecNo)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Local.sUFColumn,=,"USER_4")
+			F.Intrinsic.Control.If(V.Local.sUser4.RTrim,=,"")
+				V.Local.sUser4.Set(V.Local.sRecNo)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Local.sUFColumn,=,"USER_5")
+			F.Intrinsic.Control.If(V.Local.sUser5.RTrim,=,"")
+				V.Local.sUser5.Set(V.Local.sRecNo)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		V.Local.sUser1.Set(V.Local.sUser1.PSQLFriendly)
+		V.Local.sUser2.Set(V.Local.sUser2.PSQLFriendly)
+		V.Local.sUser3.Set(V.Local.sUser3.PSQLFriendly)
+		V.Local.sUser4.Set(V.Local.sUser4.PSQLFriendly)
+		V.Local.sUser5.Set(V.Local.sUser5.PSQLFriendly)
+		F.Intrinsic.String.Build("UPDATE ORDER_LINES SET USER_1 = '{0}', USER_2 = '{1}', USER_3 = '{2}', USER_4 = '{3}', USER_5 = '{4}' WHERE ORDER_NO = '{5}' AND RECORD_NO = '{6}'",V.Local.sUser1,V.Local.sUser2,V.Local.sUser3,V.Local.sUser4,V.Local.sUser5,V.Local.sOrderNo,V.Local.sNewRecNo,V.Local.sSQL)
+		F.ODBC.Connection!con.Execute(V.Local.sSQL)
 
 		'7546 Hultec 03/23/2026: Commented out direct SQL for DATE_ITEM_PROM; now sent via Sales.UpdateOrderLinesByFile at CSV position 16.
 		'F.Intrinsic.String.Build("UPDATE ORDER_LINES SET DATE_ITEM_PROM = '{0}', MUST_DLVR_BY_DATE = '{0}' WHERE ORDER_NO = '{1}' AND RECORD_NO = '{2}'",V.Local.dNewDue.FormatYYYYMMDD,V.Local.sOrderNo,V.Local.sNewRecNo,V.Local.sSQL)
@@ -11206,6 +11252,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260820133741432$}$CursorSigned
-${$7$}$File Version:1.0.20260820203741.0
+${$6$}$bstevens$}$20260826131710413$}$CursorSigned
+${$7$}$File Version:1.0.20260826201710.0
 Program.Sub.Comments.End
