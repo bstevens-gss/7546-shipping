@@ -9143,6 +9143,8 @@ v.Local.iCnt.Declare
 v.Local.sParam.Declare
 V.Local.sTransIDNew.Declare
 V.Local.sUserID.Declare
+V.Local.sPackSuffix.Declare
+V.Local.sHdrSuffix.Declare
 
 v.Local.sUserID.Set(v.Caller.user)
 
@@ -9265,11 +9267,30 @@ v.local.iCnt.Set(0)
 F.Intrinsic.Control.For(V.Local.iCnt,0,v.DataTable.dtloadship0.RowCount--,1)
 	'Flag load plan record as shipped/picked
 	F.Intrinsic.String.Build("update load_plan set shipped = 1,picked = 1 where order_no = '{0}' and order_line = '{1}' ",V.DataTable.dtloadship0(V.Local.iCnt).ORDER_NO!FieldVal,V.DataTable.dtloadship0(V.Local.iCnt).ORDER_LINE!FieldVal,V.Local.sSQL)
-	F.ODBC.Connection!Con.Execute(V.Local.sSQL)	
-	'02/23/26
-	'update order_suffix to current_order_suffix + 1 for all unshipped/pending order lines that match sales order shipped
-	F.Intrinsic.String.Build("UPDATE load_plan SET order_suffix = CASE WHEN (CAST('{1}' AS INTEGER) + 1) < 10 THEN '000' + CAST((CAST('{1}' AS INTEGER) + 1) AS VARCHAR(1)) WHEN (CAST('{1}' AS INTEGER) + 1) < 100 THEN '00' + CAST((CAST('{1}' AS INTEGER) + 1) AS VARCHAR(2)) WHEN (CAST('{1}' AS INTEGER) + 1) < 1000 THEN '0' + CAST((CAST('{1}' AS INTEGER) + 1) AS VARCHAR(3)) ELSE CAST((CAST('{1}' AS INTEGER) + 1) AS VARCHAR(4)) END WHERE shipped = 0 AND order_no = '{0}' ",V.DataTable.dtloadship0(V.Local.iCnt).ORDER_NO!FieldVal,V.DataTable.dtloadship0(V.Local.iCnt).CURRENT_ORDER_SUFFIX!FieldVal,V.Local.sSQL)
-	F.ODBC.Connection!Con.Execute(V.Local.sSQL)	
+	F.ODBC.Connection!Con.Execute(V.Local.sSQL)
+	'-- SHP710 next-seq on unshipped LOAD_PLAN only: packing suffix >= header next-seq -> packing+1; else header. Never decrease. Skip lines that already have a staged packing (SHP_STATUS=0). Do not write ORDER_HEADER.
+	F.Intrinsic.Control.If(V.DataTable.dtPackSfx.Exists)
+		F.Data.Datatable.Close("dtPackSfx")
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Build("SELECT TOP 1 RTRIM(ORDER_SUFFIX) AS ORDER_SUFFIX FROM V_SHIPMENT_HEADER WHERE PCK_NO='{0}' AND ORDER_NO='{1}' AND RECORD_TYPE='A' ORDER BY ORDER_REC",V.DataTable.dtloadship0(V.Local.iCnt).PACKING LIST!FieldValTrim,V.DataTable.dtloadship0(V.Local.iCnt).ORDER_NO!FieldVal,V.Local.sSQL)
+	F.Data.DataTable.CreateFromSQL("dtPackSfx","con",V.Local.sSQL)
+	F.Intrinsic.Control.If(V.DataTable.dtPackSfx.RowCount,>,0)
+		V.Local.sPackSuffix.Set(V.DataTable.dtPackSfx(0).ORDER_SUFFIX!FieldValTrim)
+		V.Local.sHdrSuffix.Set(V.DataTable.dtloadship0(V.Local.iCnt).CURRENT_ORDER_SUFFIX!FieldValTrim)
+		F.Intrinsic.Control.If(V.Local.sPackSuffix.IsNumeric,=,True)
+			F.Intrinsic.Control.If(V.Local.sHdrSuffix.IsNumeric,=,True)
+				F.Intrinsic.String.LPad(V.Local.sPackSuffix,"0",4,V.Local.sPackSuffix)
+				F.Intrinsic.String.LPad(V.Local.sHdrSuffix,"0",4,V.Local.sHdrSuffix)
+				F.Intrinsic.Control.If(V.Local.sPackSuffix,>=,V.Local.sHdrSuffix)
+					F.Intrinsic.String.Build("UPDATE load_plan SET order_suffix = CASE WHEN (CAST('{1}' AS INTEGER) + 1) < 10 THEN '000' + CAST((CAST('{1}' AS INTEGER) + 1) AS VARCHAR(1)) WHEN (CAST('{1}' AS INTEGER) + 1) < 100 THEN '00' + CAST((CAST('{1}' AS INTEGER) + 1) AS VARCHAR(2)) WHEN (CAST('{1}' AS INTEGER) + 1) < 1000 THEN '0' + CAST((CAST('{1}' AS INTEGER) + 1) AS VARCHAR(3)) ELSE CAST((CAST('{1}' AS INTEGER) + 1) AS VARCHAR(4)) END WHERE shipped = 0 AND order_no = '{0}' AND CAST(RTRIM(order_suffix) AS INTEGER) <= (CAST('{1}' AS INTEGER) + 1) AND NOT EXISTS (SELECT 1 FROM V_STAGING_QUANTITY H INNER JOIN V_SHIPMENT_HEADER S ON S.PCK_NO=H.PCK_NO AND S.ORDER_NO=H.ORDER_NO WHERE H.ORDER_NO=load_plan.ORDER_NO AND H.LINE=load_plan.ORDER_LINE AND RTRIM(S.SHP_STATUS)='0') ",V.DataTable.dtloadship0(V.Local.iCnt).ORDER_NO!FieldVal,V.Local.sPackSuffix,V.Local.sSQL)
+				F.Intrinsic.Control.Else
+					F.Intrinsic.String.Build("UPDATE load_plan SET order_suffix = CASE WHEN CAST('{1}' AS INTEGER) < 10 THEN '000' + CAST(CAST('{1}' AS INTEGER) AS VARCHAR(1)) WHEN CAST('{1}' AS INTEGER) < 100 THEN '00' + CAST(CAST('{1}' AS INTEGER) AS VARCHAR(2)) WHEN CAST('{1}' AS INTEGER) < 1000 THEN '0' + CAST(CAST('{1}' AS INTEGER) AS VARCHAR(3)) ELSE CAST(CAST('{1}' AS INTEGER) AS VARCHAR(4)) END WHERE shipped = 0 AND order_no = '{0}' AND CAST(RTRIM(order_suffix) AS INTEGER) <= CAST('{1}' AS INTEGER) AND NOT EXISTS (SELECT 1 FROM V_STAGING_QUANTITY H INNER JOIN V_SHIPMENT_HEADER S ON S.PCK_NO=H.PCK_NO AND S.ORDER_NO=H.ORDER_NO WHERE H.ORDER_NO=load_plan.ORDER_NO AND H.LINE=load_plan.ORDER_LINE AND RTRIM(S.SHP_STATUS)='0') ",V.DataTable.dtloadship0(V.Local.iCnt).ORDER_NO!FieldVal,V.Local.sHdrSuffix,V.Local.sSQL)
+				F.Intrinsic.Control.EndIf
+				F.ODBC.Connection!Con.Execute(V.Local.sSQL)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Data.Datatable.Close("dtPackSfx")
 F.Intrinsic.Control.Next(V.Local.iCnt)	
 
 'verify that we have a checked value in SELECT and load is not 0 or 9999 AND ORDER_SUFFIX = 'P'. 
@@ -11252,6 +11273,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260826131710413$}$CursorSigned
-${$7$}$File Version:1.0.20260826201710.0
+${$6$}$bstevens$}$20260826194815300$}$CursorSigned
+${$7$}$File Version:1.0.20260827024815.0
 Program.Sub.Comments.End
