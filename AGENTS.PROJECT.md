@@ -65,6 +65,15 @@ This is the fallback location for memories when no other AGENTS.x.md file is rel
 
 <!-- Add memories below this line -->
 
+### 7546 Carrier Pallet Label (Walmart office pallet, not S20 77)
+- Freight Class grid column `PRINT_CARRIER_PALLET` caption **Carrier Labels** prints via Codesoft, not S20 / FIELD_24 / LABEL_FLAG.
+- Freight Class `PRINT_LABEL` caption is **BOL Labels** (S20 pallet 77).
+- Template path: `{V.Caller.BusintDir}\labels\custom\GAB_7546_CARRIER_PALLET.lab`. Size is **4x6 portrait**. Column is hidden until that file exists.
+- Field contract and sample artwork: `docs/7546_shipping/GAB_7546_CARRIER_PALLET_LABEL.md`.
+- Distinct from header **Walmart Labels 5055** (carton/item) and from freight-class **BOL Labels** (S20 pallet 77).
+- `PALLET_COUNT` strips leading zeros from `BOL_PALLET_NUM.PLLT_NO` (CHAR 8 `00000001`) via `ConvertToLong` so the label prints `PALLET 1 OF 2`.
+- Freight Class grid is one row per order/line/pallet (`GROUP BY`), not one row per carton on `BOL_PACK_DTL`.
+
 ### Codesoft Label Naming Convention (TC-03, ARC 6907 Extended Pre-Proc)
 - **Label directory**: `{BusintDir}\labels\custom\` (e.g., `c:\Apps\Global\BUSINT\labels\custom\`)
 - **Standard naming** (1 copy): `OE_Wireless_Shipping_9001_Extended_{CompanyCode}_{CustomerNumber}.lab`

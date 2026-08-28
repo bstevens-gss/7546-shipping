@@ -271,7 +271,7 @@ Gui.frmShipSch.GSGCShipSch.Visible(True)
 Gui.frmShipSch.GSGCShipSch.Zorder(0)
 Gui.frmFrtClass..Create(BaseForm)
 Gui.frmFrtClass..Caption("Freight Class - Pallet Detail")
-Gui.frmFrtClass..Size(14500,5000)
+Gui.frmFrtClass..Size(16800,5000)
 Gui.frmFrtClass..Position(0,0)
 Gui.frmFrtClass..BackColor(-2147483633)
 Gui.frmFrtClass..MaxButton(False)
@@ -292,7 +292,7 @@ Gui.frmFrtClass.btnCalcClass.Create(Button,"Calculate Class",True,1200,300,30,30
 Gui.frmFrtClass.btnCalcClass.Enabled(True)
 Gui.frmFrtClass.btnCalcClass.Event(Click,btnCalcClass_Click)
 Gui.frmFrtClass.GSGCFrtClass.Create(GsGridControl)
-Gui.frmFrtClass.GSGCFrtClass.Size(14350,4350)
+Gui.frmFrtClass.GSGCFrtClass.Size(16650,4350)
 Gui.frmFrtClass.GSGCFrtClass.Position(30,450)
 Gui.frmFrtClass.GSGCFrtClass.Enabled(True)
 Gui.frmFrtClass.GSGCFrtClass.Visible(True)
@@ -503,6 +503,7 @@ Program.Sub.Preflight.Start
 	V.Global.sPOPackPrinter.Declare(String,"")
 	v.Global.b5235.Declare
 	V.Global.b5055.Declare(Boolean,False)
+	V.Global.bCarrierPalletLab.Declare(Boolean,False)
 	v.Global.sAllocType.Declare
 	'7546 Hultec 03/23/2026: Tracks whether a split save completed successfully for grid refresh on form close.
 	V.Global.bSplitSaved.Declare(Boolean,False)
@@ -580,6 +581,7 @@ Program.Sub.Main.Start
 	f.Intrinsic.Control.CallSub(GetUserFields)
 	f.Intrinsic.Control.CallSub(CheckAllocationType)
 	F.Intrinsic.Control.CallSub(Validate_5055)
+	F.Intrinsic.Control.CallSub(Validate_CarrierPalletLab)
 	F.Intrinsic.Control.If(V.Global.b5055)
 		Gui.frmShip.cmdPrintWalmartLabels5055.DisableOnClick(V.Enum.DisableOnClickModes!DisableButtonWithReEnable)
 		Gui.frmShip.cmdPrintWalmartLabels5055.Visible(True)
@@ -3773,15 +3775,22 @@ Program.Sub.LoadFrtClassDetail.Start
 		F.Data.DataTable.Close("dtFrtClass")
 	F.Intrinsic.Control.EndIf
 
-	'-- Query all order lines sharing the same pallet(s) as the clicked order/line
-	F.Intrinsic.String.Build("SELECT DISTINCT BPD.ORDER_NO, BPD.ORDER_LINE, RTRIM(BPD.PART) AS PART, RTRIM(BPD.LOCN) AS LOCN, RTRIM(BPD.LOT) AS LOT, RTRIM(BPD.BIN) AS BIN, RTRIM(BPD.HEAT) AS HEAT, RTRIM(BPD.SERIAL) AS SERIAL, BPD.CRTN_NO, BPD.QTY, BPD.LBS_PER_PC, RTRIM(BPD.PLLT_CD) AS PLLT_CD, BPN.PLLT_NO, BPN.PKGD_WEIGHT, RTRIM(BPN.TRCKNG_NO) AS TRCKNG_NO, RTRIM(BPN.USR_DFND_NO) AS USR_DFND_NO, RTRIM(BPI.FRT_CLASS) AS FRT_CLASS FROM BOL_PACK_DTL BPD JOIN BOL_PALLET_NUM BPN ON BPD.PCK_NO = BPN.PCK_NO AND BPD.PLLT_NO = BPN.PLLT_NO LEFT JOIN BOL_PART_INFO BPI ON BPI.PCK_NO = BPD.PCK_NO AND BPI.ORDER_NO = BPD.ORDER_NO AND BPI.LINE = BPD.ORDER_LINE WHERE BPD.PCK_NO = '{0}' AND BPD.PLLT_NO IN (SELECT PLLT_NO FROM BOL_PACK_DTL WHERE PCK_NO = '{0}' AND ORDER_NO = '{1}' AND ORDER_LINE = '{2}0')",V.Args.PckNo,V.Args.OrderNo,V.Args.OrderLine,V.Local.sSQL)
+	'-- One row per order/line/pallet. DISTINCT still duplicated because carton/lot/qty differ on BOL_PACK_DTL
+	F.Intrinsic.String.Build("SELECT BPD.ORDER_NO, BPD.ORDER_LINE, MAX(RTRIM(BPD.PART)) AS PART, MAX(RTRIM(BPD.LOCN)) AS LOCN, MAX(RTRIM(BPD.LOT)) AS LOT, MAX(RTRIM(BPD.BIN)) AS BIN, MAX(RTRIM(BPD.HEAT)) AS HEAT, MAX(RTRIM(BPD.SERIAL)) AS SERIAL, MAX(BPD.CRTN_NO) AS CRTN_NO, MAX(BPD.QTY) AS QTY, MAX(BPD.LBS_PER_PC) AS LBS_PER_PC, MAX(RTRIM(BPD.PLLT_CD)) AS PLLT_CD, BPN.PLLT_NO, MAX(BPN.PKGD_WEIGHT) AS PKGD_WEIGHT, MAX(RTRIM(BPN.TRCKNG_NO)) AS TRCKNG_NO, MAX(RTRIM(BPN.USR_DFND_NO)) AS USR_DFND_NO, MAX(RTRIM(BPI.FRT_CLASS)) AS FRT_CLASS FROM BOL_PACK_DTL BPD JOIN BOL_PALLET_NUM BPN ON BPD.PCK_NO = BPN.PCK_NO AND BPD.PLLT_NO = BPN.PLLT_NO LEFT JOIN BOL_PART_INFO BPI ON BPI.PCK_NO = BPD.PCK_NO AND BPI.ORDER_NO = BPD.ORDER_NO AND BPI.LINE = BPD.ORDER_LINE WHERE BPD.PCK_NO = '{0}' AND BPD.PLLT_NO IN (SELECT PLLT_NO FROM BOL_PACK_DTL WHERE PCK_NO = '{0}' AND ORDER_NO = '{1}' AND ORDER_LINE = '{2}0') GROUP BY BPD.ORDER_NO, BPD.ORDER_LINE, BPN.PLLT_NO ORDER BY BPN.PLLT_NO, BPD.ORDER_NO, BPD.ORDER_LINE",V.Args.PckNo,V.Args.OrderNo,V.Args.OrderLine,V.Local.sSQL)
 	F.Data.DataTable.CreateFromSQL("dtFrtClass","con",V.Local.sSQL,True)
 
-	'-- Add Print Label column and fill with "Print" text
+	'-- Add BOL Labels / Carrier Labels print columns and fill with "Print" text
 	F.Data.DataTable.AddColumn("dtFrtClass","PRINT_LABEL","String")
+	F.Intrinsic.Control.CallSub(Validate_CarrierPalletLab)
+	F.Intrinsic.Control.If(V.Global.bCarrierPalletLab)
+		F.Data.DataTable.AddColumn("dtFrtClass","PRINT_CARRIER_PALLET","String")
+	F.Intrinsic.Control.EndIf
 	F.Intrinsic.Math.Sub(V.DataTable.dtFrtClass.RowCount,1,V.Local.iLastRow)
 	F.Intrinsic.Control.For(V.Local.iCnt,0,V.Local.iLastRow,1)
 		F.Data.DataTable.SetValue("dtFrtClass",V.Local.iCnt,"PRINT_LABEL","Print")
+		F.Intrinsic.Control.If(V.Global.bCarrierPalletLab)
+			F.Data.DataTable.SetValue("dtFrtClass",V.Local.iCnt,"PRINT_CARRIER_PALLET","Print")
+		F.Intrinsic.Control.EndIf
 	F.Intrinsic.Control.Next(V.Local.iCnt)
 
 	'-- Bind to grid
@@ -3868,15 +3877,28 @@ Program.Sub.LoadFrtClassDetail.Start
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","FRT_CLASS","ReadOnly",False)
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","FRT_CLASS","CellBackColor","LightYellow")
 
-	'-- Print Label column (click to print)
-	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PRINT_LABEL","Caption","Print Label")
+	'-- BOL Labels column (S20 label 77)
+	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PRINT_LABEL","Caption","BOL Labels")
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PRINT_LABEL","MinWidth","70")
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PRINT_LABEL","AllowEdit",False)
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PRINT_LABEL","ReadOnly",True)
 	Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PRINT_LABEL","CellBackColor","LightGray")
 
+	F.Intrinsic.Control.If(V.Global.bCarrierPalletLab)
+		Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PRINT_CARRIER_PALLET","Caption","Carrier Labels")
+		Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PRINT_CARRIER_PALLET","MinWidth","120")
+		Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PRINT_CARRIER_PALLET","AllowEdit",False)
+		Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PRINT_CARRIER_PALLET","ReadOnly",True)
+		Gui.frmFrtClass.GSGCFrtClass.SetColumnProperty("gvFrtClass","PRINT_CARRIER_PALLET","CellBackColor","LightGray")
+	F.Intrinsic.Control.EndIf
+
 	Gui.frmFrtClass.GSGCFrtClass.ResumeLayout()
 	Gui.frmFrtClass.GSGCFrtClass.MainView("gvFrtClass")
+	F.Intrinsic.Control.If(V.Global.bCarrierPalletLab)
+		Gui.frmFrtClass..Size(16800,5000)
+		Gui.frmFrtClass.GSGCFrtClass.Size(16650,4350)
+	F.Intrinsic.Control.EndIf
+	Gui.frmFrtClass.GSGCFrtClass.BestFitColumns("gvFrtClass")
 
 	Gui.frmFrtClass.btnCalcClass.Enabled(True)
 	V.Global.sFrtClassWtPallets.Set("")
@@ -4186,6 +4208,12 @@ Program.Sub.GSGCFrtClass_RowCellClick.Start
 	V.Local.sLineMax.Declare
 	V.Local.iHdrMax.Declare(Long)
 	V.Local.iLineMax.Declare(Long)
+
+	F.Intrinsic.Control.If(V.Args.Column,=,"PRINT_CARRIER_PALLET")
+		V.Local.sPallet.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).PLLT_NO!FieldValTrim)
+		F.Intrinsic.Control.CallSub(PrintCarrierPalletLabel,"Pallet",V.Local.sPallet)
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
 
 	F.Intrinsic.Control.If(V.Args.Column,<>,"PRINT_LABEL")
 		F.Intrinsic.Control.ExitSub
@@ -10344,6 +10372,275 @@ F.Intrinsic.Control.Catch
 F.Intrinsic.Control.EndTry
 Program.Sub.Validate_5055.End
 
+Program.Sub.Validate_CarrierPalletLab.Start
+'-- Show Carrier Pallet print when GAB_7546_CARRIER_PALLET.lab exists under BusintDir\labels\custom
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	V.Local.sPath.Declare
+	F.Intrinsic.Debug.EnableLogging
+	F.Intrinsic.String.Build("{0}\labels\custom\GAB_7546_CARRIER_PALLET.lab",V.Caller.BusintDir,V.Local.sPath)
+	F.Intrinsic.File.Exists(V.Local.sPath,V.Global.bCarrierPalletLab)
+	F.Intrinsic.Debug.SetLA("Validate_CarrierPalletLab path=",V.Local.sPath," exists=",V.Global.bCarrierPalletLab)
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndTry
+Program.Sub.Validate_CarrierPalletLab.End
+
+Program.Sub.PrintCarrierPalletLabel.Start
+'-- 8/28/26 BS - Carrier Pallet label via Codesoft (not S20 label 77)
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	V.Local.sLabelPath.Declare
+	V.Local.bLabExists.Declare(Boolean,False)
+	V.Local.sRet.Declare
+	V.Local.sParts.Declare
+	V.Local.sPrinter.Declare
+	V.Local.sAsk.Declare
+	V.Local.iAnswer.Declare(Long)
+	V.Local.bThisOnly.Declare(Boolean,True)
+	V.Local.sSQL.Declare
+	V.Local.sPck.Declare
+	V.Local.sPckSafe.Declare
+	V.Local.sWaybill.Declare
+	V.Local.sWaySafe.Declare
+	V.Local.sOrd.Declare
+	V.Local.sOrdSafe.Declare
+	V.Local.sProNo.Declare
+	V.Local.sFilter.Declare
+	V.Local.sSel.Declare
+	V.Local.sFromName.Declare
+	V.Local.sFromAdrs1.Declare
+	V.Local.sFromAdrs2.Declare
+	V.Local.sFromCity.Declare
+	V.Local.sFromState.Declare
+	V.Local.sFromZip.Declare
+	V.Local.sFromCityStZip.Declare
+	V.Local.sFromPhone.Declare
+	V.Local.sDelName.Declare
+	V.Local.sDelAdrs1.Declare
+	V.Local.sDelCity.Declare
+	V.Local.sDelState.Declare
+	V.Local.sDelZip.Declare
+	V.Local.sDelCityStZip.Declare
+	V.Local.sPalletX.Declare
+	V.Local.sPalletY.Declare
+	V.Local.sPalletCount.Declare
+	V.Local.iPalletX.Declare(Long)
+	V.Local.bPalletNum.Declare(Boolean,False)
+	V.Local.iRow.Declare(Long)
+	V.Local.iLastRow.Declare(Long)
+	V.Local.iRptId.Declare(Long)
+	V.Local.iRunID.Declare(Long)
+	V.Local.iLogID.Declare(Long)
+	V.Local.sShipId.Declare
+	V.Local.sShipSafe.Declare
+
+	F.Intrinsic.Debug.SetLA("PrintCarrierPalletLabel pallet=",V.Args.Pallet)
+	F.Intrinsic.String.Build("{0}\labels\custom\GAB_7546_CARRIER_PALLET.lab",V.Caller.BusintDir,V.Local.sLabelPath)
+	F.Intrinsic.File.Exists(V.Local.sLabelPath,V.Local.bLabExists)
+	F.Intrinsic.Control.If(V.Local.bLabExists,=,False)
+		F.Intrinsic.UI.Msgbox("GAB_7546_CARRIER_PALLET.lab was not found in BUSINT labels/custom.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+
+	F.ODBC.Connection!conC.OpenCommonConnection
+	F.Data.DataTable.CreateFromSQL("dtPrinters","conC","SELECT RTRIM(SENTINELALIAS) AS SENTINELALIAS, RTRIM(PRINTERNAME) AS PRINTERNAME FROM SERVER_PRINTERS WHERE SENTINELENABLED = 1 AND SENTINELALIAS IS NOT NULL AND RTRIM(SENTINELALIAS) <> '' ORDER BY SENTINELALIAS")
+	F.ODBC.Connection!conC.Close
+
+	F.Intrinsic.Control.If(V.DataTable.dtPrinters.RowCount,=,0)
+		F.Intrinsic.UI.Msgbox("No Sentinel label printers are configured.","No Printers")
+		F.Data.DataTable.Close("dtPrinters")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.UI.BrowserFromDataTable("Select Label Printer","dtPrinters","Sentinel Alias*!*Printer Name","200*!*300",V.Local.sRet)
+	F.Data.DataTable.Close("dtPrinters")
+
+	F.Intrinsic.Control.If(V.Local.sRet.Trim,=,"***CANCEL***")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.String.Split(V.Local.sRet,"*!*",V.Local.sParts)
+	V.Local.sPrinter.Set(V.Local.sParts(0).Trim)
+
+	F.Intrinsic.String.Build("Print this pallet only?{0}{0}Yes = this pallet{0}No = all pallets on this packing list",V.Ambient.Newline,V.Local.sAsk)
+	F.Intrinsic.UI.Msgbox(V.Local.sAsk,"Carrier Pallet Label",V.Enum.MsgBoxStyle!YesNoCancel,V.Local.iAnswer)
+	F.Intrinsic.Control.If(V.Local.iAnswer,=,V.Enum.MsgBoxResult!Cancel)
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.iAnswer,=,V.Enum.MsgBoxResult!No)
+		V.Local.bThisOnly.Set(False)
+	F.Intrinsic.Control.EndIf
+
+	V.Local.sPck.Set(V.Global.sFrtClassPckNo)
+	V.Local.sPckSafe.Set(V.Local.sPck.PSQLFriendly)
+	V.Local.sWaybill.Set(V.Global.sFrtClassWaybill)
+	V.Local.sWaySafe.Set(V.Local.sWaybill.PSQLFriendly)
+	V.Local.sOrd.Set(V.Global.sFrtClassOrderNo)
+	V.Local.sOrdSafe.Set(V.Local.sOrd.PSQLFriendly)
+
+	'-- One PRO# per packing list: Load grid first, then TOP 1 from SHIPMENT_HEADER
+	F.Intrinsic.Control.If(V.DataTable.dtLoad.Exists,=,True)
+		F.Intrinsic.String.Build("[Packing List] = '{0}'",V.Local.sPckSafe,V.Local.sFilter)
+		F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
+		F.Intrinsic.Control.If(V.Local.sSel.Trim,<>,"***NORETURN***")
+			F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+			V.Local.sProNo.Set(V.DataTable.dtLoad(V.Local.sSel(0)).PRO_NO!FieldValTrim)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sProNo.Trim,=,"")
+		F.Intrinsic.String.Build("SELECT TOP 1 RTRIM(PRO_NO) FROM SHIPMENT_HEADER WHERE PCK_NO='{0}' AND RTRIM(PRO_NO) <> ''",V.Local.sPckSafe,V.Local.sSQL)
+		F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sProNo)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sProNo.Trim,=,"")
+		F.Intrinsic.UI.Msgbox("Pro Number is empty on this packing list. The Carrier Pallet label will print without a PRO#.")
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.If(V.Local.sWaybill.Trim,<>,"")
+		F.Intrinsic.String.Build("SELECT RTRIM(FROM_NAME) AS FROM_NAME, RTRIM(FROM_ADRS1) AS FROM_ADRS1, RTRIM(FROM_ADRS2) AS FROM_ADRS2, RTRIM(FROM_CITY) AS FROM_CITY, RTRIM(FROM_STATE) AS FROM_STATE, RTRIM(FROM_ZIP) AS FROM_ZIP, RTRIM(FROM_TELEPHONE) AS FROM_TELEPHONE, RTRIM(TO_NAME) AS TO_NAME, RTRIM(TO_ADRS1) AS TO_ADRS1, RTRIM(TO_CITY) AS TO_CITY, RTRIM(TO_STATE) AS TO_STATE, RTRIM(TO_ZIP) AS TO_ZIP FROM BOL_HEADER WHERE WAYBILL_NO='{0}'",V.Local.sWaySafe,V.Local.sSQL)
+		F.Data.DataTable.CreateFromSQL("dtCarrierBol","con",V.Local.sSQL)
+		F.Intrinsic.Control.If(V.DataTable.dtCarrierBol.RowCount,>,0)
+			V.Local.sFromName.Set(V.DataTable.dtCarrierBol(0).FROM_NAME!FieldValTrim)
+			V.Local.sFromAdrs1.Set(V.DataTable.dtCarrierBol(0).FROM_ADRS1!FieldValTrim)
+			V.Local.sFromAdrs2.Set(V.DataTable.dtCarrierBol(0).FROM_ADRS2!FieldValTrim)
+			V.Local.sFromCity.Set(V.DataTable.dtCarrierBol(0).FROM_CITY!FieldValTrim)
+			V.Local.sFromState.Set(V.DataTable.dtCarrierBol(0).FROM_STATE!FieldValTrim)
+			V.Local.sFromZip.Set(V.DataTable.dtCarrierBol(0).FROM_ZIP!FieldValTrim)
+			V.Local.sFromPhone.Set(V.DataTable.dtCarrierBol(0).FROM_TELEPHONE!FieldValTrim)
+			V.Local.sDelName.Set(V.DataTable.dtCarrierBol(0).TO_NAME!FieldValTrim)
+			V.Local.sDelAdrs1.Set(V.DataTable.dtCarrierBol(0).TO_ADRS1!FieldValTrim)
+			V.Local.sDelCity.Set(V.DataTable.dtCarrierBol(0).TO_CITY!FieldValTrim)
+			V.Local.sDelState.Set(V.DataTable.dtCarrierBol(0).TO_STATE!FieldValTrim)
+			V.Local.sDelZip.Set(V.DataTable.dtCarrierBol(0).TO_ZIP!FieldValTrim)
+		F.Intrinsic.Control.EndIf
+		F.Data.DataTable.Close("dtCarrierBol")
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.If(V.Local.sFromName.Trim,=,"")
+		V.Local.sFromName.Set("UNIVERSAL DISPLAY & FIXTURES")
+		V.Local.sFromAdrs1.Set("3333 WEST UNIVERSITY DRIVE")
+		V.Local.sFromAdrs2.Set("SUITE 1109")
+		V.Local.sFromCityStZip.Set("DENTON, TX 76207")
+		V.Local.sFromPhone.Set("972-221-5157")
+	F.Intrinsic.Control.Else
+		F.Intrinsic.String.Build("{0}, {1} {2}",V.Local.sFromCity,V.Local.sFromState,V.Local.sFromZip,V.Local.sFromCityStZip)
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.If(V.Local.sDelName.Trim,=,"")
+		F.Intrinsic.Control.If(V.DataTable.dtLoad.Exists,=,True)
+			F.Intrinsic.String.Build("[Packing List] = '{0}'",V.Local.sPckSafe,V.Local.sFilter)
+			F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
+			F.Intrinsic.Control.If(V.Local.sSel.Trim,<>,"***NORETURN***")
+				F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+				V.Local.sDelName.Set(V.DataTable.dtLoad(V.Local.sSel(0)).Name_Customer_Ship!FieldValTrim)
+				V.Local.sDelAdrs1.Set(V.DataTable.dtLoad(V.Local.sSel(0)).Address_1_Ship!FieldValTrim)
+				V.Local.sDelCity.Set(V.DataTable.dtLoad(V.Local.sSel(0)).CITY_SHIP!FieldValTrim)
+				V.Local.sDelState.Set(V.DataTable.dtLoad(V.Local.sSel(0)).STATE_SHIP!FieldValTrim)
+				V.Local.sShipId.Set(V.DataTable.dtLoad(V.Local.sSel(0)).SHIP_ID!FieldValTrim)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.If(V.Local.sDelName.Trim,=,"")
+		F.Intrinsic.Control.If(V.Local.sOrdSafe.Trim,<>,"")
+			V.Local.sShipSafe.Set(V.Local.sShipId.PSQLFriendly)
+			F.Intrinsic.Control.If(V.Local.sShipSafe.Trim,<>,"")
+				F.Intrinsic.String.Build("SELECT RTRIM(NAME_CUSTOMER_SHIP) AS NAME, RTRIM(ADDRESS_1_SHIP) AS ADRS1, RTRIM(CITY_SHIP) AS CITY, RTRIM(STATE_SHIP) AS STATE FROM V_ORDER_SHIP_TO WHERE ORDER_NO='{0}' AND SHIP_ID='{1}'",V.Local.sOrdSafe,V.Local.sShipSafe,V.Local.sSQL)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.String.Build("SELECT RTRIM(NAME_CUSTOMER_SHIP) AS NAME, RTRIM(ADDRESS_1_SHIP) AS ADRS1, RTRIM(CITY_SHIP) AS CITY, RTRIM(STATE_SHIP) AS STATE FROM V_ORDER_SHIP_TO WHERE ORDER_NO='{0}'",V.Local.sOrdSafe,V.Local.sSQL)
+			F.Intrinsic.Control.EndIf
+			F.Data.DataTable.CreateFromSQL("dtCarrierShipTo","con",V.Local.sSQL)
+			F.Intrinsic.Control.If(V.DataTable.dtCarrierShipTo.RowCount,>,0)
+				V.Local.sDelName.Set(V.DataTable.dtCarrierShipTo(0).NAME!FieldValTrim)
+				V.Local.sDelAdrs1.Set(V.DataTable.dtCarrierShipTo(0).ADRS1!FieldValTrim)
+				V.Local.sDelCity.Set(V.DataTable.dtCarrierShipTo(0).CITY!FieldValTrim)
+				V.Local.sDelState.Set(V.DataTable.dtCarrierShipTo(0).STATE!FieldValTrim)
+			F.Intrinsic.Control.EndIf
+			F.Data.DataTable.Close("dtCarrierShipTo")
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.String.Build("{0} {1} {2}",V.Local.sDelCity,V.Local.sDelState,V.Local.sDelZip,V.Local.sDelCityStZip)
+
+	F.Intrinsic.String.Build("SELECT DISTINCT PLLT_NO FROM BOL_PALLET_NUM WHERE PCK_NO='{0}' ORDER BY PLLT_NO",V.Local.sPckSafe,V.Local.sSQL)
+	F.Data.DataTable.CreateFromSQL("dtCarrierPallets","con",V.Local.sSQL)
+	F.Intrinsic.Control.If(V.DataTable.dtCarrierPallets.RowCount,>,0)
+		F.Intrinsic.String.Build("{0}",V.DataTable.dtCarrierPallets.RowCount,V.Local.sPalletY)
+	F.Intrinsic.Control.Else
+		V.Local.sPalletY.Set("1")
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.If(V.DataTable.dtCarrierPallet.Exists,=,True)
+		F.Data.DataTable.Close("dtCarrierPallet")
+	F.Intrinsic.Control.EndIf
+	F.Data.DataTable.Create("dtCarrierPallet")
+	F.Data.DataTable.AddColumn("dtCarrierPallet","SHIP_FROM_NAME","String")
+	F.Data.DataTable.AddColumn("dtCarrierPallet","SHIP_FROM_ADRS1","String")
+	F.Data.DataTable.AddColumn("dtCarrierPallet","SHIP_FROM_ADRS2","String")
+	F.Data.DataTable.AddColumn("dtCarrierPallet","SHIP_FROM_CITYSTZIP","String")
+	F.Data.DataTable.AddColumn("dtCarrierPallet","SHIP_FROM_PHONE","String")
+	F.Data.DataTable.AddColumn("dtCarrierPallet","DELIVER_TO_NAME","String")
+	F.Data.DataTable.AddColumn("dtCarrierPallet","DELIVER_TO_ADRS1","String")
+	F.Data.DataTable.AddColumn("dtCarrierPallet","DELIVER_TO_CITYSTZIP","String")
+	F.Data.DataTable.AddColumn("dtCarrierPallet","PRO_NO","String")
+	F.Data.DataTable.AddColumn("dtCarrierPallet","PALLET_COUNT","String")
+
+	'-- PLLT_NO is CHAR 8 (00000001); convert to long so the label prints PALLET 1 OF 2
+	F.Intrinsic.Control.If(V.Local.bThisOnly)
+		V.Local.sPalletX.Set(V.Args.Pallet)
+		F.Intrinsic.Math.IsNumeric(V.Local.sPalletX,V.Local.bPalletNum)
+		F.Intrinsic.Control.If(V.Local.bPalletNum,=,True)
+			F.Intrinsic.Math.ConvertToLong(V.Local.sPalletX,V.Local.iPalletX)
+			F.Intrinsic.String.Build("{0}",V.Local.iPalletX,V.Local.sPalletX)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.String.Build("PALLET {0} OF {1}",V.Local.sPalletX,V.Local.sPalletY,V.Local.sPalletCount)
+		F.Intrinsic.Debug.SetLA("CarrierPalletCount=",V.Local.sPalletCount)
+		F.Data.DataTable.AddRow("dtCarrierPallet","SHIP_FROM_NAME",V.Local.sFromName,"SHIP_FROM_ADRS1",V.Local.sFromAdrs1,"SHIP_FROM_ADRS2",V.Local.sFromAdrs2,"SHIP_FROM_CITYSTZIP",V.Local.sFromCityStZip,"SHIP_FROM_PHONE",V.Local.sFromPhone,"DELIVER_TO_NAME",V.Local.sDelName,"DELIVER_TO_ADRS1",V.Local.sDelAdrs1,"DELIVER_TO_CITYSTZIP",V.Local.sDelCityStZip,"PRO_NO",V.Local.sProNo,"PALLET_COUNT",V.Local.sPalletCount)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Control.If(V.DataTable.dtCarrierPallets.RowCount,>,0)
+			F.Intrinsic.Math.Sub(V.DataTable.dtCarrierPallets.RowCount,1,V.Local.iLastRow)
+			F.Intrinsic.Control.For(V.Local.iRow,0,V.Local.iLastRow,1)
+				V.Local.sPalletX.Set(V.DataTable.dtCarrierPallets(V.Local.iRow).PLLT_NO!FieldValTrim)
+				F.Intrinsic.Math.IsNumeric(V.Local.sPalletX,V.Local.bPalletNum)
+				F.Intrinsic.Control.If(V.Local.bPalletNum,=,True)
+					F.Intrinsic.Math.ConvertToLong(V.Local.sPalletX,V.Local.iPalletX)
+					F.Intrinsic.String.Build("{0}",V.Local.iPalletX,V.Local.sPalletX)
+				F.Intrinsic.Control.EndIf
+				F.Intrinsic.String.Build("PALLET {0} OF {1}",V.Local.sPalletX,V.Local.sPalletY,V.Local.sPalletCount)
+				F.Data.DataTable.AddRow("dtCarrierPallet","SHIP_FROM_NAME",V.Local.sFromName,"SHIP_FROM_ADRS1",V.Local.sFromAdrs1,"SHIP_FROM_ADRS2",V.Local.sFromAdrs2,"SHIP_FROM_CITYSTZIP",V.Local.sFromCityStZip,"SHIP_FROM_PHONE",V.Local.sFromPhone,"DELIVER_TO_NAME",V.Local.sDelName,"DELIVER_TO_ADRS1",V.Local.sDelAdrs1,"DELIVER_TO_CITYSTZIP",V.Local.sDelCityStZip,"PRO_NO",V.Local.sProNo,"PALLET_COUNT",V.Local.sPalletCount)
+			F.Intrinsic.Control.Next(V.Local.iRow)
+		F.Intrinsic.Control.Else
+			V.Local.sPalletX.Set(V.Args.Pallet)
+			F.Intrinsic.Math.IsNumeric(V.Local.sPalletX,V.Local.bPalletNum)
+			F.Intrinsic.Control.If(V.Local.bPalletNum,=,True)
+				F.Intrinsic.Math.ConvertToLong(V.Local.sPalletX,V.Local.iPalletX)
+				F.Intrinsic.String.Build("{0}",V.Local.iPalletX,V.Local.sPalletX)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.String.Build("PALLET {0} OF {1}",V.Local.sPalletX,V.Local.sPalletY,V.Local.sPalletCount)
+			F.Data.DataTable.AddRow("dtCarrierPallet","SHIP_FROM_NAME",V.Local.sFromName,"SHIP_FROM_ADRS1",V.Local.sFromAdrs1,"SHIP_FROM_ADRS2",V.Local.sFromAdrs2,"SHIP_FROM_CITYSTZIP",V.Local.sFromCityStZip,"SHIP_FROM_PHONE",V.Local.sFromPhone,"DELIVER_TO_NAME",V.Local.sDelName,"DELIVER_TO_ADRS1",V.Local.sDelAdrs1,"DELIVER_TO_CITYSTZIP",V.Local.sDelCityStZip,"PRO_NO",V.Local.sProNo,"PALLET_COUNT",V.Local.sPalletCount)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+
+	F.Data.DataTable.Close("dtCarrierPallets")
+
+	F.Global.BI.InitializeReport("7546 Carrier Pallet",V.Local.sLabelPath,V.Local.iRptId)
+	F.Global.BI.GetRunID(V.Local.iRunID)
+	F.Global.BI.StartLogging(V.Local.iRunID,V.Local.iRptId,-1,"",V.Local.iLogID)
+	F.Global.BI.PrintCodesoftLabelFromDataTable(V.Local.iRunID,V.Local.iLogID,"dtCarrierPallet",V.Local.sPrinter,True)
+	F.Global.BI.StopLogging(V.Local.iLogID)
+
+	F.Data.DataTable.Close("dtCarrierPallet")
+	F.Intrinsic.UI.Msgbox("Carrier Pallet label submitted.","Carrier Pallet")
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndTry
+Program.Sub.PrintCarrierPalletLabel.End
+
 Program.Sub.PrintPOPackForLoad.Start
 '5/20/26 BS - PO Pack List direct print to selected printer without preview
 'Prints GCG_7551_PO_PACK.rpt for PO lines on the selected load.
@@ -11852,6 +12149,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260828090116914$}$CursorSigned
-${$7$}$File Version:1.0.20260828160116.0
+${$6$}$bstevens$}$20260828114451036$}$CursorSigned
+${$7$}$File Version:1.0.20260828184451.0
 Program.Sub.Comments.End
