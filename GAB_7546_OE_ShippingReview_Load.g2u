@@ -209,6 +209,18 @@ Gui.frmShip.lblRunMRP.Create(Label,"Run MRP to Rebuild GS Mobile Picklist ",Fals
 Gui.frmShip.lblRunMRP.BorderStyle(0)
 Gui.frmShip.lblRunMRP.ForeColor(255)
 Gui.frmShip.lblRunMRP.Event(Click,Run_MRP)
+Gui.frmShip.cmdPrintWalmartLabels5055.Create(Button)
+Gui.frmShip.cmdPrintWalmartLabels5055.Size(1980,270)
+Gui.frmShip.cmdPrintWalmartLabels5055.Position(10995,870)
+Gui.frmShip.cmdPrintWalmartLabels5055.Anchor(9)
+Gui.frmShip.cmdPrintWalmartLabels5055.Caption("Walmart Labels 5055")
+Gui.frmShip.cmdPrintWalmartLabels5055.ToolTip("Print Walmart Item Labels 5055")
+Gui.frmShip.cmdPrintWalmartLabels5055.Event(Click,Click_Print_WalmartLabels_5055)
+Gui.frmShip.cmdPrintWalmartLabels5055.Enabled(True)
+Gui.frmShip.cmdPrintWalmartLabels5055.Visible(False)
+Gui.frmShip.cmdPrintWalmartLabels5055.Zorder(0)
+Gui.frmShip.cmdPrintWalmartLabels5055.FontName("Tahoma")
+Gui.frmShip.cmdPrintWalmartLabels5055.FontSize(8.25)
 Gui.frmShip.chkdisablerefresh.Create(CheckBox)
 Gui.frmShip.chkdisablerefresh.Enabled(True)
 Gui.frmShip.chkdisablerefresh.Visible(True)
@@ -490,6 +502,7 @@ Program.Sub.Preflight.Start
 	V.Global.bSuppressPOPackLotBin.Declare(Boolean,False)
 	V.Global.sPOPackPrinter.Declare(String,"")
 	v.Global.b5235.Declare
+	V.Global.b5055.Declare(Boolean,False)
 	v.Global.sAllocType.Declare
 	'7546 Hultec 03/23/2026: Tracks whether a split save completed successfully for grid refresh on form close.
 	V.Global.bSplitSaved.Declare(Boolean,False)
@@ -566,6 +579,11 @@ Program.Sub.Main.Start
 	F.Intrinsic.Control.CallSub(CheckPermissions)
 	f.Intrinsic.Control.CallSub(GetUserFields)
 	f.Intrinsic.Control.CallSub(CheckAllocationType)
+	F.Intrinsic.Control.CallSub(Validate_5055)
+	F.Intrinsic.Control.If(V.Global.b5055)
+		Gui.frmShip.cmdPrintWalmartLabels5055.DisableOnClick(V.Enum.DisableOnClickModes!DisableButtonWithReEnable)
+		Gui.frmShip.cmdPrintWalmartLabels5055.Visible(True)
+	F.Intrinsic.Control.EndIf
 
 	Gui.frmShip..Show	
 	gui.frmShip.tabShip.Enabled(False)
@@ -715,6 +733,7 @@ Program.Sub.SetAnchors.Start
 
 	Gui.frmShip.picGSSLogo.Anchor(1)
 	Gui.frmShip.framePermissions.Anchor(9)
+	Gui.frmShip.cmdPrintWalmartLabels5055.Anchor(9)
 	gui.frmShip.tabShip.Anchor(15)
 	
 	F.Intrinsic.Control.Catch
@@ -8652,6 +8671,28 @@ Function.Intrinsic.Control.EndTry
 
 Program.Sub.Run_MRP.End
 
+Program.Sub.Click_Print_WalmartLabels_5055.Start
+'-- Launch GAB_5055_SO_LABEL.g2u from GasDir when the header button is clicked
+F.Intrinsic.Control.Try
+	V.Local.sError.Declare(String)
+	V.Local.iPID.Declare(Long)
+	V.Local.sPath.Declare(String)
+	V.Local.bExists.Declare(Boolean,False)
+
+	F.Intrinsic.String.Build("{0}\GAB_5055_SO_LABEL.g2u",V.Caller.GasDir,V.Local.sPath)
+	F.Intrinsic.File.Exists(V.Local.sPath,V.Local.bExists)
+	F.Intrinsic.Control.If(V.Local.bExists,=,False)
+		F.Intrinsic.UI.Msgbox("GAB_5055_SO_LABEL.g2u was not found in the GAB GAS folder.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Global.General.CallAsyncGAS(V.Local.sPath,V.Local.iPID)
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(frmShip_UnLoad)
+F.Intrinsic.Control.EndTry
+Program.Sub.Click_Print_WalmartLabels_5055.End
+
 Program.Sub.GsGCShipped_CellValueChanged.Start
 Function.Intrinsic.Control.Try
 v.Local.sError.Declare
@@ -10289,6 +10330,20 @@ F.Intrinsic.Control.Catch
 F.Intrinsic.Control.EndTry
 Program.Sub.Validate_7551.End
 
+Program.Sub.Validate_5055.Start
+'-- Show the Walmart label button only when GAB_5055_SO_LABEL.g2u exists in Plugins\GAB\GAS
+F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	V.Local.sPath.Declare
+	F.Intrinsic.String.Build("{0}\GAB_5055_SO_LABEL.g2u",V.Caller.GasDir,V.Local.sPath)
+	F.Intrinsic.File.Exists(V.Local.sPath,V.Global.b5055)
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndTry
+Program.Sub.Validate_5055.End
+
 Program.Sub.PrintPOPackForLoad.Start
 '5/20/26 BS - PO Pack List direct print to selected printer without preview
 'Prints GCG_7551_PO_PACK.rpt for PO lines on the selected load.
@@ -11797,6 +11852,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260828081206872$}$CursorSigned
-${$7$}$File Version:1.0.20260828151206.0
+${$6$}$bstevens$}$20260828090116914$}$CursorSigned
+${$7$}$File Version:1.0.20260828160116.0
 Program.Sub.Comments.End
