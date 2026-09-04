@@ -6195,17 +6195,22 @@ Program.Sub.GsGCLoad_RowCellClick.Start
 					f.Intrinsic.Control.ExitSub
 				f.Intrinsic.Control.EndIf
 				F.Data.DataTable.Close("dtCarrier")
-				'-- Count distinct packing lists and distinct orders for confirmation
-				F.Intrinsic.String.Build("SELECT COUNT(DISTINCT H.PCK_NO) FROM LOAD_PLAN G, STAGING_QUANTITY H WHERE G.ORDER_NO = H.ORDER_NO AND G.ORDER_LINE = H.LINE AND G.LOAD_NO = {0} AND G.ORDER_SUFFIX <> 'P' AND H.PCK_NO <> ''",V.Local.sLoadNo,V.Local.sSQL)
-				F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.iStagedCount)
-				F.Intrinsic.Control.If(V.Ambient.ExecuteAndReturnEOF,=,True)
-					V.Local.iStagedCount.Set(0)
+				'-- Count distinct packing lists via temp DataTable (avoids multi-pallet cross-product inflation)
+				F.Intrinsic.Control.If(V.DataTable.dtStagedPLCount.Exists,=,True)
+					F.Data.DataTable.Close("dtStagedPLCount")
 				F.Intrinsic.Control.EndIf
-				F.Intrinsic.String.Build("SELECT COUNT(DISTINCT G.ORDER_NO) FROM LOAD_PLAN G WHERE G.LOAD_NO = {0} AND G.ORDER_SUFFIX <> 'P'",V.Local.sLoadNo,V.Local.sSQL)
-				F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.iNonStagedCount)
-				F.Intrinsic.Control.If(V.Ambient.ExecuteAndReturnEOF,=,True)
-					V.Local.iNonStagedCount.Set(0)
+				F.Intrinsic.String.Build("SELECT DISTINCT RTRIM(H.PCK_NO) AS PCK_NO FROM LOAD_PLAN G, STAGING_QUANTITY H WHERE G.ORDER_NO = H.ORDER_NO AND G.ORDER_LINE = H.LINE AND G.LOAD_NO = {0} AND G.ORDER_SUFFIX <> 'P' AND H.PCK_NO <> ''",V.Local.sLoadNo,V.Local.sSQL)
+				F.Data.DataTable.CreateFromSQL("dtStagedPLCount","con",V.Local.sSQL,True)
+				V.Local.iStagedCount.Set(V.DataTable.dtStagedPLCount.RowCount)
+				F.Data.DataTable.Close("dtStagedPLCount")
+				'-- Count distinct orders via temp DataTable
+				F.Intrinsic.Control.If(V.DataTable.dtOrderCount.Exists,=,True)
+					F.Data.DataTable.Close("dtOrderCount")
 				F.Intrinsic.Control.EndIf
+				F.Intrinsic.String.Build("SELECT DISTINCT RTRIM(G.ORDER_NO) AS ORDER_NO FROM LOAD_PLAN G WHERE G.LOAD_NO = {0} AND G.ORDER_SUFFIX <> 'P'",V.Local.sLoadNo,V.Local.sSQL)
+				F.Data.DataTable.CreateFromSQL("dtOrderCount","con",V.Local.sSQL,True)
+				V.Local.iNonStagedCount.Set(V.DataTable.dtOrderCount.RowCount)
+				F.Data.DataTable.Close("dtOrderCount")
 				'-- Confirmation dialog
 				F.Intrinsic.String.Build("Change carrier to {0} / {1} for {2} packing list(s) and {3} sales order(s)?",V.Local.sCarrierCD,V.Local.sShortDesc,V.Local.iStagedCount,V.Local.iNonStagedCount,V.Local.sConfirmMsg)
 				F.Intrinsic.UI.Msgbox(V.Local.sConfirmMsg,"Confirm Carrier Change",V.Enum.MsgBoxStyle!YesNo,V.Local.iConfirmBtn)
@@ -12062,11 +12067,11 @@ V.Local.sPaymentOption.Set(V.Args.sPaymentOption)
 V.Local.sVIA.Set(V.Args.sVIA)
 V.Local.sUserID.Set(V.Caller.User)
 
-'-- STAGED: query DB directly for ALL distinct packing lists on this load
+'-- STAGED: query DB directly for ALL distinct packing lists on this load (GROUP BY ensures dedup across multi-pallet joins)
 F.Intrinsic.Control.If(V.DataTable.dtStagedPL.Exists,=,True)
 	F.Data.DataTable.Close("dtStagedPL")
 F.Intrinsic.Control.EndIf
-F.Intrinsic.String.Build("SELECT DISTINCT RTRIM(H.PCK_NO) AS PCK_NO FROM LOAD_PLAN G, STAGING_QUANTITY H WHERE G.ORDER_NO = H.ORDER_NO AND G.ORDER_LINE = H.LINE AND G.LOAD_NO = {0} AND G.ORDER_SUFFIX <> 'P' AND H.PCK_NO <> ''",V.Local.sLoadNo,V.Local.sSQL)
+F.Intrinsic.String.Build("SELECT RTRIM(H.PCK_NO) AS PCK_NO FROM LOAD_PLAN G, STAGING_QUANTITY H WHERE G.ORDER_NO = H.ORDER_NO AND G.ORDER_LINE = H.LINE AND G.LOAD_NO = {0} AND G.ORDER_SUFFIX <> 'P' AND H.PCK_NO <> '' GROUP BY H.PCK_NO",V.Local.sLoadNo,V.Local.sSQL)
 F.Data.DataTable.CreateFromSQL("dtStagedPL","con",V.Local.sSQL,True)
 
 '-- Insert S50 wireless transaction for each distinct packing list
@@ -12096,7 +12101,7 @@ F.Data.DataTable.Close("dtStagedPL")
 F.Intrinsic.Control.If(V.DataTable.dtLoadOrders.Exists,=,True)
 	F.Data.DataTable.Close("dtLoadOrders")
 F.Intrinsic.Control.EndIf
-F.Intrinsic.String.Build("SELECT DISTINCT RTRIM(G.ORDER_NO) AS ORDER_NO FROM LOAD_PLAN G WHERE G.LOAD_NO = {0} AND G.ORDER_SUFFIX <> 'P'",V.Local.sLoadNo,V.Local.sSQL)
+F.Intrinsic.String.Build("SELECT RTRIM(G.ORDER_NO) AS ORDER_NO FROM LOAD_PLAN G WHERE G.LOAD_NO = {0} AND G.ORDER_SUFFIX <> 'P' GROUP BY G.ORDER_NO",V.Local.sLoadNo,V.Local.sSQL)
 F.Data.DataTable.CreateFromSQL("dtLoadOrders","con",V.Local.sSQL,True)
 
 F.Intrinsic.Control.If(V.DataTable.dtLoadOrders.RowCount,>,0)
@@ -12145,6 +12150,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260901155408189$}$CursorSigned
-${$7$}$File Version:1.0.20260901225408.0
+${$6$}$bstevens$}$20260904080858957$}$CursorSigned
+${$7$}$File Version:1.0.20260904150858.0
 Program.Sub.Comments.End
