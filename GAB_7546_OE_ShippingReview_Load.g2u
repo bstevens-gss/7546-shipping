@@ -10483,7 +10483,7 @@ Program.Sub.PrintCarrierPalletLabel.Start
 	V.Local.sOrd.Set(V.Global.sFrtClassOrderNo)
 	V.Local.sOrdSafe.Set(V.Local.sOrd.PSQLFriendly)
 
-	'-- One PRO# per packing list: Load grid first, then TOP 1 from SHIPMENT_HEADER
+	'-- One PRO# per packing list: Load grid first, then TOP 1 from V_SHIPMENT_HEADER
 	F.Intrinsic.Control.If(V.DataTable.dtLoad.Exists,=,True)
 		F.Intrinsic.String.Build("[Packing List] = '{0}'",V.Local.sPckSafe,V.Local.sFilter)
 		F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
@@ -10493,7 +10493,7 @@ Program.Sub.PrintCarrierPalletLabel.Start
 		F.Intrinsic.Control.EndIf
 	F.Intrinsic.Control.EndIf
 	F.Intrinsic.Control.If(V.Local.sProNo.Trim,=,"")
-		F.Intrinsic.String.Build("SELECT TOP 1 RTRIM(PRO_NO) FROM SHIPMENT_HEADER WHERE PCK_NO='{0}' AND RTRIM(PRO_NO) <> ''",V.Local.sPckSafe,V.Local.sSQL)
+		F.Intrinsic.String.Build("SELECT TOP 1 RTRIM(PRO_NO) FROM V_SHIPMENT_HEADER WHERE PCK_NO='{0}' AND RTRIM(PRO_NO) <> ''",V.Local.sPckSafe,V.Local.sSQL)
 		F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sProNo)
 	F.Intrinsic.Control.EndIf
 	F.Intrinsic.Control.If(V.Local.sProNo.Trim,=,"")
@@ -12150,6 +12150,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260904080858957$}$CursorSigned
-${$7$}$File Version:1.0.20260904150858.0
+${$6$}$bstevens$}$20260915150005432$}$CursorSigned
+${$7$}$File Version:1.0.20260915220005.0
 Program.Sub.Comments.End
