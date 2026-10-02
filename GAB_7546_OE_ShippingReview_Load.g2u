@@ -552,6 +552,7 @@ Program.Sub.Preflight.Start
 	V.Global.b5055.Declare(Boolean,False)
 	V.Global.bCarrierPalletLab.Declare(Boolean,False)
 	V.Global.bLpnCartonBound.Declare(Boolean,False)
+	V.Global.bLpnPalletBound.Declare(Boolean,False)
 	v.Global.sAllocType.Declare
 	'7546 Hultec 03/23/2026: Tracks whether a split save completed successfully for grid refresh on form close.
 	V.Global.bSplitSaved.Declare(Boolean,False)
@@ -6439,8 +6440,8 @@ Program.Sub.LoadShipped.Start
 		Gui.frmShip.GsGCShipped.ClearGrouping("gvShipped")
 	F.Intrinsic.Control.EndIf
 
-	'-- Shipped lines. Pro, tracking, and BOL come from the shipment A record (RECORD_TYPE = 'A'). Display only.
-	F.Data.DataTable.CreateFromSQL("dtShipped0","con","SELECT '' as 'SODocCntrl', V_SHIPMENT_LINES.ORDER_NO,V_SHIPMENT_LINES.ORDER_SUFFIX,V_SHIPMENT_LINES.CUSTOMER,V_CUSTOMER_MASTER.NAME_CUSTOMER,V_SHIPMENT_HEADER.CUSTOMER_PO,COALESCE(PART,'') AS PART,'' As DISPLAY_PART,LOCATION,ORDER_DESC,V_SHIPMENT_LINES.PCK_NO,DATE_SHIP,QTY_SHIPPED,LN_SHP_STAT,V_SHIPMENT_LINES.CUSTOMER_PART,LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_1)) As LN_USER_1,LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_2)) As LN_USER_2,LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_3)) As LN_USER_3,LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_4)) As LN_USER_4, LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_5)) As LN_USER_5,V_SHIPMENT_LINES.ORDER_REC,V_SHIPMENT_HEADER.SALESPERSON,V_SHIPMENT_HEADER.SHIP_VIA,V_SHIPMENT_HEADER.SHIP_ID,RTRIM(V_SHIPMENT_HEADER.PRO_NO) AS PRO_NO, RTRIM(V_SHIPMENT_HEADER.TRACKING_NO) AS TRACKING_NO, RTRIM(V_SHIPMENT_HEADER.WAY_BILL) AS WAY_BILL, V_SHIPMENT_HEADER.PROJECT ,  V_SHIPMENT_LINES.PHASE, RTRIM(V_SHIPMENT_HEADER.LAST_CHG_BY) AS LAST_CHG_BY FROM V_SHIPMENT_LINES JOIN V_SHIPMENT_HEADER ON V_SHIPMENT_LINES.ORDER_NO = V_SHIPMENT_HEADER.ORDER_NO AND V_SHIPMENT_LINES.ORDER_SUFFIX = V_SHIPMENT_HEADER.ORDER_SUFFIX AND V_SHIPMENT_HEADER.RECORD_TYPE = 'A' LEFT JOIN V_CUSTOMER_MASTER ON V_SHIPMENT_LINES.CUSTOMER = V_CUSTOMER_MASTER.CUSTOMER WHERE QTY_SHIPPED <> 0 AND LN_SHP_STAT <> 0 ORDER BY DATE_SHIP, V_SHIPMENT_LINES.ORDER_NO;",True)
+	'-- Shipped lines. Pro, tracking, BOL, and carrier code come from the shipment A record (RECORD_TYPE = 'A'). SCAC comes from the carrier for that code and service type. Display only.
+	F.Data.DataTable.CreateFromSQL("dtShipped0","con","SELECT '' as 'SODocCntrl', V_SHIPMENT_LINES.ORDER_NO,V_SHIPMENT_LINES.ORDER_SUFFIX,V_SHIPMENT_LINES.CUSTOMER,V_CUSTOMER_MASTER.NAME_CUSTOMER,V_SHIPMENT_HEADER.CUSTOMER_PO,COALESCE(PART,'') AS PART,'' As DISPLAY_PART,LOCATION,ORDER_DESC,V_SHIPMENT_LINES.PCK_NO,DATE_SHIP,QTY_SHIPPED,LN_SHP_STAT,V_SHIPMENT_LINES.CUSTOMER_PART,LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_1)) As LN_USER_1,LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_2)) As LN_USER_2,LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_3)) As LN_USER_3,LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_4)) As LN_USER_4, LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_5)) As LN_USER_5,V_SHIPMENT_LINES.ORDER_REC,V_SHIPMENT_HEADER.SALESPERSON,V_SHIPMENT_HEADER.SHIP_VIA,V_SHIPMENT_HEADER.SHIP_ID,RTRIM(V_SHIPMENT_HEADER.PRO_NO) AS PRO_NO, RTRIM(V_SHIPMENT_HEADER.TRACKING_NO) AS TRACKING_NO, RTRIM(V_SHIPMENT_HEADER.WAY_BILL) AS WAY_BILL, RTRIM(V_SHIPMENT_HEADER.CARRIER_CD) AS CARRIER_CD, RTRIM(V_OE_CARRIER.SCAC) AS SCAC, V_SHIPMENT_HEADER.PROJECT ,  V_SHIPMENT_LINES.PHASE, RTRIM(V_SHIPMENT_HEADER.LAST_CHG_BY) AS LAST_CHG_BY FROM V_SHIPMENT_LINES JOIN V_SHIPMENT_HEADER ON V_SHIPMENT_LINES.ORDER_NO = V_SHIPMENT_HEADER.ORDER_NO AND V_SHIPMENT_LINES.ORDER_SUFFIX = V_SHIPMENT_HEADER.ORDER_SUFFIX AND V_SHIPMENT_HEADER.RECORD_TYPE = 'A' LEFT JOIN V_OE_CARRIER ON V_SHIPMENT_HEADER.CARRIER_CD = V_OE_CARRIER.CARRIER_CD AND V_SHIPMENT_HEADER.SRVC_TYPE = V_OE_CARRIER.SRVC_TYPE LEFT JOIN V_CUSTOMER_MASTER ON V_SHIPMENT_LINES.CUSTOMER = V_CUSTOMER_MASTER.CUSTOMER WHERE QTY_SHIPPED <> 0 AND LN_SHP_STAT <> 0 ORDER BY DATE_SHIP, V_SHIPMENT_LINES.ORDER_NO;",True)
 	
 	F.Data.DataTable.AddDisplayPartColumn("dtShipped0",0,"PART","DISPLAY_PART")
 	
@@ -6650,6 +6651,22 @@ Program.Sub.LoadShippedGV.Start
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","WAY_BILL","HeaderHAlignment","Center")
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","WAY_BILL","CellHAlignment","Center")
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","WAY_BILL","VisibleIndex","2")
+
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","CARRIER_CD","Caption","Carrier Code")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","CARRIER_CD","MinWidth","90")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","CARRIER_CD","AllowEdit",False)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","CARRIER_CD","ReadOnly",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","CARRIER_CD","HeaderHAlignment","Center")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","CARRIER_CD","CellHAlignment","Center")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","CARRIER_CD","VisibleIndex","3")
+
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","SCAC","Caption","SCAC")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","SCAC","MinWidth","70")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","SCAC","AllowEdit",False)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","SCAC","ReadOnly",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","SCAC","HeaderHAlignment","Center")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","SCAC","CellHAlignment","Center")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","SCAC","VisibleIndex","4")
 
 	'-- LAST_CHG_BY from V_SHIPMENT_HEADER. Hidden; column chooser only.
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","LAST_CHG_BY","Caption","Last Change By")
@@ -7402,6 +7419,18 @@ Program.Sub.ApplyCanonicalColumnContract.Start
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","WAY_BILL","Visible",True)
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","WAY_BILL","VisibleIndex","2")
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","WAY_BILL","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","CARRIER_CD","Caption","Carrier Code")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","CARRIER_CD","AllowEdit",False)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","CARRIER_CD","ReadOnly",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","CARRIER_CD","Visible",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","CARRIER_CD","VisibleIndex","3")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","CARRIER_CD","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","SCAC","Caption","SCAC")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","SCAC","AllowEdit",False)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","SCAC","ReadOnly",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","SCAC","Visible",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","SCAC","VisibleIndex","4")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","SCAC","ShowInColumnChooser",True)
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PCK_NO","IsHyperlink",True)
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PCK_NO","CellForeColor",V.Enum.ThemeColors!AccentColor)
 	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","Caption","BOL Ship From")
@@ -10363,6 +10392,10 @@ Program.Sub.frmLpn_UnLoad.Start
 	V.Local.sError.Declare
 
 	Gui.frmLpn..Visible(False)
+	F.Intrinsic.Control.If(V.Global.bLpnPalletBound,=,True)
+		Gui.frmLpn.GsGCLpnPallet.ClearRows("gvLpnPallet")
+		V.Global.bLpnPalletBound.Set(False)
+	F.Intrinsic.Control.EndIf
 	F.Intrinsic.Control.If(V.Global.bLpnCartonBound,=,True)
 		Gui.frmLpn.GsGCLpnCarton.ClearRows("gvLpnCarton")
 		V.Global.bLpnCartonBound.Set(False)
@@ -10397,11 +10430,14 @@ Program.Sub.LoadLpn.Start
 	Gui.frmLpn..Show
 	Gui.frmLpn.tabLpn.SetTab(0)
 
+	F.Intrinsic.Control.If(V.Global.bLpnPalletBound,=,True)
+		Gui.frmLpn.GsGCLpnPallet.ClearRows("gvLpnPallet")
+	F.Intrinsic.Control.EndIf
 	F.Intrinsic.Control.If(V.DataTable.dtLpnPallet.Exists)
 		F.Data.DataTable.Close("dtLpnPallet")
 	F.Intrinsic.Control.EndIf
-	'-- Pallet license plates for this packing list
-	F.Intrinsic.String.Build("SELECT RTRIM(PLLT_NO) AS PLLT_NO, RTRIM(USR_DFND_NO) AS USR_DFND_NO FROM V_BOL_PALLET_NUM WHERE PCK_NO = '{0}' ORDER BY PLLT_NO",V.Local.sSafe,V.Local.sSQL)
+	'-- Pallets packed on this packing list. User defined number comes from the pallet record for the same list.
+	F.Intrinsic.String.Build("SELECT MAX(RTRIM(D.PLLT_NO)) AS PLLT_NO, MAX(RTRIM(P.USR_DFND_NO)) AS USR_DFND_NO FROM V_BOL_PACK_DTL D LEFT JOIN V_BOL_PALLET_NUM P ON P.PCK_NO = D.PCK_NO AND P.PLLT_NO = D.PLLT_NO WHERE D.PCK_NO = '{0}' AND RTRIM(D.PLLT_NO) <> '' AND D.PLLT_NO <> '00000000' GROUP BY D.PLLT_NO ORDER BY D.PLLT_NO",V.Local.sSafe,V.Local.sSQL)
 	F.Data.DataTable.CreateFromSQL("dtLpnPallet","con",V.Local.sSQL,True)
 	F.Intrinsic.Control.If(V.DataTable.dtLpnPallet.RowCount--,>=,0)
 		Gui.frmLpn.GsGCLpnPallet.AddGridViewFromDataTable("gvLpnPallet","dtLpnPallet")
@@ -10424,6 +10460,7 @@ Program.Sub.LoadLpn.Start
 		Gui.frmLpn.GsGCLpnPallet.SetColumnProperty("gvLpnPallet","USR_DFND_NO","CellHAlignment","Center")
 		Gui.frmLpn.GsGCLpnPallet.ResumeLayout()
 		Gui.frmLpn.GsGCLpnPallet.MainView("gvLpnPallet")
+		V.Global.bLpnPalletBound.Set(True)
 	F.Intrinsic.Control.EndIf
 
 	Gui.frmLpn.tabLpn.SetTab(1)
@@ -12368,6 +12405,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20261002121022221$}$CursorSigned
-${$7$}$File Version:1.0.20261002191022.0
+${$6$}$bstevens$}$20261002122142953$}$CursorSigned
+${$7$}$File Version:1.0.20261002192142.0
 Program.Sub.Comments.End
