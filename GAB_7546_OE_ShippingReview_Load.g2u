@@ -299,6 +299,53 @@ Gui.frmFrtClass.GSGCFrtClass.Visible(True)
 Gui.frmFrtClass.GSGCFrtClass.Zorder(0)
 Gui.frmFrtClass.GSGCFrtClass.Event(CellValueChanged,GSGCFrtClass_CellValueChanged)
 Gui.frmFrtClass.GSGCFrtClass.Event(RowCellClick,GSGCFrtClass_RowCellClick)
+Gui.frmLpn..Create(BaseForm)
+Gui.frmLpn..Caption("Container Details")
+Gui.frmLpn..Size(12000,7000)
+Gui.frmLpn..MinX(8000)
+Gui.frmLpn..MinY(4000)
+Gui.frmLpn..Position(0,0)
+Gui.frmLpn..BackColor(-2147483633)
+Gui.frmLpn..MaxButton(True)
+Gui.frmLpn..MinButton(False)
+Gui.frmLpn..MousePointer(0)
+Gui.frmLpn..Event(UnLoad,frmLpn_UnLoad)
+Gui.frmLpn..Sizeable(True)
+Gui.frmLpn..AlwaysOnTop(False)
+Gui.frmLpn..FontName("Tahoma")
+Gui.frmLpn..FontSize(8.25)
+Gui.frmLpn..ControlBox(True)
+Gui.frmLpn..Moveable(True)
+Gui.frmLpn..ShowInTaskBar(True)
+Gui.frmLpn..TitleBar(True)
+Gui.frmLpn.tabLpn.Create(Tab)
+Gui.frmLpn.tabLpn.Size(11880,6600)
+Gui.frmLpn.tabLpn.Position(30,30)
+Gui.frmLpn.tabLpn.Anchor(15)
+Gui.frmLpn.tabLpn.Enabled(True)
+Gui.frmLpn.tabLpn.Visible(True)
+Gui.frmLpn.tabLpn.FontName("Tahoma")
+Gui.frmLpn.tabLpn.FontSize(8.25)
+Gui.frmLpn.tabLpn.Tabs(2)
+Gui.frmLpn.tabLpn.SetTab(0)
+Gui.frmLpn.tabLpn.Caption("Pallets")
+Gui.frmLpn.tabLpn.SetTab(1)
+Gui.frmLpn.tabLpn.Caption("Cartons")
+Gui.frmLpn.tabLpn.SetTab(0)
+Gui.frmLpn.GsGCLpnPallet.Create(GsGridControl)
+Gui.frmLpn.GsGCLpnPallet.Size(11700,6000)
+Gui.frmLpn.GsGCLpnPallet.Position(0,0)
+Gui.frmLpn.GsGCLpnPallet.Parent("tabLpn",0)
+Gui.frmLpn.GsGCLpnPallet.Dock(5)
+Gui.frmLpn.GsGCLpnPallet.Enabled(True)
+Gui.frmLpn.GsGCLpnPallet.Visible(True)
+Gui.frmLpn.GsGCLpnCarton.Create(GsGridControl)
+Gui.frmLpn.GsGCLpnCarton.Size(11700,6000)
+Gui.frmLpn.GsGCLpnCarton.Position(0,0)
+Gui.frmLpn.GsGCLpnCarton.Parent("tabLpn",1)
+Gui.frmLpn.GsGCLpnCarton.Dock(5)
+Gui.frmLpn.GsGCLpnCarton.Enabled(True)
+Gui.frmLpn.GsGCLpnCarton.Visible(True)
 Gui.frmItem..Create(BaseForm)
 Gui.frmItem..Caption("Item Master")
 Gui.frmItem..Size(10140,7995)
@@ -6391,7 +6438,8 @@ Program.Sub.LoadShipped.Start
 		Gui.frmShip.GsGCShipped.ClearGrouping("gvShipped")
 	F.Intrinsic.Control.EndIf
 
-	F.Data.DataTable.CreateFromSQL("dtShipped0","con","SELECT '' as 'SODocCntrl', V_SHIPMENT_LINES.ORDER_NO,V_SHIPMENT_LINES.ORDER_SUFFIX,V_SHIPMENT_LINES.CUSTOMER,V_CUSTOMER_MASTER.NAME_CUSTOMER,V_SHIPMENT_HEADER.CUSTOMER_PO,COALESCE(PART,'') AS PART,'' As DISPLAY_PART,LOCATION,ORDER_DESC,V_SHIPMENT_LINES.PCK_NO,DATE_SHIP,QTY_SHIPPED,LN_SHP_STAT,V_SHIPMENT_LINES.CUSTOMER_PART,LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_1)) As LN_USER_1,LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_2)) As LN_USER_2,LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_3)) As LN_USER_3,LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_4)) As LN_USER_4, LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_5)) As LN_USER_5,V_SHIPMENT_LINES.ORDER_REC,V_SHIPMENT_HEADER.SALESPERSON,V_SHIPMENT_HEADER.SHIP_VIA,V_SHIPMENT_HEADER.SHIP_ID,V_SHIPMENT_HEADER.TRACKING_NO, V_SHIPMENT_HEADER.PROJECT ,  V_SHIPMENT_LINES.PHASE, RTRIM(V_SHIPMENT_HEADER.LAST_CHG_BY) AS LAST_CHG_BY FROM V_SHIPMENT_LINES JOIN V_SHIPMENT_HEADER ON V_SHIPMENT_LINES.ORDER_NO = V_SHIPMENT_HEADER.ORDER_NO AND V_SHIPMENT_LINES.ORDER_SUFFIX = V_SHIPMENT_HEADER.ORDER_SUFFIX LEFT JOIN V_CUSTOMER_MASTER ON V_SHIPMENT_LINES.CUSTOMER = V_CUSTOMER_MASTER.CUSTOMER WHERE QTY_SHIPPED <> 0 AND LN_SHP_STAT <> 0 ORDER BY DATE_SHIP, V_SHIPMENT_LINES.ORDER_NO;",True)
+	'-- Shipped lines. Pro, tracking, and BOL come from the shipment A record (RECORD_TYPE = 'A'). Display only.
+	F.Data.DataTable.CreateFromSQL("dtShipped0","con","SELECT '' as 'SODocCntrl', V_SHIPMENT_LINES.ORDER_NO,V_SHIPMENT_LINES.ORDER_SUFFIX,V_SHIPMENT_LINES.CUSTOMER,V_CUSTOMER_MASTER.NAME_CUSTOMER,V_SHIPMENT_HEADER.CUSTOMER_PO,COALESCE(PART,'') AS PART,'' As DISPLAY_PART,LOCATION,ORDER_DESC,V_SHIPMENT_LINES.PCK_NO,DATE_SHIP,QTY_SHIPPED,LN_SHP_STAT,V_SHIPMENT_LINES.CUSTOMER_PART,LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_1)) As LN_USER_1,LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_2)) As LN_USER_2,LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_3)) As LN_USER_3,LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_4)) As LN_USER_4, LTrim(RTrim(V_SHIPMENT_LINES.LN_USER_5)) As LN_USER_5,V_SHIPMENT_LINES.ORDER_REC,V_SHIPMENT_HEADER.SALESPERSON,V_SHIPMENT_HEADER.SHIP_VIA,V_SHIPMENT_HEADER.SHIP_ID,RTRIM(V_SHIPMENT_HEADER.PRO_NO) AS PRO_NO, RTRIM(V_SHIPMENT_HEADER.TRACKING_NO) AS TRACKING_NO, RTRIM(V_SHIPMENT_HEADER.WAY_BILL) AS WAY_BILL, V_SHIPMENT_HEADER.PROJECT ,  V_SHIPMENT_LINES.PHASE, RTRIM(V_SHIPMENT_HEADER.LAST_CHG_BY) AS LAST_CHG_BY FROM V_SHIPMENT_LINES JOIN V_SHIPMENT_HEADER ON V_SHIPMENT_LINES.ORDER_NO = V_SHIPMENT_HEADER.ORDER_NO AND V_SHIPMENT_LINES.ORDER_SUFFIX = V_SHIPMENT_HEADER.ORDER_SUFFIX AND V_SHIPMENT_HEADER.RECORD_TYPE = 'A' LEFT JOIN V_CUSTOMER_MASTER ON V_SHIPMENT_LINES.CUSTOMER = V_CUSTOMER_MASTER.CUSTOMER WHERE QTY_SHIPPED <> 0 AND LN_SHP_STAT <> 0 ORDER BY DATE_SHIP, V_SHIPMENT_LINES.ORDER_NO;",True)
 	
 	F.Data.DataTable.AddDisplayPartColumn("dtShipped0",0,"PART","DISPLAY_PART")
 	
@@ -6530,6 +6578,8 @@ Program.Sub.LoadShippedGV.Start
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PCK_NO","ReadOnly",True)
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PCK_NO","HeaderHAlignment","Center")
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PCK_NO","CellHAlignment","Center")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PCK_NO","IsHyperlink",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PCK_NO","CellForeColor",V.Enum.ThemeColors!AccentColor)
 	
 	'DATE_SHIP
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","DATE_SHIP","Caption","Date Shipped")
@@ -6575,12 +6625,30 @@ Program.Sub.LoadShippedGV.Start
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","SHIP_ID","ReadOnly",True)
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","SHIP_ID","HeaderHAlignment","Center")
 	
-	'TRACKING_NO
-	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","Caption","Tracking No.")
-	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","MinWidth","130")
-	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","AllowEdit",True)
+	'PRO_NO, TRACKING_NO, WAY_BILL — display only; edits stay on the Load tab
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","Caption","Pro Number")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","MinWidth","125")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","AllowEdit",False)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","ReadOnly",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","HeaderHAlignment","Center")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","CellHAlignment","Center")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","VisibleIndex","0")
+
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","Caption","Tracking Number")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","MinWidth","125")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","AllowEdit",False)
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","ReadOnly",True)
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","HeaderHAlignment","Center")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","CellHAlignment","Center")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","VisibleIndex","1")
+
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","WAY_BILL","Caption","BOL")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","WAY_BILL","MinWidth","125")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","WAY_BILL","AllowEdit",False)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","WAY_BILL","ReadOnly",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","WAY_BILL","HeaderHAlignment","Center")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","WAY_BILL","CellHAlignment","Center")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","WAY_BILL","VisibleIndex","2")
 
 	'-- LAST_CHG_BY from V_SHIPMENT_HEADER. Hidden; column chooser only.
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","LAST_CHG_BY","Caption","Last Change By")
@@ -7314,6 +7382,27 @@ Program.Sub.ApplyCanonicalColumnContract.Start
 	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","DAYS","ShowInColumnChooser",True)
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","LAST_CHG_BY","Caption","Last Change By")
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","LAST_CHG_BY","ShowInColumnChooser",True)
+	'-- Shipped pro / tracking / BOL stay visible and read-only after layout restore
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","Caption","Pro Number")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","AllowEdit",False)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","ReadOnly",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","Visible",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","VisibleIndex","0")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","Caption","Tracking Number")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","AllowEdit",False)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","ReadOnly",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","Visible",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","VisibleIndex","1")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","WAY_BILL","Caption","BOL")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","WAY_BILL","AllowEdit",False)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","WAY_BILL","ReadOnly",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","WAY_BILL","Visible",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","WAY_BILL","VisibleIndex","2")
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","WAY_BILL","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PCK_NO","IsHyperlink",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PCK_NO","CellForeColor",V.Enum.ThemeColors!AccentColor)
 	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","Caption","BOL Ship From")
 	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","ShowInColumnChooser",True)
 	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","BOL_SHIP_FROM","MinWidth","150")
@@ -10267,6 +10356,114 @@ Function.Intrinsic.Control.Catch
 Function.Intrinsic.Control.EndTry	
 Program.Sub.Click_Print_BOL.End
 
+Program.Sub.frmLpn_UnLoad.Start
+'-- Hide the LPN window and drop its grids so the next packing list loads clean
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+
+	Gui.frmLpn..Visible(False)
+	F.Intrinsic.Control.If(V.DataTable.dtLpnPallet.Exists)
+		F.Data.DataTable.Close("dtLpnPallet")
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.DataTable.dtLpnCarton.Exists)
+		F.Data.DataTable.Close("dtLpnCarton")
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndTry
+Program.Sub.frmLpn_UnLoad.End
+
+Program.Sub.LoadLpn.Start
+'-- Opens the read-only LPN window for one packing list. Pallets and cartons are separate tabs.
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	V.Local.sPck.Declare
+	V.Local.sSafe.Declare
+	V.Local.sSQL.Declare
+	V.Local.sCaption.Declare
+
+	V.Local.sPck.Set(V.Args.PckNo)
+	V.Local.sSafe.Set(V.Local.sPck.PSQLFriendly)
+	F.Intrinsic.String.Build("Container Details - Packing List {0}",V.Local.sPck,V.Local.sCaption)
+	Gui.frmLpn..Caption(V.Local.sCaption)
+	Gui.frmLpn.tabLpn.SetTab(0)
+
+	F.Intrinsic.Control.If(V.DataTable.dtLpnPallet.Exists)
+		F.Data.DataTable.Close("dtLpnPallet")
+	F.Intrinsic.Control.EndIf
+	'-- Pallet license plates for this packing list
+	F.Intrinsic.String.Build("SELECT RTRIM(PLLT_NO) AS PLLT_NO, RTRIM(USR_DFND_NO) AS USR_DFND_NO FROM V_BOL_PALLET_NUM WHERE PCK_NO = '{0}' ORDER BY PLLT_NO",V.Local.sSafe,V.Local.sSQL)
+	F.Data.DataTable.CreateFromSQL("dtLpnPallet","con",V.Local.sSQL,True)
+	F.Intrinsic.Control.If(V.DataTable.dtLpnPallet.RowCount--,>=,0)
+		Gui.frmLpn.GsGCLpnPallet.AddGridViewFromDataTable("gvLpnPallet","dtLpnPallet")
+		Gui.frmLpn.GsGCLpnPallet.SuspendLayout()
+		Gui.frmLpn.GsGCLpnPallet.SetGridViewProperty("gvLpnPallet","AllowSort",True)
+		Gui.frmLpn.GsGCLpnPallet.SetGridViewProperty("gvLpnPallet","AllowFilter",True)
+		Gui.frmLpn.GsGCLpnPallet.SetGridViewProperty("gvLpnPallet","OptionsViewShowAutoFilterRow",True)
+		Gui.frmLpn.GsGCLpnPallet.SetGridViewProperty("gvLpnPallet","OptionsViewColumnAutoWidth",False)
+		Gui.frmLpn.GsGCLpnPallet.SetColumnProperty("gvLpnPallet","PLLT_NO","Caption","Pallet No")
+		Gui.frmLpn.GsGCLpnPallet.SetColumnProperty("gvLpnPallet","PLLT_NO","MinWidth","120")
+		Gui.frmLpn.GsGCLpnPallet.SetColumnProperty("gvLpnPallet","PLLT_NO","AllowEdit",False)
+		Gui.frmLpn.GsGCLpnPallet.SetColumnProperty("gvLpnPallet","PLLT_NO","ReadOnly",True)
+		Gui.frmLpn.GsGCLpnPallet.SetColumnProperty("gvLpnPallet","PLLT_NO","HeaderHAlignment","Center")
+		Gui.frmLpn.GsGCLpnPallet.SetColumnProperty("gvLpnPallet","PLLT_NO","CellHAlignment","Center")
+		Gui.frmLpn.GsGCLpnPallet.SetColumnProperty("gvLpnPallet","USR_DFND_NO","Caption","User Defined No")
+		Gui.frmLpn.GsGCLpnPallet.SetColumnProperty("gvLpnPallet","USR_DFND_NO","MinWidth","160")
+		Gui.frmLpn.GsGCLpnPallet.SetColumnProperty("gvLpnPallet","USR_DFND_NO","AllowEdit",False)
+		Gui.frmLpn.GsGCLpnPallet.SetColumnProperty("gvLpnPallet","USR_DFND_NO","ReadOnly",True)
+		Gui.frmLpn.GsGCLpnPallet.SetColumnProperty("gvLpnPallet","USR_DFND_NO","HeaderHAlignment","Center")
+		Gui.frmLpn.GsGCLpnPallet.SetColumnProperty("gvLpnPallet","USR_DFND_NO","CellHAlignment","Center")
+		Gui.frmLpn.GsGCLpnPallet.ResumeLayout()
+		Gui.frmLpn.GsGCLpnPallet.MainView("gvLpnPallet")
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.If(V.DataTable.dtLpnCarton.Exists)
+		F.Data.DataTable.Close("dtLpnCarton")
+	F.Intrinsic.Control.EndIf
+	'-- Carton license plates for this packing list, including tracking
+	F.Intrinsic.String.Build("SELECT RTRIM(CRTN_NO) AS CRTN_NO, RTRIM(USER_DFND_NO) AS USER_DFND_NO, RTRIM(TRACKING_NO) AS TRACKING_NO FROM V_BOL_CARTON_NUM WHERE PCK_NO = '{0}' ORDER BY CRTN_NO",V.Local.sSafe,V.Local.sSQL)
+	F.Data.DataTable.CreateFromSQL("dtLpnCarton","con",V.Local.sSQL,True)
+	F.Intrinsic.Control.If(V.DataTable.dtLpnCarton.RowCount--,>=,0)
+		Gui.frmLpn.GsGCLpnCarton.AddGridViewFromDataTable("gvLpnCarton","dtLpnCarton")
+		Gui.frmLpn.GsGCLpnCarton.SuspendLayout()
+		Gui.frmLpn.GsGCLpnCarton.SetGridViewProperty("gvLpnCarton","AllowSort",True)
+		Gui.frmLpn.GsGCLpnCarton.SetGridViewProperty("gvLpnCarton","AllowFilter",True)
+		Gui.frmLpn.GsGCLpnCarton.SetGridViewProperty("gvLpnCarton","OptionsViewShowAutoFilterRow",True)
+		Gui.frmLpn.GsGCLpnCarton.SetGridViewProperty("gvLpnCarton","OptionsViewColumnAutoWidth",False)
+		Gui.frmLpn.GsGCLpnCarton.SetColumnProperty("gvLpnCarton","CRTN_NO","Caption","Carton No")
+		Gui.frmLpn.GsGCLpnCarton.SetColumnProperty("gvLpnCarton","CRTN_NO","MinWidth","120")
+		Gui.frmLpn.GsGCLpnCarton.SetColumnProperty("gvLpnCarton","CRTN_NO","AllowEdit",False)
+		Gui.frmLpn.GsGCLpnCarton.SetColumnProperty("gvLpnCarton","CRTN_NO","ReadOnly",True)
+		Gui.frmLpn.GsGCLpnCarton.SetColumnProperty("gvLpnCarton","CRTN_NO","HeaderHAlignment","Center")
+		Gui.frmLpn.GsGCLpnCarton.SetColumnProperty("gvLpnCarton","CRTN_NO","CellHAlignment","Center")
+		Gui.frmLpn.GsGCLpnCarton.SetColumnProperty("gvLpnCarton","USER_DFND_NO","Caption","User Defined No")
+		Gui.frmLpn.GsGCLpnCarton.SetColumnProperty("gvLpnCarton","USER_DFND_NO","MinWidth","160")
+		Gui.frmLpn.GsGCLpnCarton.SetColumnProperty("gvLpnCarton","USER_DFND_NO","AllowEdit",False)
+		Gui.frmLpn.GsGCLpnCarton.SetColumnProperty("gvLpnCarton","USER_DFND_NO","ReadOnly",True)
+		Gui.frmLpn.GsGCLpnCarton.SetColumnProperty("gvLpnCarton","USER_DFND_NO","HeaderHAlignment","Center")
+		Gui.frmLpn.GsGCLpnCarton.SetColumnProperty("gvLpnCarton","USER_DFND_NO","CellHAlignment","Center")
+		Gui.frmLpn.GsGCLpnCarton.SetColumnProperty("gvLpnCarton","TRACKING_NO","Caption","Tracking Number")
+		Gui.frmLpn.GsGCLpnCarton.SetColumnProperty("gvLpnCarton","TRACKING_NO","MinWidth","160")
+		Gui.frmLpn.GsGCLpnCarton.SetColumnProperty("gvLpnCarton","TRACKING_NO","AllowEdit",False)
+		Gui.frmLpn.GsGCLpnCarton.SetColumnProperty("gvLpnCarton","TRACKING_NO","ReadOnly",True)
+		Gui.frmLpn.GsGCLpnCarton.SetColumnProperty("gvLpnCarton","TRACKING_NO","HeaderHAlignment","Center")
+		Gui.frmLpn.GsGCLpnCarton.SetColumnProperty("gvLpnCarton","TRACKING_NO","CellHAlignment","Center")
+		Gui.frmLpn.GsGCLpnCarton.ResumeLayout()
+		Gui.frmLpn.GsGCLpnCarton.MainView("gvLpnCarton")
+	F.Intrinsic.Control.EndIf
+
+	Gui.frmLpn..Show
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndTry
+Program.Sub.LoadLpn.End
+
 Program.Sub.GsGCShipped_RowCellClick.Start
 	F.Intrinsic.Control.Try
 	V.Local.sError.Declare
@@ -10311,6 +10508,15 @@ Program.Sub.GsGCShipped_RowCellClick.Start
 				F.Global.DocumentControl.CreateReference(V.Local.sPart,"00045",V.Local.iRefID)
 			f.Intrinsic.Control.EndIf
 			F.Global.DocumentControl.Invoke(V.Local.sOrderNo,45,"(Sales Order Master)",V.Local.iPID)
+		F.Intrinsic.Control.CaseAny("PCK_NO")
+			'-- Packing No opens the read-only LPN window for this packing list
+			V.Local.sPackingList.Set(V.DataTable.dtShipped(V.Args.RowIndex).PCK_NO!FieldValTrim)
+			F.Intrinsic.Control.If(V.Local.sPackingList,=,"")
+				F.Intrinsic.UI.Msgbox("There is no packing list for this line.","Container Details")
+			F.Intrinsic.Control.Else
+				F.Intrinsic.Control.UnBlockEvents
+				F.Intrinsic.Control.CallSub(LoadLpn,"PckNo",V.Local.sPackingList)
+			F.Intrinsic.Control.EndIf
 	F.Intrinsic.Control.EndSelect
 	f.Intrinsic.Control.UnBlockEvents
 
@@ -12152,6 +12358,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20261002083719647$}$CursorSigned
-${$7$}$File Version:1.0.20261002153719.0
+${$6$}$bstevens$}$20261002113224414$}$CursorSigned
+${$7$}$File Version:1.0.20261002183224.0
 Program.Sub.Comments.End
