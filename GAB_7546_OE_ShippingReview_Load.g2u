@@ -551,6 +551,7 @@ Program.Sub.Preflight.Start
 	v.Global.b5235.Declare
 	V.Global.b5055.Declare(Boolean,False)
 	V.Global.bCarrierPalletLab.Declare(Boolean,False)
+	V.Global.bLpnCartonBound.Declare(Boolean,False)
 	v.Global.sAllocType.Declare
 	'7546 Hultec 03/23/2026: Tracks whether a split save completed successfully for grid refresh on form close.
 	V.Global.bSplitSaved.Declare(Boolean,False)
@@ -10362,6 +10363,10 @@ Program.Sub.frmLpn_UnLoad.Start
 	V.Local.sError.Declare
 
 	Gui.frmLpn..Visible(False)
+	F.Intrinsic.Control.If(V.Global.bLpnCartonBound,=,True)
+		Gui.frmLpn.GsGCLpnCarton.ClearRows("gvLpnCarton")
+		V.Global.bLpnCartonBound.Set(False)
+	F.Intrinsic.Control.EndIf
 	F.Intrinsic.Control.If(V.DataTable.dtLpnPallet.Exists)
 		F.Data.DataTable.Close("dtLpnPallet")
 	F.Intrinsic.Control.EndIf
@@ -10389,6 +10394,7 @@ Program.Sub.LoadLpn.Start
 	V.Local.sSafe.Set(V.Local.sPck.PSQLFriendly)
 	F.Intrinsic.String.Build("Container Details - Packing List {0}",V.Local.sPck,V.Local.sCaption)
 	Gui.frmLpn..Caption(V.Local.sCaption)
+	Gui.frmLpn..Show
 	Gui.frmLpn.tabLpn.SetTab(0)
 
 	F.Intrinsic.Control.If(V.DataTable.dtLpnPallet.Exists)
@@ -10420,11 +10426,15 @@ Program.Sub.LoadLpn.Start
 		Gui.frmLpn.GsGCLpnPallet.MainView("gvLpnPallet")
 	F.Intrinsic.Control.EndIf
 
+	Gui.frmLpn.tabLpn.SetTab(1)
+	F.Intrinsic.Control.If(V.Global.bLpnCartonBound,=,True)
+		Gui.frmLpn.GsGCLpnCarton.ClearRows("gvLpnCarton")
+	F.Intrinsic.Control.EndIf
 	F.Intrinsic.Control.If(V.DataTable.dtLpnCarton.Exists)
 		F.Data.DataTable.Close("dtLpnCarton")
 	F.Intrinsic.Control.EndIf
-	'-- Carton license plates for this packing list, including tracking
-	F.Intrinsic.String.Build("SELECT RTRIM(CRTN_NO) AS CRTN_NO, RTRIM(USER_DFND_NO) AS USER_DFND_NO, RTRIM(TRACKING_NO) AS TRACKING_NO FROM V_BOL_CARTON_NUM WHERE PCK_NO = '{0}' ORDER BY CRTN_NO",V.Local.sSafe,V.Local.sSQL)
+	'-- Cartons packed on this packing list. User defined number and tracking come from the carton record for the same list.
+	F.Intrinsic.String.Build("SELECT MAX(RTRIM(D.CRTN_NO)) AS CRTN_NO, MAX(RTRIM(C.USER_DFND_NO)) AS USER_DFND_NO, MAX(RTRIM(C.TRACKING_NO)) AS TRACKING_NO FROM V_BOL_PACK_DTL D LEFT JOIN V_BOL_CARTON_NUM C ON C.PCK_NO = D.PCK_NO AND C.CRTN_NO = D.CRTN_NO WHERE D.PCK_NO = '{0}' AND RTRIM(D.CRTN_NO) <> '' AND D.CRTN_NO <> '00000000' GROUP BY D.CRTN_NO ORDER BY D.CRTN_NO",V.Local.sSafe,V.Local.sSQL)
 	F.Data.DataTable.CreateFromSQL("dtLpnCarton","con",V.Local.sSQL,True)
 	F.Intrinsic.Control.If(V.DataTable.dtLpnCarton.RowCount--,>=,0)
 		Gui.frmLpn.GsGCLpnCarton.AddGridViewFromDataTable("gvLpnCarton","dtLpnCarton")
@@ -10453,9 +10463,9 @@ Program.Sub.LoadLpn.Start
 		Gui.frmLpn.GsGCLpnCarton.SetColumnProperty("gvLpnCarton","TRACKING_NO","CellHAlignment","Center")
 		Gui.frmLpn.GsGCLpnCarton.ResumeLayout()
 		Gui.frmLpn.GsGCLpnCarton.MainView("gvLpnCarton")
+		V.Global.bLpnCartonBound.Set(True)
 	F.Intrinsic.Control.EndIf
-
-	Gui.frmLpn..Show
+	Gui.frmLpn.tabLpn.SetTab(0)
 
 	F.Intrinsic.Control.Catch
 		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
@@ -12358,6 +12368,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20261002113224414$}$CursorSigned
-${$7$}$File Version:1.0.20261002183224.0
+${$6$}$bstevens$}$20261002121022221$}$CursorSigned
+${$7$}$File Version:1.0.20261002191022.0
 Program.Sub.Comments.End
