@@ -1,0 +1,178 @@
+﻿' Pick List MRP UDF. Launch this script instead of Picklist_MRP.exe.
+' The stock program is not started. Walk order matches the Hultec sort.
+' Each order line gets one load-plan item row per on-hand bin, E locations first.
+Program.Sub.Preflight.Start
+Program.External.Include.File("PickListMrpUdf.dll",False)
+V.Global.bError.Declare(Boolean,False)
+V.Global.iCon.Declare(Long,0)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.sSQL.Declare(String,"")
+V.Local.sDir.Declare(String,"")
+V.Local.sPath.Declare(String,"")
+V.Local.sDll.Declare(String,"")
+V.Local.sResult.Declare(String,"")
+V.Local.bDll.Declare(Boolean,False)
+
+F.Intrinsic.UI.InvokeWaitDialog("Pick List MRP is running.")
+
+F.ODBC.Connection!con.OpenCompanyConnection(600)
+
+V.Local.sSQL.Set("SELECT ID, F_BOOLEAN, F_LONG, TEXT1 FROM OP_HEADER WHERE SEQUENCE = 0 AND ID IN (402676,402674,402677,402678,402679,402680,402598,401187)")
+F.Data.DataTable.CreateFromSQL("dtOpt","con",V.Local.sSQL,True)
+V.Local.sSQL.Set("SELECT L.CUSTOMER, L.ORDER_NO, L.ORDER_LINE, L.ORDER_SUFFIX, L.PICK_BY_DATE, L.LOAD_NO, L.LOAD_SEQ, O.PART, O.LOCATION, O.QTY_BO, I.KEY_SOURCE, L.PCKLST_DISP_FLAG, L.PICKED FROM LOAD_PLAN L LEFT JOIN ORDER_LINES O ON O.ORDER_NO = L.ORDER_NO AND O.RECORD_NO = L.ORDER_LINE LEFT JOIN INVENTORY_MSTR I ON I.PART = O.PART AND I.LOCATION = O.LOCATION WHERE L.PICKED = 0")
+F.Data.DataTable.CreateFromSQL("dtLines","con",V.Local.sSQL,True)
+V.Local.sSQL.Set("SELECT PART, LOCATION, LOT, BIN, HEAT, SERIAL_NUMBER, QUANTITY, ALLOCATED, ALLOC_TYPE FROM ITEM_MASTER WHERE QUANTITY > 0")
+F.Data.DataTable.CreateFromSQL("dtOnHand","con",V.Local.sSQL,True)
+
+V.Local.sDir.Set(V.Caller.LocalGSSTempDir)
+F.Intrinsic.String.Build("{0}PickListMrpUdf_options.csv",V.Local.sDir,V.Local.sPath)
+F.Data.DataTable.SaveToCSV("dtOpt",V.Local.sPath,True)
+F.Intrinsic.String.Build("{0}PickListMrpUdf_lines.csv",V.Local.sDir,V.Local.sPath)
+F.Data.DataTable.SaveToCSV("dtLines",V.Local.sPath,True)
+F.Intrinsic.String.Build("{0}PickListMrpUdf_items.csv",V.Local.sDir,V.Local.sPath)
+F.Data.DataTable.SaveToCSV("dtOnHand",V.Local.sPath,True)
+
+' [7546] - 10/02/2026 - Script folder has no trailing slash; the DLL sits beside this script
+F.Intrinsic.String.Build("{0}\PickListMrpUdf.dll",V.Ambient.ScriptPath,V.Local.sDll)
+F.Intrinsic.File.Exists(V.Local.sDll,V.Local.bDll)
+F.Intrinsic.Control.If(V.Local.bDll,=,False)
+	F.Intrinsic.String.Build("{0}\PickListMrpUdf.dll",V.Caller.GasDir,V.Local.sDll)
+	F.Intrinsic.File.Exists(V.Local.sDll,V.Local.bDll)
+F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.If(V.Local.bDll,=,False)
+	F.Intrinsic.String.Build("Pick List MRP could not find PickListMrpUdf.dll in {0} or {1}.",V.Ambient.ScriptPath,V.Caller.GasDir,V.Local.sError)
+	F.Intrinsic.UI.CloseWaitDialog
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Cleanup)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndIf
+
+F.Automation.Generic.LoadAssembly(PickListMrpUdf,V.Local.sDll)
+F.Automation.Generic.CreateObject(PickListMrpUdf,PickListMrpUdf.Runner,"mrp")
+F.Automation.Generic.CallMethodReturnVariable(mrp,Execute,V.Local.sDir,V.Local.sResult)
+F.Automation.Generic.DestroyObject("mrp")
+
+' [7546] - 10/02/2026 - A star delimiter in the result is swallowed, so the write flag is a plain word
+F.Intrinsic.Control.If(V.Local.sResult,=,"SKIP")
+	F.Intrinsic.UI.CloseWaitDialog
+	F.Intrinsic.UI.Msgbox("Pick List MRP is not enabled. Nothing was written.")
+	F.Intrinsic.Control.CallSub(Cleanup)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.If(V.Local.sResult,<>,"OK")
+	F.Intrinsic.Control.If(V.Local.sResult,<>,"WRITE")
+		F.Intrinsic.String.Build("Pick List MRP UDF failed: {0}",V.Local.sResult,V.Local.sError)
+		F.Intrinsic.UI.CloseWaitDialog
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.CallSub(Cleanup)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+
+' [7546] - 10/02/2026 - Naming the columns here keeps the title row as data, and ORDER_NO is not a number
+F.Intrinsic.String.Build("{0}PickListMrpUdf_sequence.csv",V.Local.sDir,V.Local.sPath)
+F.Data.DataTable.CreateFromCSV("dtSeq",V.Local.sPath,"String*!*String*!*String*!*String*!*String",True)
+F.Intrinsic.Control.CallSub(WriteSequence)
+
+F.Intrinsic.Control.If(V.Local.sResult,=,"WRITE")
+	F.ODBC.Connection!con.Execute("DELETE FROM LOAD_PLAN_ITEMS")
+	F.Intrinsic.String.Build("{0}PickListMrpUdf_itembins.csv",V.Local.sDir,V.Local.sPath)
+	F.Data.DataTable.CreateFromCSV("dtItems",V.Local.sPath,"String*!*String*!*String*!*String*!*String*!*String*!*String*!*String*!*String*!*Float*!*String*!*String*!*String",True)
+	F.Intrinsic.Control.CallSub(WriteItems)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.UI.CloseWaitDialog
+F.Intrinsic.Control.CallSub(Cleanup)
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Pick List MRP UDF{0}{0}Subroutine: {1}{0}Error {2}: {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.CloseWaitDialog
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Cleanup)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndIf
+Program.Sub.Main.End
+
+Program.Sub.WriteSequence.Start
+F.Intrinsic.Control.SetErrorHandler("WriteSequence_Err")
+F.Intrinsic.Control.ClearErrors
+V.Local.i.Declare(Long,0)
+V.Local.sCustomer.Declare(String,"")
+V.Local.sOrder.Declare(String,"")
+V.Local.sLine.Declare(String,"")
+V.Local.sSuffix.Declare(String,"")
+V.Local.sSeq.Declare(String,"")
+V.Local.sSQL.Declare(String,"")
+V.Local.sError.Declare(String,"")
+' [7546] - 10/02/2026 - Entity Update is rejected on this runtime, so the walk number is written directly
+F.Intrinsic.Control.If(V.DataTable.dtSeq.RowCount,>,0)
+	F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.dtSeq.RowCount--,1)
+		V.Local.sCustomer.Set(V.DataTable.dtSeq(V.Local.i).CUSTOMER!FieldValTrim)
+		V.Local.sOrder.Set(V.DataTable.dtSeq(V.Local.i).ORDER_NO!FieldValTrim)
+		V.Local.sLine.Set(V.DataTable.dtSeq(V.Local.i).ORDER_LINE!FieldValTrim)
+		V.Local.sSuffix.Set(V.DataTable.dtSeq(V.Local.i).ORDER_SUFFIX!FieldValTrim)
+		V.Local.sSeq.Set(V.DataTable.dtSeq(V.Local.i).MOBILE_SEQUENCE!FieldValTrim)
+		F.Intrinsic.String.Replace(V.Local.sCustomer,"'","''",V.Local.sCustomer)
+		F.Intrinsic.String.Replace(V.Local.sOrder,"'","''",V.Local.sOrder)
+		F.Intrinsic.String.Replace(V.Local.sLine,"'","''",V.Local.sLine)
+		F.Intrinsic.String.Replace(V.Local.sSuffix,"'","''",V.Local.sSuffix)
+		F.Intrinsic.String.Build("UPDATE LOAD_PLAN SET MOBILE_SEQUENCE = {0} WHERE CUSTOMER = '{1}' AND ORDER_NO = '{2}' AND ORDER_LINE = '{3}' AND ORDER_SUFFIX = '{4}'",V.Local.sSeq,V.Local.sCustomer,V.Local.sOrder,V.Local.sLine,V.Local.sSuffix,V.Local.sSQL)
+		'-- gab-lint-ignore: W21
+		F.ODBC.Connection!con.Execute(V.Local.sSQL)
+	F.Intrinsic.Control.Next(V.Local.i)
+F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.Label("WriteSequence_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Could not update the pick order. Error {0}: {1}",V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.CloseWaitDialog
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndIf
+Program.Sub.WriteSequence.End
+
+Program.Sub.WriteItems.Start
+F.Intrinsic.Control.SetErrorHandler("WriteItems_Err")
+F.Intrinsic.Control.ClearErrors
+V.Local.sError.Declare(String,"")
+' [7546] - 10/02/2026 - The item table requires the audit columns, and one save writes every bin row
+F.Intrinsic.Control.If(V.DataTable.dtItems.RowCount,>,0)
+	F.Data.DataTable.AcceptChanges("dtItems")
+	F.Data.DataTable.SaveToDB("dtItems","con","LOAD_PLAN_ITEMS","ORDER_NO*!*ORDER_LINE*!*ORDER_SUFFIX",128)
+F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.Label("WriteItems_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Could not write the bin list. Error {0}: {1}",V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.CloseWaitDialog
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+F.Intrinsic.Control.EndIf
+Program.Sub.WriteItems.End
+
+Program.Sub.Cleanup.Start
+F.Intrinsic.Control.SetErrorHandler("Cleanup_Err")
+F.Intrinsic.Control.ClearErrors
+F.Data.DataTable.Close("dtOpt")
+F.Data.DataTable.Close("dtLines")
+F.Data.DataTable.Close("dtOnHand")
+F.Data.DataTable.Close("dtSeq")
+F.Data.DataTable.Close("dtItems")
+F.ODBC.Connection!con.Close
+F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.Label("Cleanup_Err")
+Program.Sub.Cleanup.End
+
+Program.Sub.Comments.Start
+${$5$}$2.0.0.0$}$2
+${$6$}$bstevens$}$20261002103253939$}$CursorSigned
+${$7$}$File Version:1.0.20261002173253.0
+Program.Sub.Comments.End

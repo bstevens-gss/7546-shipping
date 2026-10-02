@@ -8685,14 +8685,19 @@ Function.Intrinsic.Control.EndTry
 Program.Sub.LaunchPickerStatus.End
 
 Program.Sub.Run_MRP.Start
+'-- Rebuild the GS Mobile pick list. UDF Running Total uses the custom MRP so the order-line list is every on-hand bin, E locations first.
 Function.Intrinsic.Control.Try
-v.Local.sError.Declare(String)
-v.Local.iPID.Declare(Long)
-v.Local.sPath.Declare(String)
+V.Local.sError.Declare(String)
+V.Local.iPID.Declare(Long)
+V.Local.sPath.Declare(String)
 
-f.Intrinsic.String.Build("{0}\PickListMRP_Launcher.g2u",v.Caller.GasDir,v.Local.sPath)
-f.Global.General.CallAsyncGAS(v.Local.sPath,iPID)
-gui.frmShip.lblRunMRP.Visible(False)
+F.Intrinsic.Control.If(V.Screen.frmShip!ddlCalculateMRPOnHand.ItemData,=,4)
+	F.Intrinsic.String.Build("{0}\PickListMRP_UDF.g2u",V.Caller.GasDir,V.Local.sPath)
+F.Intrinsic.Control.Else
+	F.Intrinsic.String.Build("{0}\PickListMRP_Launcher.g2u",V.Caller.GasDir,V.Local.sPath)
+F.Intrinsic.Control.EndIf
+F.Global.General.CallAsyncGAS(V.Local.sPath,V.Local.iPID)
+Gui.frmShip.lblRunMRP.Visible(False)
 
 Function.Intrinsic.Control.Catch
 	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
@@ -12147,6 +12152,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20260918081739705$}$CursorSigned
-${$7$}$File Version:1.0.20260918151739.0
+${$6$}$bstevens$}$20261002083719647$}$CursorSigned
+${$7$}$File Version:1.0.20261002153719.0
 Program.Sub.Comments.End
