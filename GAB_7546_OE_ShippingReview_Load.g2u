@@ -205,7 +205,7 @@ Gui.frmShip.ddlPicklistRpt.Position(2580,840)
 Gui.frmShip.ddlPicklistRpt.FontName("Tahoma")
 Gui.frmShip.ddlPicklistRpt.FontSize(8.25)
 Gui.frmShip.ddlPicklistRpt.Event(SelectedIndexChanged,ddlPicklistRpt_SelectedIndexChanged)
-Gui.frmShip.lblRunMRP.Create(Label,"Run MRP to Rebuild GS Mobile Picklist ",False,3285,240,0,1530,120,True,0,"Tahoma",10,8454143,1,0)
+Gui.frmShip.lblRunMRP.Create(Label,"Run MRP to Rebuild GS Mobile Picklist ",False,3285,240,0,3600,120,True,0,"Tahoma",10,8454143,1,0)
 Gui.frmShip.lblRunMRP.BorderStyle(0)
 Gui.frmShip.lblRunMRP.ForeColor(255)
 Gui.frmShip.lblRunMRP.Event(Click,Run_MRP)
@@ -11025,6 +11025,7 @@ V.Local.sLoc.Declare(String)
 V.Local.sProdLine.Declare(String)
 V.Local.sOrdSuffix.Declare(String)
 V.Local.fWeight.Declare(Float)
+V.Local.dDue.Declare(Date)
 V.Local.bHasAccess.Declare(Boolean,False)
 V.Local.sSer.Declare(String)
 
@@ -11103,6 +11104,10 @@ F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
 		V.Local.sProdLine.Set(V.DataTable.dtAllShip(V.Local.sSel(V.Local.i)).PRODUCT_LINE!FieldVal)
 		V.Local.sOrdSuffix.Set(V.DataTable.dtAllShip(V.Local.sSel(V.Local.i)).ORDER_SUFFIX!FieldVal)
 		V.Local.fWeight.Set(V.DataTable.dtAllShip(V.Local.sSel(V.Local.i)).WEIGHT!FieldValFloat)
+		V.Local.dDue.Set(V.Ambient.Date)
+		F.Intrinsic.Control.If(V.DataTable.dtAllShip(V.Local.sSel(V.Local.i)).DATE_ITEM_PROM!FieldValTrim,<>,"")
+			V.Local.dDue.Set(V.DataTable.dtAllShip(V.Local.sSel(V.Local.i)).DATE_ITEM_PROM!FieldVal)
+		F.Intrinsic.Control.EndIf
 	F.Intrinsic.Control.Else
 		V.Local.sCust.Set(V.DataTable.dtDueShip(V.Local.sSel(V.Local.i)).CUSTOMER!FieldVal)
 		V.Local.sNameCust.Set(V.DataTable.dtDueShip(V.Local.sSel(V.Local.i)).NAME_CUSTOMER!FieldVal)
@@ -11121,8 +11126,12 @@ F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
 		V.Local.sProdLine.Set(V.DataTable.dtDueShip(V.Local.sSel(V.Local.i)).PRODUCT_LINE!FieldVal)
 		V.Local.sOrdSuffix.Set(V.DataTable.dtDueShip(V.Local.sSel(V.Local.i)).ORDER_SUFFIX!FieldVal)
 		V.Local.fWeight.Set(V.DataTable.dtDueShip(V.Local.sSel(V.Local.i)).WEIGHT!FieldValFloat)
+		V.Local.dDue.Set(V.Ambient.Date)
+		F.Intrinsic.Control.If(V.DataTable.dtDueShip(V.Local.sSel(V.Local.i)).DATE_ITEM_PROM!FieldValTrim,<>,"")
+			V.Local.dDue.Set(V.DataTable.dtDueShip(V.Local.sSel(V.Local.i)).DATE_ITEM_PROM!FieldVal)
+		F.Intrinsic.Control.EndIf
 	F.Intrinsic.Control.EndIf
-	F.Data.DataTable.AddRow("dtSplitLines","CUSTOMER",V.Local.sCust,"NAME_CUSTOMER",V.Local.sNameCust,"ORDER_NO",V.Local.sOrdNo,"RECORD_NO",V.Local.sRecNo,"ORDER_LINE",V.Local.sOrdLn,"DISPLAY_PART",V.Local.sDispPart,"DESCRIPTION",V.Local.sDesc,"SHIP_ID",V.Local.sShipId,"CITY_SHIP",V.Local.sCityShip,"STATE_SHIP",V.Local.sStateShip,"NAME_CUSTOMER_SHIP",V.Local.sNameShip,"QTY_BO",V.Local.fQtyBo,"QTY_SPLIT",0,"NEW_DUE_DATE",V.Ambient.Date,"PART",V.Local.sPart,"LOCATION",V.Local.sLoc,"PRODUCT_LINE",V.Local.sProdLine,"ORDER_SUFFIX",V.Local.sOrdSuffix,"WEIGHT",V.Local.fWeight)
+	F.Data.DataTable.AddRow("dtSplitLines","CUSTOMER",V.Local.sCust,"NAME_CUSTOMER",V.Local.sNameCust,"ORDER_NO",V.Local.sOrdNo,"RECORD_NO",V.Local.sRecNo,"ORDER_LINE",V.Local.sOrdLn,"DISPLAY_PART",V.Local.sDispPart,"DESCRIPTION",V.Local.sDesc,"SHIP_ID",V.Local.sShipId,"CITY_SHIP",V.Local.sCityShip,"STATE_SHIP",V.Local.sStateShip,"NAME_CUSTOMER_SHIP",V.Local.sNameShip,"QTY_BO",V.Local.fQtyBo,"QTY_SPLIT",0,"NEW_DUE_DATE",V.Local.dDue,"PART",V.Local.sPart,"LOCATION",V.Local.sLoc,"PRODUCT_LINE",V.Local.sProdLine,"ORDER_SUFFIX",V.Local.sOrdSuffix,"WEIGHT",V.Local.fWeight)
 F.Intrinsic.Control.Next(V.Local.i)
 
 '7546 UDF 04/06/2026: Fill SO Document Control status from shared dDCC dictionary
@@ -11346,6 +11355,7 @@ V.Local.sInfo1.Declare(String)
 V.Local.sInfo2.Declare(String)
 V.Local.sFlagBom.Declare(String)
 V.Local.sBomParent.Declare(String)
+V.Local.sOrigLine.Declare(String)
 V.Local.fQtyBoRemain.Declare(Float)
 V.Local.fLiveBo.Declare(Float)
 V.Local.sKey.Declare(String)
@@ -11675,6 +11685,12 @@ F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.dtSplitLines.RowCount--)
 		V.Local.sBomParent.Set(V.Local.sBomParent.PSQLFriendly)
 		F.Intrinsic.String.Build("UPDATE ORDER_LINES SET USER_1 = '{0}', USER_2 = '{1}', USER_3 = '{2}', USER_4 = '{3}', USER_5 = '{4}', INFO_1 = '{5}', INFO_2 = '{6}', FLAG_BOM = '{7}', BOM_PARENT = '{8}' WHERE ORDER_NO = '{9}' AND RECORD_NO = '{10}'",V.Local.sUser1,V.Local.sUser2,V.Local.sUser3,V.Local.sUser4,V.Local.sUser5,V.Local.sInfo1,V.Local.sInfo2,V.Local.sFlagBom,V.Local.sBomParent,V.Local.sOrderNo,V.Local.sNewRecNo,V.Local.sSQL)
 		F.ODBC.Connection!con.Execute(V.Local.sSQL)
+		'7546 UDF 10/06/2026: UDF always stamps ORIG_ORDER_LINE on the new line with the source 4-char RECORD_NO.
+		F.Intrinsic.Control.If(V.Caller.CompanyCode,=,"UDF")
+			V.Local.sOrigLine.Set(V.Local.sOrderLine.PSQLFriendly)
+			F.Intrinsic.String.Build("UPDATE ORDER_LINES SET ORIG_ORDER_LINE = '{0}' WHERE ORDER_NO = '{1}' AND RECORD_NO = '{2}'",V.Local.sOrigLine,V.Local.sOrderNo,V.Local.sNewRecNo,V.Local.sSQL)
+			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+		F.Intrinsic.Control.EndIf
 
 		'7546 Hultec 03/23/2026: Commented out direct SQL for DATE_ITEM_PROM; now sent via Sales.UpdateOrderLinesByFile at CSV position 16.
 		'F.Intrinsic.String.Build("UPDATE ORDER_LINES SET DATE_ITEM_PROM = '{0}', MUST_DLVR_BY_DATE = '{0}' WHERE ORDER_NO = '{1}' AND RECORD_NO = '{2}'",V.Local.dNewDue.FormatYYYYMMDD,V.Local.sOrderNo,V.Local.sNewRecNo,V.Local.sSQL)
@@ -12405,6 +12421,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20261002122142953$}$CursorSigned
-${$7$}$File Version:1.0.20261002192142.0
+${$6$}$bstevens$}$20261006143257777$}$CursorSigned
+${$7$}$File Version:1.0.20261006213257.0
 Program.Sub.Comments.End
