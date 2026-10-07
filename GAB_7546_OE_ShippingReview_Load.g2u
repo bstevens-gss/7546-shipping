@@ -4321,7 +4321,7 @@ Program.Sub.btnCalcClass_Click.Start
 Program.Sub.btnCalcClass_Click.End
 
 Program.Sub.CalcFrtClass.Start
-'-- 7/14/26 BS - Calculate freight class from density (NMFC 57410)
+'-- 10/7/26 BS - Calculate class from the selected pallet, then apply that class to every pallet row
 	F.Intrinsic.Control.Try
 	V.Local.sError.Declare
 	V.Local.iRow.Declare(Long)
@@ -4330,6 +4330,8 @@ Program.Sub.CalcFrtClass.Start
 	V.Local.sCalcClass.Declare
 	V.Local.sSQL.Declare
 	V.Local.sRows.Declare
+	V.Local.sSel.Declare
+	V.Local.bMulti.Declare(Boolean,False)
 
 	'-- NMFC 57410 guard
 	F.Intrinsic.Control.If(V.Global.sFrtClassNMFC.Trim,<>,"57410")
@@ -4337,21 +4339,41 @@ Program.Sub.CalcFrtClass.Start
 		F.Intrinsic.Control.ExitSub
 	F.Intrinsic.Control.EndIf
 
-	'-- Clear warned-pallets tracker
-	V.Global.sFrtClassWarned.Set("")
-
-	'-- Loop through rows - delegate per-row calculation
+	'-- Selected pallet is the source. GetSelectedRows returns the DataTable row index.
+	Gui.frmFrtClass.GSGCFrtClass.GetSelectedRows("gvFrtClass",V.Local.sSel)
+	F.Intrinsic.Control.If(V.Local.sSel.Trim,=,"","OR",V.Local.sSel.Trim,=,"***NORETURN***")
+		F.Intrinsic.UI.Msgbox("Select a pallet row first.","Validation")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.IsInString(V.Local.sSel,"*!*",False,V.Local.bMulti)
+	F.Intrinsic.Control.If(V.Local.bMulti)
+		F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sRows)
+		V.Global.iFrtClassRowIdx.Set(V.Local.sRows(0).Trim.Long)
+	F.Intrinsic.Control.Else
+		V.Global.iFrtClassRowIdx.Set(V.Local.sSel.Trim.Long)
+	F.Intrinsic.Control.EndIf
 	F.Intrinsic.Math.Sub(V.DataTable.dtFrtClass.RowCount,1,V.Local.iLastRow)
-	F.Intrinsic.Control.For(V.Local.iRow,0,V.Local.iLastRow,1)
-		V.Global.iFrtClassRowIdx.Set(V.Local.iRow)
-		F.Intrinsic.Control.CallSub(CalcOneRow)
-	F.Intrinsic.Control.Next(V.Local.iRow)
+	F.Intrinsic.Control.If(V.Global.iFrtClassRowIdx,<,0)
+		F.Intrinsic.UI.Msgbox("Select a pallet row first.","Validation")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Global.iFrtClassRowIdx,>,V.Local.iLastRow)
+		F.Intrinsic.UI.Msgbox("Select a pallet row first.","Validation")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
 
-	'-- Get calculated class from first row for BOL_ITEM and parent grid
-	V.Local.sCalcClass.Set(V.DataTable.dtFrtClass(0).FRT_CLASS!FieldValTrim)
+	'-- Calculate the selected pallet only
+	V.Global.sFrtClassWarned.Set("")
+	F.Intrinsic.Control.CallSub(CalcOneRow)
+	V.Local.sCalcClass.Set(V.DataTable.dtFrtClass(V.Global.iFrtClassRowIdx).FRT_CLASS!FieldValTrim)
 	F.Intrinsic.Control.If(V.Local.sCalcClass.Trim,=,"")
 		F.Intrinsic.Control.ExitSub
 	F.Intrinsic.Control.EndIf
+
+	'-- Same class on every pallet row for this line
+	F.Intrinsic.Control.For(V.Local.iRow,0,V.Local.iLastRow,1)
+		F.Data.Datatable.SetValue("dtFrtClass",V.Local.iRow,"FRT_CLASS",V.Local.sCalcClass)
+	F.Intrinsic.Control.Next(V.Local.iRow)
 
 	'-- Update BOL_ITEM
 	F.Intrinsic.Control.If(V.Global.sFrtClassWaybill.Trim,<>,"")
@@ -9604,8 +9626,8 @@ f.Data.Datatable.Close("dtloadShipv")
 f.Data.DataView.ToDataTable("dtload","dvloadship","dtloadship0",True)
 v.local.iCnt.Set(0)	
 F.Intrinsic.Control.For(V.Local.iCnt,0,v.DataTable.dtloadship0.RowCount--,1)
-	'Flag load plan record as shipped/picked
-	F.Intrinsic.String.Build("update load_plan set shipped = 1,picked = 1 where order_no = '{0}' and order_line = '{1}' ",V.DataTable.dtloadship0(V.Local.iCnt).ORDER_NO!FieldVal,V.DataTable.dtloadship0(V.Local.iCnt).ORDER_LINE!FieldVal,V.Local.sSQL)
+	'-- This line passed the Ship Load checks. Flag it shipped and picked. Other lines on the load stay as they are.
+	F.Intrinsic.String.Build("update load_plan set shipped = 1, picked = 1 where order_no = '{0}' and order_line = '{1}' and order_suffix = '{2}' and load_no = {3}",V.DataTable.dtloadship0(V.Local.iCnt).ORDER_NO!FieldVal,V.DataTable.dtloadship0(V.Local.iCnt).ORDER_LINE!FieldVal,V.DataTable.dtloadship0(V.Local.iCnt).ORDER_SUFFIX!FieldVal,V.DataTable.dtloadship0(V.Local.iCnt).LOAD NUMBER!FieldVal,V.Local.sSQL)
 	F.ODBC.Connection!Con.Execute(V.Local.sSQL)
 	'-- SHP710 next-seq on unshipped LOAD_PLAN only: packing suffix >= header next-seq -> packing+1; else header. Never decrease. Skip lines that already have a staged packing (SHP_STATUS=0). Do not write ORDER_HEADER.
 	F.Intrinsic.Control.If(V.DataTable.dtPackSfx.Exists)
@@ -9639,13 +9661,14 @@ f.Data.DataView.Create("dtLoad","dvloadshipOSP",22,v.Local.sFilterString,"")
 f.Data.DataView.ToDataTable("dtload","dvloadshipOSP","dtloadshipOSP",True)
 v.local.iCnt.Set(0)	
 F.Intrinsic.Control.For(V.Local.iCnt,0,v.DataTable.dtloadshipOSP.RowCount--,1)
-	'Flag load plan record as shipped/picked
-	F.Intrinsic.String.Build("update load_plan set shipped = 1,picked = 1 where order_no = '{0}' and order_line = '{1}' and load_no = {2} ",V.DataTable.dtloadshipOSP(V.Local.iCnt).ORDER_NO!FieldVal,V.DataTable.dtloadshipOSP(V.Local.iCnt).ORDER_LINE!FieldVal,V.DataTable.dtloadshipOSP(V.Local.iCnt).LOAD NUMBER!FieldVal,V.Local.sSQL)
+	'-- This outside-PO line passed the Ship Load checks. Flag it shipped and picked.
+	F.Intrinsic.String.Build("update load_plan set shipped = 1, picked = 1 where order_no = '{0}' and order_line = '{1}' and order_suffix = '{2}' and load_no = {3}",V.DataTable.dtloadshipOSP(V.Local.iCnt).ORDER_NO!FieldVal,V.DataTable.dtloadshipOSP(V.Local.iCnt).ORDER_LINE!FieldVal,V.DataTable.dtloadshipOSP(V.Local.iCnt).ORDER_SUFFIX!FieldVal,V.DataTable.dtloadshipOSP(V.Local.iCnt).LOAD NUMBER!FieldVal,V.Local.sSQL)
 	F.ODBC.Connection!Con.Execute(V.Local.sSQL)
 	'update PO_LINES.USER_5 with load# | Shipped Date
 	F.Intrinsic.String.Build("update po_lines set USER_5 = '{2}'+' | '+'{3}' where purchase_order = '{0}' and record_no = '{1}' and po_type = 'O'",V.DataTable.dtloadshipOSP(V.Local.iCnt).ORDER_NO!FieldVal,V.DataTable.dtloadshipOSP(V.Local.iCnt).ORDER_LINE!FieldVal,V.DataTable.dtloadshipOSP(V.Local.iCnt).LOAD NUMBER!FieldVal,V.DataTable.dtloadshipOSP(V.Local.iCnt).Ship Date!FieldVal,V.Local.sSQL)
 	F.ODBC.Connection!Con.Execute(V.Local.sSQL)	
 F.Intrinsic.Control.Next(V.Local.iCnt)
+
 f.Data.DataView.Close("dtLoad","dvloadShipOSP")
 f.Data.Datatable.Close("dtloadshipOSP")
 
@@ -12429,6 +12452,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20261006144442755$}$CursorSigned
-${$7$}$File Version:1.0.20261006214442.0
+${$6$}$bstevens$}$20261007102908955$}$CursorSigned
+${$7$}$File Version:1.0.20261007172908.0
 Program.Sub.Comments.End
