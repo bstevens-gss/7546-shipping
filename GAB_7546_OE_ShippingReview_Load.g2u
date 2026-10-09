@@ -4166,6 +4166,9 @@ Program.Sub.GSGCFrtClass_RowCellClick.Start
 	V.Local.sLineMax.Declare
 	V.Local.iHdrMax.Declare(Long)
 	V.Local.iLineMax.Declare(Long)
+	V.Local.sAsk.Declare
+	V.Local.iAnswer.Declare(Long)
+	V.Local.bThisOnly.Declare(Boolean,True)
 
 	F.Intrinsic.Control.If(V.Args.Column,=,"PRINT_CARRIER_PALLET")
 		V.Local.sPallet.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).PLLT_NO!FieldValTrim)
@@ -4197,6 +4200,16 @@ Program.Sub.GSGCFrtClass_RowCellClick.Start
 
 	F.Intrinsic.String.Split(V.Local.sRet,"*!*",V.Local.sParts)
 	V.Local.sPRID.Set(V.Local.sParts(0).Trim)
+
+	'-- Yes = this pallet, No = every pallet on the packing list, Cancel = stop
+	F.Intrinsic.String.Build("Print this pallet only?{0}{0}Yes = this pallet{0}No = all pallets on this packing list",V.Ambient.Newline,V.Local.sAsk)
+	F.Intrinsic.UI.Msgbox(V.Local.sAsk,"BOL Labels",V.Enum.MsgBoxStyle!YesNoCancel,V.Local.iAnswer)
+	F.Intrinsic.Control.If(V.Local.iAnswer,=,V.Enum.MsgBoxResult!Cancel)
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.iAnswer,=,V.Enum.MsgBoxResult!No)
+		V.Local.bThisOnly.Set(False)
+	F.Intrinsic.Control.EndIf
 
 	'-- Gather row context
 	V.Local.sPallet.Set(V.DataTable.dtFrtClass(V.Args.RowIndex).PLLT_NO!FieldValTrim)
@@ -4287,11 +4300,16 @@ Program.Sub.GSGCFrtClass_RowCellClick.Start
 	F.Intrinsic.StringBuilder.Dispose("sbSQL")
 	F.ODBC.Connection!con.Execute(V.Local.sSQL)
 
-	'-- Reset all pallets LABEL_FLAG to N, then set Y for this pallet
-	F.Intrinsic.String.Build("UPDATE BOL_PALLET_NUM SET LABEL_FLAG='N' WHERE PCK_NO='{0}'",V.Global.sFrtClassPckNo,V.Local.sSQL)
-	F.ODBC.Connection!con.Execute(V.Local.sSQL)
-	F.Intrinsic.String.Build("UPDATE BOL_PALLET_NUM SET LABEL_FLAG='Y' WHERE PCK_NO='{0}' AND PLLT_NO='{1}'",V.Global.sFrtClassPckNo,V.Local.sPallet,V.Local.sSQL)
-	F.ODBC.Connection!con.Execute(V.Local.sSQL)
+	'-- Yes prints the clicked pallet. No prints every pallet on the packing list.
+	F.Intrinsic.Control.If(V.Local.bThisOnly)
+		F.Intrinsic.String.Build("UPDATE BOL_PALLET_NUM SET LABEL_FLAG='N' WHERE PCK_NO='{0}'",V.Global.sFrtClassPckNo,V.Local.sSQL)
+		F.ODBC.Connection!con.Execute(V.Local.sSQL)
+		F.Intrinsic.String.Build("UPDATE BOL_PALLET_NUM SET LABEL_FLAG='Y' WHERE PCK_NO='{0}' AND PLLT_NO='{1}'",V.Global.sFrtClassPckNo,V.Local.sPallet,V.Local.sSQL)
+		F.ODBC.Connection!con.Execute(V.Local.sSQL)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.String.Build("UPDATE BOL_PALLET_NUM SET LABEL_FLAG='Y' WHERE PCK_NO='{0}'",V.Global.sFrtClassPckNo,V.Local.sSQL)
+		F.ODBC.Connection!con.Execute(V.Local.sSQL)
+	F.Intrinsic.Control.EndIf
 
 	'-- Release for WirePoll
 	F.Intrinsic.String.Build("UPDATE WIRELESS_HDR SET ATTEMPTED_FLAG='' WHERE TRANS_ID='{0}'",V.Local.sTransIDNew,V.Local.sSQL)
@@ -12466,6 +12484,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20261008091701351$}$CursorSigned
-${$7$}$File Version:1.0.20261008161701.0
+${$6$}$bstevens$}$20261009083104844$}$CursorSigned
+${$7$}$File Version:1.0.20261009153104.0
 Program.Sub.Comments.End
