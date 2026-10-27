@@ -11526,6 +11526,7 @@ V.Local.iRet.Declare(Long)
 V.Local.sMsg.Declare(String)
 V.Local.dNewDue.Declare(Date)
 V.Local.sDateOrder.Declare(String)
+V.Local.sMustDlvr.Declare(String)
 V.Local.bSkip.Declare(Boolean)
 V.Local.fOrigWeight.Declare(Float)
 V.Local.fUnitWeight.Declare(Float)
@@ -11718,7 +11719,7 @@ F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.dtSplitLines.RowCount--)
 	F.Intrinsic.Control.EndIf
 
 	F.Intrinsic.Control.If(V.Local.bSkip.Not)
-		F.Intrinsic.String.Build("SELECT PRICE, COST, DATE_ORDER, QTY_ORDERED, QTY_BO, WEIGHT, USER_1, USER_2, USER_3, USER_4, USER_5, INFO_1, INFO_2, FLAG_BOM, BOM_PARENT, ORIG_ORDER_LINE FROM ORDER_LINES WHERE ORDER_NO = '{0}' AND RECORD_NO = '{1}'",V.Local.sOrderNo,V.Local.sOrderLine,V.Local.sSQL)
+		F.Intrinsic.String.Build("SELECT PRICE, COST, DATE_ORDER, MUST_DLVR_BY_DATE, QTY_ORDERED, QTY_BO, WEIGHT, USER_1, USER_2, USER_3, USER_4, USER_5, INFO_1, INFO_2, FLAG_BOM, BOM_PARENT, ORIG_ORDER_LINE FROM ORDER_LINES WHERE ORDER_NO = '{0}' AND RECORD_NO = '{1}'",V.Local.sOrderNo,V.Local.sOrderLine,V.Local.sSQL)
 		F.Intrinsic.Control.If(V.DataTable.dtSplitOL.Exists)
 			F.Data.DataTable.Close("dtSplitOL")
 		F.Intrinsic.Control.EndIf
@@ -11727,6 +11728,7 @@ F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.dtSplitLines.RowCount--)
 			V.Local.fPrice.Set(V.DataTable.dtSplitOL(0).PRICE!FieldValFloat)
 			V.Local.fCost.Set(V.DataTable.dtSplitOL(0).COST!FieldValFloat)
 			V.Local.sDateOrder.Set(V.DataTable.dtSplitOL(0).DATE_ORDER!FieldVal)
+			V.Local.sMustDlvr.Set(V.DataTable.dtSplitOL(0).MUST_DLVR_BY_DATE!FieldValTrim)
 			V.Local.fLineQty.Set(V.DataTable.dtSplitOL(0).QTY_ORDERED!FieldValFloat)
 			V.Local.fQtyBo.Set(V.DataTable.dtSplitOL(0).QTY_BO!FieldValFloat)
 			V.Local.fOrigWeight.Set(V.DataTable.dtSplitOL(0).WEIGHT!FieldValFloat)
@@ -11744,6 +11746,7 @@ F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.dtSplitLines.RowCount--)
 			V.Local.fPrice.Set(0)
 			V.Local.fCost.Set(0)
 			V.Local.sDateOrder.Set("")
+			V.Local.sMustDlvr.Set("")
 			V.Local.fLineQty.Set(0)
 			V.Local.fQtyBo.Set(0)
 			V.Local.fOrigWeight.Set(0)
@@ -11930,6 +11933,14 @@ F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.dtSplitLines.RowCount--)
 		F.Intrinsic.Control.If(V.Local.sDateOrder,<>,"")
 			F.Intrinsic.String.Build("UPDATE ORDER_LINES SET DATE_ORDER = '{0}' WHERE ORDER_NO = '{1}' AND RECORD_NO = '{2}'",V.Local.sDateOrder,V.Local.sOrderNo,V.Local.sNewRecNo,V.Local.sSQL)
 			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+		F.Intrinsic.Control.EndIf
+		'7546 UDF 10/27/2026: Copy the original line customer due date onto the new split line. New Due Date still sets the promise date only.
+		F.Intrinsic.Control.If(V.Local.sMustDlvr,<>,"")
+			F.Intrinsic.Control.If(V.Local.sMustDlvr,<>,"00000000")
+				V.Local.sMustDlvr.Set(V.Local.sMustDlvr.PSQLFriendly)
+				F.Intrinsic.String.Build("UPDATE ORDER_LINES SET MUST_DLVR_BY_DATE = '{0}' WHERE ORDER_NO = '{1}' AND RECORD_NO = '{2}'",V.Local.sMustDlvr,V.Local.sOrderNo,V.Local.sNewRecNo,V.Local.sSQL)
+				F.ODBC.Connection!con.Execute(V.Local.sSQL)
+			F.Intrinsic.Control.EndIf
 		F.Intrinsic.Control.EndIf
 
 		F.Intrinsic.String.Left(V.Local.sOrderLine,3,V.Local.sTemp)
@@ -12653,6 +12664,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20261027162632052$}$CursorSigned
-${$7$}$File Version:1.0.20261027232632.0
+${$6$}$bstevens$}$20261027164517374$}$CursorSigned
+${$7$}$File Version:1.0.20261027234517.0
 Program.Sub.Comments.End
