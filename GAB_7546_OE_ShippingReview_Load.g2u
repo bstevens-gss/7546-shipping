@@ -11859,6 +11859,14 @@ F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.dtSplitLines.RowCount--)
 			F.Intrinsic.File.DeleteFile(V.Local.sFilePath)
 		F.Intrinsic.Control.EndIf
 
+		'7546 UDF 10/27/2026: Reduce the source quantity only after the new line is on the order.
+		F.Intrinsic.String.Build("SELECT COUNT(*) FROM V_ORDER_LINES WHERE ORDER_NO = '{0}' AND RECORD_NO = '{1}'",V.Local.sOrderNo,V.Local.sNewRecNo,V.Local.sSQL)
+		F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sReturn)
+		V.Local.sReturn.Set(V.Local.sReturn.Trim)
+		F.Intrinsic.Control.If(V.Local.sReturn,=,"","OR",V.Local.sReturn,=,"0")
+			F.Intrinsic.String.Build("Order {0} line {1} was not added. The source line quantity was not changed.",V.Local.sOrderNo,V.Local.sNewRecNo,V.Local.sMsg)
+			F.Intrinsic.UI.Msgbox(V.Local.sMsg)
+		F.Intrinsic.Control.Else
 		'7546 UDF 10/27/2026: Keep the header counter on the line just added when ORDADCMD left it behind. Next piece re-reads this value.
 		F.Intrinsic.String.Build("SELECT LAST_REC_NO FROM V_ORDER_HEADER WHERE ORDER_NO = '{0}' AND RECORD_NO = '  A'",V.Local.sOrderNo,V.Local.sSQL)
 		F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sReturn)
@@ -11984,6 +11992,7 @@ F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.dtSplitLines.RowCount--)
 		F.Intrinsic.File.Exists(V.Local.sFilePath,V.Local.bExists)
 		F.Intrinsic.Control.If(V.Local.bExists)
 			F.Intrinsic.File.DeleteFile(V.Local.sFilePath)
+		F.Intrinsic.Control.EndIf
 		F.Intrinsic.Control.EndIf
 	F.Intrinsic.Control.EndIf
 F.Intrinsic.Control.Next(V.Local.i)
@@ -12664,6 +12673,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20261027164517374$}$CursorSigned
-${$7$}$File Version:1.0.20261027234517.0
+${$6$}$bstevens$}$20261027214620285$}$CursorSigned
+${$7$}$File Version:1.0.20261028044620.0
 Program.Sub.Comments.End
