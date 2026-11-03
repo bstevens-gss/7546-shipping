@@ -4522,7 +4522,15 @@ Program.Sub.CalcOneRow.Start
 	F.Intrinsic.Math.Div(V.Local.sWeight,V.Local.sVolume,V.Local.sDensity)
 
 	'-- Density to Class lookup (must check highest first)
-	F.Intrinsic.Control.If(V.Local.sDensity,>=,"15")
+	F.Intrinsic.Control.If(V.Local.sDensity,>=,"50")
+		V.Local.sClass.Set("50")
+	F.Intrinsic.Control.ElseIf(V.Local.sDensity,>=,"35")
+		V.Local.sClass.Set("55")
+	F.Intrinsic.Control.ElseIf(V.Local.sDensity,>=,"30")
+		V.Local.sClass.Set("60")
+	F.Intrinsic.Control.ElseIf(V.Local.sDensity,>=,"22.5")
+		V.Local.sClass.Set("65")
+	F.Intrinsic.Control.ElseIf(V.Local.sDensity,>=,"15")
 		V.Local.sClass.Set("70")
 	F.Intrinsic.Control.ElseIf(V.Local.sDensity,>=,"12")
 		V.Local.sClass.Set("85")
@@ -4534,8 +4542,12 @@ Program.Sub.CalcOneRow.Start
 		V.Local.sClass.Set("125")
 	F.Intrinsic.Control.ElseIf(V.Local.sDensity,>=,"4")
 		V.Local.sClass.Set("175")
+	F.Intrinsic.Control.ElseIf(V.Local.sDensity,>=,"2")
+		V.Local.sClass.Set("250")
+	F.Intrinsic.Control.ElseIf(V.Local.sDensity,>=,"1")
+		V.Local.sClass.Set("300")
 	F.Intrinsic.Control.Else
-		F.Intrinsic.Control.ExitSub
+		V.Local.sClass.Set("400")
 	F.Intrinsic.Control.EndIf
 
 	'-- Save to DataTable
@@ -12673,6 +12685,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20261027214620285$}$CursorSigned
-${$7$}$File Version:1.0.20261028044620.0
+${$6$}$bstevens$}$20261103095646363$}$CursorSigned
+${$7$}$File Version:1.0.20261103175646.0
 Program.Sub.Comments.End
