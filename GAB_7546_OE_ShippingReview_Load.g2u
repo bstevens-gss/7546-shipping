@@ -21,8 +21,8 @@ Gui.frmShip..TitleBar(True)
 Gui.frmShip.lblPicklistRpt.Create(Label,"Pick List Report",True,1095,195,0,2580,690,True,0,"Tahoma",8.25,,0,0)
 Gui.frmShip.lblPicklistRpt.BorderStyle(0)
 Gui.frmShip.tabShip.Create(Tab)
-Gui.frmShip.tabShip.Size(15120,9015)
-Gui.frmShip.tabShip.Position(15,1155)
+Gui.frmShip.tabShip.Size(15120,8650)
+Gui.frmShip.tabShip.Position(15,1520)
 Gui.frmShip.tabShip.Event(Click,tabShip_Click)
 Gui.frmShip.tabShip.Enabled(True)
 Gui.frmShip.tabShip.Visible(True)
@@ -221,16 +221,36 @@ Gui.frmShip.cmdPrintWalmartLabels5055.Visible(False)
 Gui.frmShip.cmdPrintWalmartLabels5055.Zorder(0)
 Gui.frmShip.cmdPrintWalmartLabels5055.FontName("Tahoma")
 Gui.frmShip.cmdPrintWalmartLabels5055.FontSize(8.25)
+Gui.frmShip.lblLineNote.Create(Label,"Line note",True,1100,195,0,75,1210,True,0,"Tahoma",8.25,,0,0)
+Gui.frmShip.lblLineNote.BorderStyle(0)
+Gui.frmShip.lblLineNote.Anchor(5)
+Gui.frmShip.txtLineNote.Create(TextBox,"",True,4500,300,0,1250,1170,True,2,"Tahoma",8.25,16777215,1)
+Gui.frmShip.txtLineNote.ToolTip("Note written onto each checked line that is visible on Open Orders or Past Due")
+Gui.frmShip.txtLineNote.Enabled(True)
+Gui.frmShip.txtLineNote.Visible(True)
+Gui.frmShip.txtLineNote.Zorder(0)
+Gui.frmShip.txtLineNote.Anchor(5)
+Gui.frmShip.cmdApplyLineNote.Create(Button)
+Gui.frmShip.cmdApplyLineNote.Size(1500,270)
+Gui.frmShip.cmdApplyLineNote.Position(5850,1185)
+Gui.frmShip.cmdApplyLineNote.Anchor(5)
+Gui.frmShip.cmdApplyLineNote.Caption("Apply Note")
+Gui.frmShip.cmdApplyLineNote.ToolTip("Write the line note on every checked line that is visible on Open Orders or Past Due")
+Gui.frmShip.cmdApplyLineNote.Event(Click,Click_ApplyLineNote)
+Gui.frmShip.cmdApplyLineNote.Enabled(True)
+Gui.frmShip.cmdApplyLineNote.Visible(True)
+Gui.frmShip.cmdApplyLineNote.FontName("Tahoma")
+Gui.frmShip.cmdApplyLineNote.FontSize(8.25)
 Gui.frmShip.chkdisablerefresh.Create(CheckBox)
 Gui.frmShip.chkdisablerefresh.Enabled(True)
 Gui.frmShip.chkdisablerefresh.Visible(True)
 Gui.frmShip.chkdisablerefresh.Zorder(0)
 Gui.frmShip.chkdisablerefresh.Size(585,300)
-Gui.frmShip.chkdisablerefresh.Position(8025,1200)
+Gui.frmShip.chkdisablerefresh.Position(8025,1565)
 Gui.frmShip.chkdisablerefresh.Caption("")
 Gui.frmShip.chkdisablerefresh.FontName("Tahoma")
 Gui.frmShip.chkdisablerefresh.FontSize(8.25)
-Gui.frmShip.lbloverriderefresh.Create(Label,"Disable Grid Refresh on Return from Packing List",True,3465,195,0,8325,1260,True,0,"Tahoma",8.25,,0,0)
+Gui.frmShip.lbloverriderefresh.Create(Label,"Disable Grid Refresh on Return from Packing List",True,3465,195,0,8325,1625,True,0,"Tahoma",8.25,,0,0)
 Gui.frmShip.lbloverriderefresh.BorderStyle(0)
 Gui.frmShip.timerAutoRefresh.Create(Timer)
 Gui.frmShip.timerAutoRefresh.Size(495,345)
@@ -608,6 +628,7 @@ Program.Sub.Main.Start
 	
 	'Open DB Connection
 	F.ODBC.Connection!con.OpenCompanyConnection(500)
+	F.Intrinsic.Control.CallSub(EnsurePickRelease)
 
 	'6/1/26 BS - POR020: Read SW customer code to scope shipping hold PL block
 	V.Local.sSWCust.Declare
@@ -952,6 +973,13 @@ Program.Sub.SetContextMenus.Start
 		Gui.frmShip..ContextMenuAddItem(V.Local.sContextMenuName,"ResetColumns",0,"Reset Grid Serialization")
 		Gui.frmShip..ContextMenuAddItem(V.Local.sContextMenuName,"ResetColors",0,"Reset Colors Only")
 		Gui.frmShip..ContextMenuSetItemEventHandler(V.Local.sContextMenuName,"Refresh","cmdRefresh_Click")
+		'-- Load tab only. Sits under Refresh and does not rerun Open Orders or the on-hand walk.
+		F.Intrinsic.Control.If(V.Local.sControlName,=,"GsGCLoad")
+			Gui.frmShip..ContextMenuAddItem(V.Local.sContextMenuName,"RefreshLoad",0,"Refresh Load")
+			Gui.frmShip..ContextMenuSetItemEventHandler(V.Local.sContextMenuName,"RefreshLoad","Click_Refresh_Load")
+			Gui.frmShip..ContextMenuAddItem(V.Local.sContextMenuName,"ApplyShipDate",0,"Apply ship date to paperwork")
+			Gui.frmShip..ContextMenuSetItemEventHandler(V.Local.sContextMenuName,"ApplyShipDate","Click_ApplyShipDate")
+		F.Intrinsic.Control.EndIf
 		Gui.frmShip..ContextMenuSetItemEventHandler(V.Local.sContextMenuName,"Export","ExportGrids")
 		Gui.frmShip..ContextMenuSetItemEventHandler(V.Local.sContextMenuName,"ResetColumns","ResetGridColumns")
 		Gui.frmShip..ContextMenuSetItemEventHandler(V.Local.sContextMenuName,"ResetColors","ResetGridColors")
@@ -1131,6 +1159,240 @@ Program.Sub.cmdRefresh_Click.Start
 		F.Intrinsic.Control.End 
 	F.Intrinsic.Control.EndTry
 Program.Sub.cmdRefresh_Click.End
+
+Program.Sub.Click_Refresh_Load.Start
+	'-- Reload the Load grid only. Open Orders, Past Due, staging, shipped orders, and the MRP walk are left alone.
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	V.Local.sSerialize.Declare
+
+	Gui.frmShip.GsGCLoad.Serialize("gvLoad",V.Local.sSerialize)
+	F.Global.Registry.AddValue(V.Caller.User,V.Caller.CompanyCode,"GVLOAD",7546,1000,False,"Serialize",False,0,-999.0,1/1/1980,12:00:00 AM,V.Local.sSerialize)
+	F.Intrinsic.Control.BlockEvents
+	F.Intrinsic.Control.CallSub(LoadSharedDictionaries)
+	F.Intrinsic.Control.CallSub(LoadLoad)
+	F.Intrinsic.Control.CallSub(CloseSharedDictionaries)
+	F.Intrinsic.Control.UnBlockEvents
+	F.Intrinsic.Control.If(V.Local.sSerialize.Trim,<>,"")
+		Gui.frmShip.GsGCLoad.Deserialize(V.Local.sSerialize)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.CallSub(ApplyCanonicalColumnContract)
+	Gui.frmShip.lblStatus.Visible(False)
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.Control.UnBlockEvents
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndTry
+Program.Sub.Click_Refresh_Load.End
+
+Program.Sub.MarkVisibleRows.Start
+	'-- Args: DT, GSGC, GV. VISROW = 1 on rows the grid is showing. Hidden checked rows stay checked.
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	V.Local.sFields.Declare
+	V.Local.iPos.Declare(Long)
+
+	V.Local.sFields.Set("")
+	F.Intrinsic.Control.SelectCase(V.Args.DT)
+		F.Intrinsic.Control.Case("dtAllShip")
+			V.Local.sFields.Set(V.DataTable.dtAllShip.FieldNames)
+		F.Intrinsic.Control.Case("dtDueShip")
+			V.Local.sFields.Set(V.DataTable.dtDueShip.FieldNames)
+		F.Intrinsic.Control.Case("dtLoad")
+			V.Local.sFields.Set(V.DataTable.dtLoad.FieldNames)
+	F.Intrinsic.Control.EndSelect
+	F.Intrinsic.String.InStr(V.Local.sFields,"VISROW",V.Local.iPos)
+	F.Intrinsic.Control.If(V.Local.iPos,=,0)
+		F.Data.DataTable.AddColumn(V.Args.DT,"VISROW","LONG",0)
+	F.Intrinsic.Control.EndIf
+	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"VISROW","Visible",False)
+	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"VISROW","ShowInColumnChooser",False)
+	F.Data.DataView.Create(V.Args.DT,"dvVisAll",22,"","")
+	F.Data.DataView.SetValue(V.Args.DT,"dvVisAll",-1,"VISROW",0)
+	F.Data.DataView.Close(V.Args.DT,"dvVisAll")
+	Gui.frmShip.[V.Args.GSGC].CreateDataView(V.Args.GV,V.Args.DT,"dvVisNow")
+	F.Data.DataView.SetValue(V.Args.DT,"dvVisNow",-1,"VISROW",1)
+	F.Data.DataView.Close(V.Args.DT,"dvVisNow")
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndTry
+Program.Sub.MarkVisibleRows.End
+
+Program.Sub.Click_ApplyLineNote.Start
+	'-- One typed note onto every checked line that is visible on Open Orders or Past Due.
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	V.Local.sNote.Declare
+	V.Local.sNoteSql.Declare
+	V.Local.sSel.Declare
+	V.Local.sSQL.Declare
+	V.Local.sOrder.Declare
+	V.Local.sLine.Declare
+	V.Local.sOrderSql.Declare
+	V.Local.sLineSql.Declare
+	V.Local.i.Declare(Long)
+	V.Local.iTab.Declare(Long)
+
+	V.Local.iTab.Set(V.Screen.frmShip!tabShip.Tab)
+	F.Intrinsic.Control.If(V.Local.iTab,<>,0,"AND",V.Local.iTab,<>,1)
+		F.Intrinsic.UI.Msgbox("Apply Note writes the line note on Open Orders or Past Due. Open one of those tabs, check the lines you can see, and try again.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	V.Local.sNote.Set(V.Screen.frmShip!txtLineNote.Text)
+	F.Intrinsic.Control.If(V.Local.sNote.Trim,=,"")
+		F.Intrinsic.UI.Msgbox("Type the note first.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Replace(V.Local.sNote,"'","''",V.Local.sNoteSql)
+	F.Intrinsic.Control.If(V.Local.iTab,=,0)
+		F.Data.DataTable.AcceptChanges("dtAllShip")
+		F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtAllShip","GSGC","GsGCAllShip","GV","gvAllShip")
+		F.Data.Datatable.Select("dtAllShip","ASSIGNPICKER = 1 AND VISROW = 1",V.Local.sSel)
+	F.Intrinsic.Control.Else
+		F.Data.DataTable.AcceptChanges("dtDueShip")
+		F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtDueShip","GSGC","GsGCDue","GV","gvDue")
+		F.Data.Datatable.Select("dtDueShip","ASSIGNPICKER = 1 AND VISROW = 1",V.Local.sSel)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sSel,=,"***NORETURN***")
+		F.Intrinsic.UI.Msgbox("No checked lines are visible on this tab. Clear the filter or check the lines you can see.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+	F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
+		F.Intrinsic.Control.If(V.Local.iTab,=,0)
+			V.Local.sOrder.Set(V.DataTable.dtAllShip(V.Local.sSel(V.Local.i)).ORDER_NO!FieldVal)
+			V.Local.sLine.Set(V.DataTable.dtAllShip(V.Local.sSel(V.Local.i)).RECORD_NO!FieldVal)
+		F.Intrinsic.Control.Else
+			V.Local.sOrder.Set(V.DataTable.dtDueShip(V.Local.sSel(V.Local.i)).ORDER_NO!FieldVal)
+			V.Local.sLine.Set(V.DataTable.dtDueShip(V.Local.sSel(V.Local.i)).RECORD_NO!FieldVal)
+		F.Intrinsic.Control.EndIf
+		V.Local.sOrderSql.Set(V.Local.sOrder.PSQLFriendly)
+		V.Local.sLineSql.Set(V.Local.sLine.PSQLFriendly)
+		F.Intrinsic.String.Build("SELECT SO FROM GAB_4167_SO_NOTES WHERE SO = '{0}' AND SOLINE = '{1}'",V.Local.sOrderSql,V.Local.sLineSql,V.Local.sSQL)
+		F.Intrinsic.Control.If(V.DataTable.dtNoteHit.Exists,=,True)
+			F.Data.DataTable.Close("dtNoteHit")
+		F.Intrinsic.Control.EndIf
+		F.Data.DataTable.CreateFromSQL("dtNoteHit","con",V.Local.sSQL)
+		F.Intrinsic.Control.If(V.DataTable.dtNoteHit.RowCount,>,0)
+			F.Intrinsic.String.Build("UPDATE GAB_4167_SO_NOTES SET NOTES = '{0}' WHERE SO = '{1}' AND SOLINE = '{2}'",V.Local.sNoteSql,V.Local.sOrderSql,V.Local.sLineSql,V.Local.sSQL)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.String.Build("INSERT INTO GAB_4167_SO_NOTES(SO,SOLINE,NOTES) VALUES('{0}','{1}','{2}')",V.Local.sOrderSql,V.Local.sLineSql,V.Local.sNoteSql,V.Local.sSQL)
+		F.Intrinsic.Control.EndIf
+		F.ODBC.Connection!con.Execute(V.Local.sSQL)
+		F.Data.DataTable.Close("dtNoteHit")
+		F.Intrinsic.Control.CallSub(CheckNote,"OrderNo",V.Local.sOrder,"OrderLine",V.Local.sLine,"FieldName","NOTES","Text",V.Local.sNote)
+	F.Intrinsic.Control.Next(V.Local.i)
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndTry
+Program.Sub.Click_ApplyLineNote.End
+
+Program.Sub.Click_ApplyShipDate.Start
+	'-- Write the Ship Date already on the line onto the packing list, shipment, BOL, and load, even when the date did not change.
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	V.Local.sSel.Declare
+	V.Local.sRows.Declare
+	V.Local.sSQL.Declare
+	V.Local.sFilter.Declare
+	V.Local.sPack.Declare
+	V.Local.sLoadNo.Declare
+	V.Local.sWaybill.Declare
+	V.Local.sYmd.Declare
+	V.Local.sMdy.Declare
+	V.Local.sYmd8.Declare
+	V.Local.dShip.Declare(Date)
+	V.Local.i.Declare(Long)
+	V.Local.iSrc.Declare(Long)
+	V.Local.iGrid.Declare(Long)
+
+	F.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
+	F.Data.Datatable.Select("dtLoad","[VISROW] = 1 AND [SELECT] = 1 AND [PACKING LIST] <> '' AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999 AND [SHIP DATE] <> #1/1/1900#",V.Local.sSel)
+	F.Intrinsic.Control.If(V.Local.sSel,=,"***NORETURN***")
+		F.Intrinsic.UI.Msgbox("Check lines you can see that already have a packing list and a load ship date. This does not invent a date.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+	F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
+		V.Local.iSrc.Set(V.Local.sSel(V.Local.i))
+		V.Local.dShip.Set(V.DataTable.dtLoad(V.Local.iSrc).SHIP DATE!FieldVal)
+		V.Local.sYmd.Set(V.Local.dShip.FormatYYYY-MM-DD)
+		V.Local.sMdy.Set(V.Local.dShip.FormatMMDDYY)
+		V.Local.sYmd8.Set(V.Local.dShip.FormatYYYYMMDD)
+		V.Local.sPack.Set(V.DataTable.dtLoad(V.Local.iSrc).PACKING LIST!FieldValTrim)
+		V.Local.sLoadNo.Set(V.DataTable.dtLoad(V.Local.iSrc).LOAD NUMBER!FieldValTrim)
+		V.Local.sPack.Set(V.Local.sPack.PSQLFriendly)
+		F.Data.Datatable.SetValue("dtLoad",V.Local.iSrc,"PL SHIP DATE",V.Local.dShip)
+		F.Intrinsic.String.Build("UPDATE STAGING_HEADER SET SHP_DATE = '{0}' WHERE PCK_NO = '{1}'",V.Local.sYmd,V.Local.sPack,V.Local.sSQL)
+		F.ODBC.Connection!con.Execute(V.Local.sSQL)
+		F.Intrinsic.String.Build("UPDATE SHIPMENT_HEADER SET DATE_SHIPPED = '{0}',CNV_SHIP_DATE = '{1}' WHERE RECORD_TYPE IN ('A','L') AND PCK_NO = '{2}'",V.Local.sMdy,V.Local.sYmd8,V.Local.sPack,V.Local.sSQL)
+		F.ODBC.Connection!con.Execute(V.Local.sSQL)
+		F.Intrinsic.String.Build("SELECT DISTINCT WAY_BILL FROM V_SHIPMENT_HEADER WHERE PCK_NO = '{0}'",V.Local.sPack,V.Local.sSQL)
+		F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sWaybill)
+		F.Intrinsic.Control.If(V.Local.sWaybill.Trim,<>,"")
+			V.Local.sWaybill.Set(V.Local.sWaybill.Trim)
+			V.Local.sWaybill.Set(V.Local.sWaybill.PSQLFriendly)
+			F.Intrinsic.String.Build("UPDATE BOL_HEADER SET DATE1 = '{0}', ETA_DATE = '{0}' WHERE WAYBILL_NO = '{1}'",V.Local.sYmd8,V.Local.sWaybill,V.Local.sSQL)
+			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.String.Build("UPDATE LOAD_PLAN SET SHIP_DATE = '{0}' WHERE LOAD_NO = {1}",V.Local.sYmd,V.Local.sLoadNo,V.Local.sSQL)
+		F.ODBC.Connection!con.Execute(V.Local.sSQL)
+		F.Intrinsic.String.Build("[LOAD NUMBER] = {0}",V.Local.sLoadNo,V.Local.sFilter)
+		F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sRows)
+		F.Intrinsic.Control.If(V.Local.sRows.Trim,<>,"***NORETURN***")
+			F.Intrinsic.String.Split(V.Local.sRows,"*!*",V.Local.sRows)
+			F.Intrinsic.Control.For(V.Local.iGrid,0,V.Local.sRows.UBound)
+				F.Data.Datatable.SetValue("dtLoad",V.Local.sRows(V.Local.iGrid),"SHIP DATE",V.Local.dShip)
+				F.Data.Datatable.SetValue("dtLoad",V.Local.sRows(V.Local.iGrid),"PL SHIP DATE",V.Local.dShip)
+			F.Intrinsic.Control.Next(V.Local.iGrid)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.i)
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndTry
+Program.Sub.Click_ApplyShipDate.End
+
+Program.Sub.SortPackingListTable.Start
+	'-- Rewrites dtloadPL into BOL order, then packing list order.
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	V.Local.sKey.Declare
+	V.Local.i.Declare(Long)
+
+	F.Data.DataTable.AddColumn("dtloadPL","SORTKEY","String","")
+	F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.dtloadPL.RowCount--,1)
+		V.Local.sKey.Set(V.DataTable.dtloadPL(V.Local.i).WAY_BILL!FieldValTrim)
+		F.Intrinsic.String.Concat(V.Local.sKey,"|",V.Local.sKey)
+		F.Intrinsic.String.Concat(V.Local.sKey,V.DataTable.dtloadPL(V.Local.i).PACKING LIST!FieldValTrim,V.Local.sKey)
+		F.Data.DataTable.SetValue("dtloadPL",V.Local.i,"SORTKEY",V.Local.sKey)
+	F.Intrinsic.Control.Next(V.Local.i)
+	F.Data.DataView.Create("dtloadPL","dvPLSort",22,"[PACKING LIST] <> ''","")
+	F.Data.DataView.SetSort("dtloadPL","dvPLSort","SORTKEY ASC")
+	F.Data.DataView.ToDataTable("dtloadPL","dvPLSort","dtPLSorted",True)
+	F.Data.DataView.Close("dtloadPL","dvPLSort")
+	F.Data.DataTable.Close("dtloadPL")
+	F.Data.DataTable.Clone("dtPLSorted","dtloadPL",True)
+	F.Data.DataTable.Merge("dtPLSorted","dtloadPL",False,1)
+	F.Data.DataTable.Close("dtPLSorted")
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndTry
+Program.Sub.SortPackingListTable.End
 
 Program.Sub.ExportGrids.Start
 	F.Intrinsic.Control.Try
@@ -1532,7 +1794,7 @@ Program.Sub.txtORD_KeyPressEnter.Start
 	F.Intrinsic.Control.EndTry 
 Program.Sub.txtORD_KeyPressEnter.End
 
-'7546 UDF 03/25/2026: Shared dictionary optimization — load lookup dictionaries once for both LoadOpenOrders and LoadLoad instead of duplicating each SQL query.
+'7546 UDF 03/25/2026: Shared dictionary optimization â€” load lookup dictionaries once for both LoadOpenOrders and LoadLoad instead of duplicating each SQL query.
 Program.Sub.LoadSharedDictionaries.Start
 F.Intrinsic.Control.Try
 V.Local.sError.Declare
@@ -1577,7 +1839,7 @@ F.Intrinsic.Control.EndIf
 F.Data.Dictionary.CreateFromSQL("dFirstBin","con","SELECT PART+LOCATION AS PARTLOC, RTRIM(MIN(BIN)) AS FIRST_BIN FROM ITEM_MASTER WHERE QUANTITY > 0 GROUP BY PART, LOCATION;")
 F.Data.Dictionary.SetDefaultReturn("dFirstBin","")
 
-'-- Ship days (carrier NONE) as a small lookup. Do not join this into the Open Orders SQL — RTRIM on both sides of V_SHIP_DAYS forced a scan of the big query.
+'-- Ship days (carrier NONE) as a small lookup. Do not join this into the Open Orders SQL â€” RTRIM on both sides of V_SHIP_DAYS forced a scan of the big query.
 F.Data.Dictionary.CreateFromSQL("dShipDays","con","SELECT RTRIM(CUST_NO)+RTRIM(SHIPTO) AS CUSTSHIP, MAX(DAYS) AS DAYS FROM V_SHIP_DAYS WHERE RTRIM(CARRIER_CD) = 'NONE' GROUP BY CUST_NO, SHIPTO")
 F.Data.Dictionary.SetDefaultReturn("dShipDays","0")
 
@@ -1597,7 +1859,7 @@ F.Intrinsic.Control.Catch
 F.Intrinsic.Control.EndTry
 Program.Sub.LoadSharedDictionaries.End
 
-'7546 UDF 03/25/2026: Shared dictionary optimization — close all shared lookup dictionaries after both LoadOpenOrders and LoadLoad have consumed them.
+'7546 UDF 03/25/2026: Shared dictionary optimization â€” close all shared lookup dictionaries after both LoadOpenOrders and LoadLoad have consumed them.
 Program.Sub.CloseSharedDictionaries.Start
 F.Intrinsic.Control.Try
 V.Local.sError.Declare
@@ -1622,6 +1884,8 @@ Program.Sub.LoadOpenOrders.Start
 	V.Local.sError.Declare	
 	V.Local.sFilter.Declare
 	v.Local.sQuery.Declare(string)
+	V.Local.iOnLoad.Declare(Long)
+	V.Local.sOlKey.Declare(String)
 	
 	Gui.frmShip.lblStatus.Visible(True)
 	Gui.frmShip.lblStatus.ForeColor(V.Color.Black)
@@ -1729,7 +1993,7 @@ Program.Sub.LoadOpenOrders.Start
 							
 	F.Data.DataTable.AddColumn("dtAllShip0","CUST_ORDER_NOTES",String,"")
 	
-	'7546 UDF 03/25/2026: Shared dictionary optimization — fill from pre-loaded shared dictionaries (loaded in LoadSharedDictionaries)
+	'7546 UDF 03/25/2026: Shared dictionary optimization â€” fill from pre-loaded shared dictionaries (loaded in LoadSharedDictionaries)
 	F.Intrinsic.Control.If(V.Global.bCustOrderNotesFailedToLoad,=,False)
 		F.Data.DataTable.FillFromDictionary("dtAllShip0","dCustOrderNotes","CUSTOMER","CUST_ORDER_NOTES")
 	F.Intrinsic.Control.EndIf
@@ -1789,6 +2053,25 @@ Program.Sub.LoadOpenOrders.Start
 	'Convert DV to DT
 	F.Data.DataView.ToDataTable("dtAllShip1","dvAllShip","dtAllShip",True)
 	F.Data.DataTable.Close("dtAllShip1")
+
+	'-- Starting on-hand, kept after the running total overwrites QTY_ONHAND.
+	F.Data.DataTable.CopyColumn("dtAllShip","QTY_ONHAND","QTY_ONHAND_FULL",True)
+	F.Data.DataTable.AddColumn("dtAllShip","VISROW","LONG",0)
+
+	'-- On Load shows the load number, including 0 and 9999. A real load wins when the line is also on one. Blank means no unshipped load row.
+	F.Data.Dictionary.CreateFromSQL("dOnLoad","con","SELECT RTRIM(A.ORDER_NO)+RTRIM(A.ORDER_SUFFIX)+RTRIM(A.ORDER_LINE) AS OLKEY, CASE WHEN MAX(CASE WHEN A.LOAD_NO NOT IN (0,9999) THEN A.LOAD_NO ELSE 0 END) > 0 THEN RTRIM(CAST(MAX(CASE WHEN A.LOAD_NO NOT IN (0,9999) THEN A.LOAD_NO ELSE 0 END) AS VARCHAR(4))) WHEN MAX(CASE WHEN A.LOAD_NO = 9999 THEN 1 ELSE 0 END) = 1 THEN '9999' WHEN MAX(CASE WHEN A.LOAD_NO = 0 THEN 1 ELSE 0 END) = 1 THEN '0' ELSE '' END AS ON_LOAD FROM LOAD_PLAN A WHERE A.SHIPPED <> 1 GROUP BY A.ORDER_NO, A.ORDER_SUFFIX, A.ORDER_LINE")
+	F.Data.Dictionary.SetDefaultReturn("dOnLoad","")
+	F.Data.DataTable.AddColumn("dtAllShip","OLKEY",String,"")
+	F.Data.DataTable.AddColumn("dtAllShip","ON_LOAD",String,"")
+	F.Intrinsic.Control.For(V.Local.iOnLoad,0,V.DataTable.dtAllShip.RowCount--,1)
+		V.Local.sOlKey.Set(V.DataTable.dtAllShip(V.Local.iOnLoad).ORDER_NO!FieldValTrim)
+		F.Intrinsic.String.Concat(V.Local.sOlKey,V.DataTable.dtAllShip(V.Local.iOnLoad).ORDER_SUFFIX!FieldValTrim,V.Local.sOlKey)
+		F.Intrinsic.String.Concat(V.Local.sOlKey,V.DataTable.dtAllShip(V.Local.iOnLoad).ORDER_LINE!FieldValTrim,V.Local.sOlKey)
+		F.Data.DataTable.SetValue("dtAllShip",V.Local.iOnLoad,"OLKEY",V.Local.sOlKey)
+	F.Intrinsic.Control.Next(V.Local.iOnLoad)
+	F.Data.DataTable.FillFromDictionary("dtAllShip","dOnLoad","OLKEY","ON_LOAD")
+	F.Data.Dictionary.Close("dOnLoad")
+	F.Data.DataTable.RemoveColumn("dtAllShip","OLKEY")
 
 	F.Intrinsic.Control.If(V.Screen.frmShip!ddlCalculateMRPOnHand.Text,<>,"No")
 		F.Intrinsic.Control.CallSub(CalculateMaterial)
@@ -2015,7 +2298,7 @@ Program.Sub.LoadLoad.Start
 	F.Data.DataTable.AddColumn("dtLoad0","CUST_ORDER_NOTES",String,"")
 	F.Data.Datatable.AddColumn("dtLoad0","Select","boolean",False)
 	
-	'7546 UDF 03/25/2026: Shared dictionary optimization — fill from pre-loaded shared dictionaries (loaded in LoadSharedDictionaries)
+	'7546 UDF 03/25/2026: Shared dictionary optimization â€” fill from pre-loaded shared dictionaries (loaded in LoadSharedDictionaries)
 	F.Intrinsic.Control.If(V.Global.bCustOrderNotesFailedToLoad,=,False)
 		F.Data.DataTable.FillFromDictionary("dtLoad0","dCustOrderNotes","CUSTOMER","CUST_ORDER_NOTES")
 	F.Intrinsic.Control.EndIf
@@ -2134,6 +2417,7 @@ Program.Sub.LoadLoad.Start
 	'F.Data.DataTable.RemoveColumn("dtLoad","OPOL")
 	F.Data.DataTable.RemoveColumn("dtLoad","LD")
 	F.Data.DataTable.RemoveColumn("dtLoad","PARTLOC")
+	F.Data.DataTable.AddColumn("dtLoad","VISROW","LONG",0)
 	
 	F.Intrinsic.Control.CallSub(LoadOpenOrdersGV,"DT","dtLoad","GV","gvLoad","GSGC","GsGCLoad")
 	
@@ -2418,8 +2702,31 @@ Program.Sub.LoadOpenOrdersGV.Start
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"QTY_ONHAND","HeaderHAlignment","Far")
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"QTY_ONHAND","CellHAlignment","Far")
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"QTY_ONHAND","DisplayCustomNumeric","n4")
+
+	'-- Full on-hand is the quantity before the running total consumes it. Open Orders and Past Due only.
+	F.Intrinsic.Control.If(V.Args.GSGC,=,"GsGCAllShip","OR",V.Args.GSGC,=,"GsGCDue")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"QTY_ONHAND_FULL","Caption","Qty On Hand (Full)")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"QTY_ONHAND_FULL","MinWidth","110")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"QTY_ONHAND_FULL","AllowEdit",False)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"QTY_ONHAND_FULL","ReadOnly",True)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"QTY_ONHAND_FULL","HeaderHAlignment","Far")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"QTY_ONHAND_FULL","CellHAlignment","Far")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"QTY_ONHAND_FULL","DisplayCustomNumeric","n4")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"QTY_ONHAND_FULL","Visible",True)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"QTY_ONHAND_FULL","ShowInColumnChooser",True)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"ON_LOAD","Caption","On Load")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"ON_LOAD","MinWidth","80")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"ON_LOAD","AllowEdit",False)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"ON_LOAD","ReadOnly",True)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"ON_LOAD","HeaderHAlignment","Center")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"ON_LOAD","CellHAlignment","Center")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"ON_LOAD","Visible",True)
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"ON_LOAD","ShowInColumnChooser",True)
+	F.Intrinsic.Control.EndIf
+	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"VISROW","Visible",False)
+	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"VISROW","ShowInColumnChooser",False)
 	
-	'FIRST_BIN — first bin with qty > 0 from ITEM_MASTER (Open Orders, Due, Load; hidden by default)
+	'FIRST_BIN â€” first bin with qty > 0 from ITEM_MASTER (Open Orders, Due, Load; hidden by default)
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"FIRST_BIN","Caption","First Bin")
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"FIRST_BIN","MinWidth","80")
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"FIRST_BIN","AllowEdit",False)
@@ -2604,6 +2911,9 @@ Program.Sub.LoadOpenOrdersGV.Start
 	
 	'Assigned_To
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Assigned_To","Caption","Assigned To")
+	F.Intrinsic.Control.If(V.Args.GSGC,=,"GsGCAllShip","OR",V.Args.GSGC,=,"GsGCDue")
+		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Assigned_To","Caption","Picker")
+	F.Intrinsic.Control.EndIf
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Assigned_To","MinWidth","120")
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Assigned_To","AllowEdit",False)
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Assigned_To","ReadOnly",True)
@@ -2695,7 +3005,7 @@ Program.Sub.LoadOpenOrdersGV.Start
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Est Area","HeaderHAlignment","Right")
 	Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Est Area","CellHAlignment","Right")
 
-	'Staged PL Weight, Cartons, Pallets — Load tab only
+	'Staged PL Weight, Cartons, Pallets â€” Load tab only
 	F.Intrinsic.Control.If(V.Args.GV,=,"gvLoad")
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Weight","Caption","Staged PL Weight")
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"Staged PL Weight","MinWidth","145")
@@ -2875,7 +3185,7 @@ Program.Sub.LoadOpenOrdersGV.Start
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"WAY_BILL","CellHAlignment","Center")		
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"WAY_BILL","VisibleIndex","0")
 
-	'BOL SHIP FROM (hidden by default, available via Column Chooser) — Load tab only
+	'BOL SHIP FROM (hidden by default, available via Column Chooser) â€” Load tab only
 	F.Intrinsic.Control.If(V.Args.GV,=,"gvLoad")
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"BOL_SHIP_FROM","Caption","BOL Ship From")
 		Gui.frmShip.[V.Args.GSGC].SetColumnProperty(V.Args.GV,"BOL_SHIP_FROM","MinWidth","150")
@@ -6733,7 +7043,7 @@ Program.Sub.LoadShippedGV.Start
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","SHIP_ID","ReadOnly",True)
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","SHIP_ID","HeaderHAlignment","Center")
 	
-	'PRO_NO, TRACKING_NO, WAY_BILL — display only; edits stay on the Load tab
+	'PRO_NO, TRACKING_NO, WAY_BILL â€” display only; edits stay on the Load tab
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","Caption","Pro Number")
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","MinWidth","125")
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","AllowEdit",False)
@@ -7591,6 +7901,34 @@ Program.Sub.ApplyCanonicalColumnContract.Start
 	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","DAYS","ShowInColumnChooser",True)
 	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","DAYS","Caption","Ship Days")
 	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","DAYS","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","QTY_ONHAND_FULL","Caption","Qty On Hand (Full)")
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","QTY_ONHAND_FULL","Visible",True)
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","QTY_ONHAND_FULL","AllowEdit",False)
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","QTY_ONHAND_FULL","ReadOnly",True)
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","QTY_ONHAND_FULL","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","QTY_ONHAND_FULL","Caption","Qty On Hand (Full)")
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","QTY_ONHAND_FULL","Visible",True)
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","QTY_ONHAND_FULL","AllowEdit",False)
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","QTY_ONHAND_FULL","ReadOnly",True)
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","QTY_ONHAND_FULL","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","ON_LOAD","Caption","On Load")
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","ON_LOAD","Visible",True)
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","ON_LOAD","AllowEdit",False)
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","ON_LOAD","ReadOnly",True)
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","ON_LOAD","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","ON_LOAD","Caption","On Load")
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","ON_LOAD","Visible",True)
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","ON_LOAD","AllowEdit",False)
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","ON_LOAD","ReadOnly",True)
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","ON_LOAD","ShowInColumnChooser",True)
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","Assigned_To","Caption","Picker")
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","Assigned_To","Caption","Picker")
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","VISROW","Visible",False)
+	Gui.frmShip.GsGCAllShip.SetColumnProperty("gvAllShip","VISROW","ShowInColumnChooser",False)
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","VISROW","Visible",False)
+	Gui.frmShip.GsGCDue.SetColumnProperty("gvDue","VISROW","ShowInColumnChooser",False)
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","VISROW","Visible",False)
+	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","VISROW","ShowInColumnChooser",False)
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","LAST_CHG_BY","Caption","Last Change By")
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","LAST_CHG_BY","ShowInColumnChooser",True)
 	'-- Shipped pro / tracking / BOL stay visible and read-only after layout restore
@@ -8048,9 +8386,10 @@ Function.Intrinsic.Control.EndIf
 'filter for selected rows
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
 
 '5/20/26 BS - TC-04: validate all selected rows are validated before printing manifest
-v.Local.sFilterString.Set("[SELECT] = 1 AND [VALIDATED]=0")
+v.Local.sFilterString.Set("[SELECT] = 1 AND [VISROW] = 1 AND [VALIDATED]=0")
 f.Data.DataView.Create("dtLoad","dvManifestVal",22,v.Local.sFilterString,"")
 f.Data.DataView.ToDataTable("dtload","dvManifestVal","dtManifestVal",True)
 F.Data.Datatable.Select("dtManifestVal","[VALIDATED]=0",v.Local.sSel)
@@ -8062,7 +8401,7 @@ f.Data.Datatable.Close("dtManifestVal")
 v.Local.sSel.Set("")
 
 'verify that we have a checked value in SELECT and load is not 0. 
-v.Local.sFilterString.Set("[SELECT] = 1 and [LOAD NUMBER] <> 0 AND [LOAD NUMBER]<>9999")
+v.Local.sFilterString.Set("[SELECT] = 1 AND [VISROW] = 1 and [LOAD NUMBER] <> 0 AND [LOAD NUMBER]<>9999")
 f.Data.DataView.Create("dtLoad","dvloadManifest",22,v.Local.sFilterString,"")
 f.Data.DataView.ToDataTableDistinct("dtload","dvloadManifest","dtloadManifest","LOAD NUMBER",)
 
@@ -8156,6 +8495,85 @@ Function.Intrinsic.Control.EndTry
 
 Program.Sub.Update_StagedFlag.End
 
+Program.Sub.ShowAssignedLoad.Start
+	'-- Args: DT, ROW, LOADNO. On Load shows 0 or 9999 for the line just assigned. A truck load number stays.
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	V.Local.sNow.Declare
+	V.Local.sOther.Declare
+	V.Local.sFilter.Declare
+	V.Local.sOrder.Declare
+	V.Local.sSuf.Declare
+	V.Local.sLine.Declare
+	V.Local.sHits.Declare
+	V.Local.iHit.Declare(Long)
+
+	V.Local.sNow.Set("")
+	V.Local.sOther.Set("")
+	F.Intrinsic.Control.SelectCase(V.Args.DT)
+		F.Intrinsic.Control.Case("dtAllShip")
+			V.Local.sNow.Set(V.DataTable.dtAllShip(V.Args.ROW).ON_LOAD!FieldValTrim)
+			V.Local.sOrder.Set(V.DataTable.dtAllShip(V.Args.ROW).ORDER_NO!FieldVal)
+			V.Local.sSuf.Set(V.DataTable.dtAllShip(V.Args.ROW).ORDER_SUFFIX!FieldVal)
+			V.Local.sLine.Set(V.DataTable.dtAllShip(V.Args.ROW).ORDER_LINE!FieldVal)
+			V.Local.sOther.Set("dtDueShip")
+		F.Intrinsic.Control.Case("dtDueShip")
+			V.Local.sNow.Set(V.DataTable.dtDueShip(V.Args.ROW).ON_LOAD!FieldValTrim)
+			V.Local.sOrder.Set(V.DataTable.dtDueShip(V.Args.ROW).ORDER_NO!FieldVal)
+			V.Local.sSuf.Set(V.DataTable.dtDueShip(V.Args.ROW).ORDER_SUFFIX!FieldVal)
+			V.Local.sLine.Set(V.DataTable.dtDueShip(V.Args.ROW).ORDER_LINE!FieldVal)
+			V.Local.sOther.Set("dtAllShip")
+	F.Intrinsic.Control.EndSelect
+	F.Intrinsic.Control.If(V.Args.LOADNO,=,"0")
+		F.Intrinsic.Control.If(V.Local.sNow,=,"")
+			F.Data.Datatable.SetValue(V.Args.DT,V.Args.ROW,"ON_LOAD","0")
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Control.If(V.Local.sNow,=,"","OR",V.Local.sNow,=,"0")
+			F.Data.Datatable.SetValue(V.Args.DT,V.Args.ROW,"ON_LOAD","9999")
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	V.Local.sOrder.Set(V.Local.sOrder.PSQLFriendly)
+	V.Local.sSuf.Set(V.Local.sSuf.PSQLFriendly)
+	V.Local.sLine.Set(V.Local.sLine.PSQLFriendly)
+	F.Intrinsic.String.Build("ORDER_NO = '{0}' AND ORDER_SUFFIX = '{1}' AND ORDER_LINE = '{2}'",V.Local.sOrder,V.Local.sSuf,V.Local.sLine,V.Local.sFilter)
+	V.Local.sHits.Set("***NORETURN***")
+	F.Intrinsic.Control.If(V.Local.sOther,=,"dtDueShip")
+		F.Intrinsic.Control.If(V.DataTable.dtDueShip.Exists)
+			F.Data.Datatable.Select("dtDueShip",V.Local.sFilter,V.Local.sHits)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Control.If(V.DataTable.dtAllShip.Exists)
+			F.Data.Datatable.Select("dtAllShip",V.Local.sFilter,V.Local.sHits)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sHits,<>,"***NORETURN***")
+		F.Intrinsic.String.Split(V.Local.sHits,"*!*",V.Local.sHits)
+		F.Intrinsic.Control.For(V.Local.iHit,0,V.Local.sHits.UBound)
+			F.Intrinsic.Control.If(V.Local.sOther,=,"dtDueShip")
+				V.Local.sNow.Set(V.DataTable.dtDueShip(V.Local.sHits(V.Local.iHit)).ON_LOAD!FieldValTrim)
+			F.Intrinsic.Control.Else
+				V.Local.sNow.Set(V.DataTable.dtAllShip(V.Local.sHits(V.Local.iHit)).ON_LOAD!FieldValTrim)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.If(V.Args.LOADNO,=,"0")
+				F.Intrinsic.Control.If(V.Local.sNow,=,"")
+					F.Data.Datatable.SetValue(V.Local.sOther,V.Local.sHits(V.Local.iHit),"ON_LOAD","0")
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.Else
+				F.Intrinsic.Control.If(V.Local.sNow,=,"","OR",V.Local.sNow,=,"0")
+					F.Data.Datatable.SetValue(V.Local.sOther,V.Local.sHits(V.Local.iHit),"ON_LOAD","9999")
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.Next(V.Local.iHit)
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End
+	F.Intrinsic.Control.EndTry
+Program.Sub.ShowAssignedLoad.End
+
 Program.Sub.Assign_Picker.Start
 Function.Intrinsic.Control.Try
 v.Local.sError.Declare(String)
@@ -8168,8 +8586,9 @@ v.Local.sQuery.Declare(String)
 
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtAllShip")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtAllShip","GSGC","GsGCAllShip","GV","gvAllShip")
 'verify that we have a checked value in ASSIGNPICKER AND BLANKE MOBILEUSER VALUE. 
-F.Data.Datatable.Select("dtAllShip","ASSIGNPICKER = 1",v.Local.sSel)
+F.Data.Datatable.Select("dtAllShip","ASSIGNPICKER = 1 AND VISROW = 1",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 
@@ -8228,6 +8647,7 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 		F.Intrinsic.Control.For(v.Local.i,0,v.Local.sSel.UBound)
 			'set the mobile use column, uncheck assign picker column.
 			F.Data.Datatable.SetValue("dtAllShip",v.Local.sSel(v.Local.i),"ASSIGNED_TO",v.local.sRet(0).Trim,"ASSIGNPICKER",0)
+			F.Intrinsic.Control.CallSub(ShowAssignedLoad,"DT","dtAllShip","ROW",v.Local.sSel(v.Local.i),"LOADNO","0")
 			
 			'If not using Load Planning Pick by Date is the Date Item Promise
 			Function.Intrinsic.Control.If(v.Global.bUseLoadPlanning.not)	
@@ -8291,8 +8711,9 @@ v.Local.sQuery.Declare(String)
 
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtAllShip")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtAllShip","GSGC","GsGCAllShip","GV","gvAllShip")
 'verify that we have a checked value in ASSIGNPICKER AND BLANKE MOBILEUSER VALUE. 
-F.Data.Datatable.Select("dtAllShip","ASSIGNPICKER = 1",v.Local.sSel)
+F.Data.Datatable.Select("dtAllShip","ASSIGNPICKER = 1 AND VISROW = 1",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 	v.Local.dPickDate.Set("1900-01-01")
@@ -8350,6 +8771,7 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 		F.Intrinsic.Control.For(v.Local.i,0,v.Local.sSel.UBound)
 			'set the mobile use column, uncheck assign picker column.
 			F.Data.Datatable.SetValue("dtAllShip",v.Local.sSel(v.Local.i),"ASSIGNED_TO",v.local.sRet(0).Trim,"ASSIGNPICKER",0)
+			F.Intrinsic.Control.CallSub(ShowAssignedLoad,"DT","dtAllShip","ROW",v.Local.sSel(v.Local.i),"LOADNO","9999")
 			
 			'If not using Load Planning Pick by Date is the Date Item Promise
 			Function.Intrinsic.Control.If(v.Global.bUseLoadPlanning.not)	
@@ -8378,6 +8800,7 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 				F.Intrinsic.String.Build("Update Load_Plan Set Assigned_To = '{0}',PICK_BY_DATE ='{1}',Modified_By = '{2}', MODIFIED_TIME = '{3}',Modified_Date = '{4}',Load_No = 9999,PCKLST_DISP_FLAG = 1 Where ORDER_NO = '{5}' And ORDER_SUFFIX = '{6}' ANd ORDER_LINE = '{7}' AND LOAD_NO = 0",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_BY!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Time!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Date!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,v.Local.sSQL)				
 			Function.Intrinsic.Control.EndIf
 			f.ODBC.Connection!con.Execute(v.Local.sSQL)
+			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"Load","9999","Keep","1")
 			F.ODBC.con!rstORD.Close
 		f.Intrinsic.Control.Next(v.Local.i)
 		
@@ -8414,8 +8837,9 @@ v.Local.sQuery.Declare(String)
 
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtDueShip")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtDueShip","GSGC","GsGCDue","GV","gvDue")
 'verify that we have a checked value in ASSIGNPICKER AND BLANKE MOBILEUSER VALUE. 
-F.Data.Datatable.Select("dtDueShip","ASSIGNPICKER = 1",v.Local.sSel)
+F.Data.Datatable.Select("dtDueShip","ASSIGNPICKER = 1 AND VISROW = 1",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 
@@ -8472,6 +8896,7 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 		F.Intrinsic.Control.For(v.Local.i,0,v.Local.sSel.UBound)
 			'set the mobile use column, uncheck assign picker column.
 			F.Data.Datatable.SetValue("dtDueShip",v.Local.sSel(v.Local.i),"ASSIGNED_TO",v.local.sRet(0).Trim,"ASSIGNPICKER",0)
+			F.Intrinsic.Control.CallSub(ShowAssignedLoad,"DT","dtDueShip","ROW",v.Local.sSel(v.Local.i),"LOADNO","0")
 			
 			'If not using Load Planning Pick by Date is the Date Item Promise
 			Function.Intrinsic.Control.If(v.Global.bUseLoadPlanning.not)	
@@ -8535,8 +8960,9 @@ v.Local.sQuery.Declare(String)
 
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtDueShip")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtDueShip","GSGC","GsGCDue","GV","gvDue")
 'verify that we have a checked value in ASSIGNPICKER AND BLANKE MOBILEUSER VALUE. 
-F.Data.Datatable.Select("dtDueShip","ASSIGNPICKER = 1",v.Local.sSel)
+F.Data.Datatable.Select("dtDueShip","ASSIGNPICKER = 1 AND VISROW = 1",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 
@@ -8593,6 +9019,7 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 		F.Intrinsic.Control.For(v.Local.i,0,v.Local.sSel.UBound)
 			'set the mobile use column, uncheck assign picker column.
 			F.Data.Datatable.SetValue("dtDueShip",v.Local.sSel(v.Local.i),"ASSIGNED_TO",v.local.sRet(0).Trim,"ASSIGNPICKER",0)
+			F.Intrinsic.Control.CallSub(ShowAssignedLoad,"DT","dtDueShip","ROW",v.Local.sSel(v.Local.i),"LOADNO","9999")
 			
 			'If not using Load Planning Pick by Date is the Date Item Promise
 			Function.Intrinsic.Control.If(v.Global.bUseLoadPlanning.not)	
@@ -8622,6 +9049,7 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 				F.Intrinsic.String.Build("Update Load_Plan Set Assigned_To = '{0}',PICK_BY_DATE ='{1}',Modified_By = '{2}', MODIFIED_TIME = '{3}',Modified_Date = '{4}',Load_No = 9999, ,PCKLST_DISP_FLAG = 1 Where ORDER_NO = '{5}' And ORDER_SUFFIX = '{6}' ANd ORDER_LINE = '{7}' and LOAD_NO = 0",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_BY!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Time!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Date!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,v.Local.sSQL)				
 			Function.Intrinsic.Control.EndIf
 			f.ODBC.Connection!con.Execute(v.Local.sSQL)
+			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"Load","9999","Keep","1")
 			F.ODBC.con!rstORD.Close
 		f.Intrinsic.Control.Next(v.Local.i)
 		
@@ -8665,7 +9093,8 @@ v.Local.sValue.Declare(String)
 
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtAllShip")
-F.Data.Datatable.Select("dtAllShip","ASSIGNPICKER = 1",v.Local.sSel)
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtAllShip","GSGC","GsGCAllShip","GV","gvAllShip")
+F.Data.Datatable.Select("dtAllShip","ASSIGNPICKER = 1 AND VISROW = 1",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 	v.Local.dPickDate.Set("1900-01-01")
@@ -8708,6 +9137,7 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 
 		F.Intrinsic.Control.For(v.Local.i,0,v.Local.sSel.UBound)
 			F.Data.Datatable.SetValue("dtAllShip",v.Local.sSel(v.Local.i),"ASSIGNED_TO",v.local.sRet(0).Trim,"ASSIGNPICKER",0)
+			F.Intrinsic.Control.CallSub(ShowAssignedLoad,"DT","dtAllShip","ROW",v.Local.sSel(v.Local.i),"LOADNO","9999")
 
 			Function.Intrinsic.Control.If(v.Global.bUseLoadPlanning.not)
 				Function.Intrinsic.Control.If(V.datatable.dtAllShip0(V.Local.sSel(V.Local.I)).Date_ITEM_PROM!Fieldval,<>,"")
@@ -8729,6 +9159,7 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 				F.Intrinsic.String.Build("Update Load_Plan Set Assigned_To = '{0}',PICK_BY_DATE ='{1}',Modified_By = '{2}', MODIFIED_TIME = '{3}',Modified_Date = '{4}',Load_No = 9999,PCKLST_DISP_FLAG = 1 Where ORDER_NO = '{5}' And ORDER_SUFFIX = '{6}' ANd ORDER_LINE = '{7}' AND LOAD_NO = 0",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_BY!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Time!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Date!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,v.Local.sSQL)
 			Function.Intrinsic.Control.EndIf
 			f.ODBC.Connection!con.Execute(v.Local.sSQL)
+			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"Load","9999","Keep","1")
 			F.ODBC.con!rstORD.Close
 		f.Intrinsic.Control.Next(v.Local.i)
 
@@ -8784,7 +9215,8 @@ v.Local.sValue.Declare(String)
 
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtDueShip")
-F.Data.Datatable.Select("dtDueShip","ASSIGNPICKER = 1",v.Local.sSel)
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtDueShip","GSGC","GsGCDue","GV","gvDue")
+F.Data.Datatable.Select("dtDueShip","ASSIGNPICKER = 1 AND VISROW = 1",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 	v.Local.dPickDate.Set("1900-01-01")
@@ -8827,6 +9259,7 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 
 		F.Intrinsic.Control.For(v.Local.i,0,v.Local.sSel.UBound)
 			F.Data.Datatable.SetValue("dtDueShip",v.Local.sSel(v.Local.i),"ASSIGNED_TO",v.local.sRet(0).Trim,"ASSIGNPICKER",0)
+			F.Intrinsic.Control.CallSub(ShowAssignedLoad,"DT","dtDueShip","ROW",v.Local.sSel(v.Local.i),"LOADNO","9999")
 
 			Function.Intrinsic.Control.If(v.Global.bUseLoadPlanning.not)
 				Function.Intrinsic.Control.If(V.datatable.dtDueShip(V.Local.sSel(V.Local.I)).Date_ITEM_PROM!Fieldval,<>,"")
@@ -8848,6 +9281,7 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 				F.Intrinsic.String.Build("Update Load_Plan Set Assigned_To = '{0}',PICK_BY_DATE ='{1}',Modified_By = '{2}', MODIFIED_TIME = '{3}',Modified_Date = '{4}',Load_No = 9999,PCKLST_DISP_FLAG = 1 Where ORDER_NO = '{5}' And ORDER_SUFFIX = '{6}' ANd ORDER_LINE = '{7}' AND LOAD_NO = 0",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_BY!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Time!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Date!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,v.Local.sSQL)
 			Function.Intrinsic.Control.EndIf
 			f.ODBC.Connection!con.Execute(v.Local.sSQL)
+			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"Load","9999","Keep","1")
 			F.ODBC.con!rstORD.Close
 		f.Intrinsic.Control.Next(v.Local.i)
 
@@ -8896,8 +9330,9 @@ v.Local.sSQL.Declare(String)
 Function.Intrinsic.Control.BlockEvents
 
 Function.Data.DataTable.AcceptChanges("dtAllShip")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtAllShip","GSGC","GsGCAllShip","GV","gvAllShip")
 'verify that we have a checked value in ASSIGNPICKER AND BLANKE MOBILEUSER VALUE.
-F.Data.Datatable.Select("dtAllShip","ASSIGNPICKER = 1",v.Local.sSel)
+F.Data.Datatable.Select("dtAllShip","ASSIGNPICKER = 1 AND VISROW = 1",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 
@@ -8939,8 +9374,9 @@ v.Local.sSQL.Declare(String)
 Function.Intrinsic.Control.BlockEvents
 
 Function.Data.DataTable.AcceptChanges("dtDueShip")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtDueShip","GSGC","GsGCDue","GV","gvDue")
 'verify that we have a checked value in ASSIGNPICKER AND BLANKE MOBILEUSER VALUE.
-F.Data.Datatable.Select("dtDueShip","ASSIGNPICKER = 1",v.Local.sSel)
+F.Data.Datatable.Select("dtDueShip","ASSIGNPICKER = 1 AND VISROW = 1",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 
@@ -9126,8 +9562,9 @@ F.Global.General.SaveOption("402675","0000",1,"",v.Global.iLoadNo,,0,V.Ambient.D
 
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
 'verify that we have a checked value in SELECT and Load Number = 0. 
-F.Data.Datatable.Select("dtLoad","SELECT = 1 and [LOAD NUMBER] = 0",v.Local.sSel)
+F.Data.Datatable.Select("dtLoad","SELECT = 1 AND VISROW = 1 and [LOAD NUMBER] = 0",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
@@ -9136,6 +9573,7 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 			F.Data.Datatable.SetValue("dtLoad",v.Local.sSel(v.Local.i),"LOAD NUMBER",V.Global.sLoadNo)				
 			F.Intrinsic.String.Build("Update Load_Plan Set Load_No = '{0}', ORDER_SUFFIX = '{5}' Where ORDER_NO = '{1}' And ORDER_SUFFIX = '{2}' ANd ORDER_LINE = '{3}' and CUSTOMER = '{4}'",V.Global.sLoadNo,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!FieldValTRIM,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_LINE!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CUSTOMER!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CURRENT_ORDER_SUFFIX!FieldVal,v.Local.sSQL)
 			f.ODBC.Connection!con.Execute(v.Local.sSQL)
+			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,"Suffix",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!FieldValTRIM,"Line",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_LINE!FieldVal,"Load",V.Global.sLoadNo,"From","0","NewSuffix",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CURRENT_ORDER_SUFFIX!FieldVal,"Keep","2")
 			F.Data.Datatable.SetValue("dtLoad",v.Local.sSel(v.Local.i),"ORDER_SUFFIX",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CURRENT_ORDER_SUFFIX!FieldVal)
 		F.Intrinsic.Control.Next(v.Local.i)	
 		gui.frmShip.lblRunMRP.Visible(True)
@@ -9172,8 +9610,9 @@ F.Global.General.SaveOption("402675","0000",1,"",v.Global.iLoadNo,,0,V.Ambient.D
 
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
 'verify that we have a checked value in SELECT and Load Number = 9999. 
-F.Data.Datatable.Select("dtLoad","SELECT = 1 and [LOAD NUMBER] = 9999",v.Local.sSel)
+F.Data.Datatable.Select("dtLoad","SELECT = 1 AND VISROW = 1 and [LOAD NUMBER] = 9999",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
@@ -9185,6 +9624,7 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 			F.Data.Datatable.SetValue("dtLoad",v.Local.sSel(v.Local.i),"LOAD NUMBER",V.Global.sLoadNo)
 			F.Intrinsic.String.Build("Update Load_Plan Set Load_No = '{0}', ORDER_SUFFIX = '{5}' Where ORDER_NO = '{1}' And ORDER_SUFFIX = '{2}' ANd ORDER_LINE = '{3}' and CUSTOMER = '{4}'",V.Global.sLoadNo,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!FieldValTRIM,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_LINE!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CUSTOMER!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CURRENT_ORDER_SUFFIX!FieldVal,v.Local.sSQL)
 			f.ODBC.Connection!con.Execute(v.Local.sSQL)
+			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,"Suffix",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!FieldValTRIM,"Line",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_LINE!FieldVal,"Load",V.Global.sLoadNo,"From","9999","NewSuffix",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CURRENT_ORDER_SUFFIX!FieldVal,"Keep","2")
 			F.Data.Datatable.SetValue("dtLoad",v.Local.sSel(v.Local.i),"ORDER_SUFFIX",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CURRENT_ORDER_SUFFIX!FieldVal)
 		F.Intrinsic.Control.Next(v.Local.i)	
 		gui.frmShip.lblRunMRP.Visible(True)
@@ -9216,8 +9656,9 @@ v.Local.iCnt.Declare
 'filter for selected rows
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
 'verify that we have a checked value in SELECT and load = 0. 
-F.Data.Datatable.Select("dtLoad","SELECT = 1 and [LOAD NUMBER] = 0 or [LOAD NUMBER] = 9999",v.Local.sSel)
+F.Data.Datatable.Select("dtLoad","SELECT = 1 AND VISROW = 1 and [LOAD NUMBER] = 0 or [LOAD NUMBER] = 9999",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		'create browser from existing loads
@@ -9239,9 +9680,11 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
 		F.Intrinsic.Control.For(v.Local.i,0,v.Local.sSel.UBound)
 			'update gridview with load# assigned
+			v.Local.sQuery.Set(v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).Load Number!FieldVal)
 			F.Data.Datatable.SetValue("dtLoad",v.Local.sSel(v.Local.i),"LOAD NUMBER",v.Local.sRet(0))			
 			F.Intrinsic.String.Build("Update Load_Plan Set Load_No = '{0}', ORDER_SUFFIX = '{5}' Where ORDER_NO = '{1}' And ORDER_SUFFIX = '{2}' AND ORDER_LINE = '{3}' and CUSTOMER = '{4}'",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).Load Number!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!FieldValTRIM,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_LINE!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CUSTOMER!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CURRENT_ORDER_SUFFIX!FieldVal,v.Local.sSQL)
 			f.ODBC.Connection!con.Execute(v.Local.sSQL)
+			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,"Suffix",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!FieldValTRIM,"Line",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_LINE!FieldVal,"Load",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).Load Number!FieldVal,"From",v.Local.sQuery,"NewSuffix",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CURRENT_ORDER_SUFFIX!FieldVal,"Keep","2")
 			F.Data.Datatable.SetValue("dtLoad",v.Local.sSel(v.Local.i),"ORDER_SUFFIX",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CURRENT_ORDER_SUFFIX!FieldVal)
 		F.Intrinsic.Control.Next(v.Local.i)	
 		gui.frmShip.lblRunMRP.Visible(True)
@@ -9273,16 +9716,19 @@ v.Local.iCnt.Declare
 'filter for selected rows
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
 'verify that we have a checked value in SELECT and load = 0. 
-F.Data.Datatable.Select("dtLoad","SELECT = 1 and [LOAD NUMBER] <> 9999",v.Local.sSel)
+F.Data.Datatable.Select("dtLoad","SELECT = 1 AND VISROW = 1 and [LOAD NUMBER] <> 9999",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
 		F.Intrinsic.Control.For(v.Local.i,0,v.Local.sSel.UBound)
 			'update gridview with load#9999 assigned
+			v.Local.sQuery.Set(v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).Load Number!FieldVal)
 			F.Data.Datatable.SetValue("dtLoad",v.Local.sSel(v.Local.i),"LOAD NUMBER",9999)
 			F.Intrinsic.String.Build("Update Load_Plan Set Load_No = '9999', ORDER_SUFFIX = '{5}' Where ORDER_NO = '{1}' And ORDER_SUFFIX = '{2}' AND ORDER_LINE = '{3}' and CUSTOMER = '{4}'",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).Load Number!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!FieldValTRIM,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_LINE!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CUSTOMER!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CURRENT_ORDER_SUFFIX!FieldVal,v.Local.sSQL)
 			f.ODBC.Connection!con.Execute(v.Local.sSQL)
+			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,"Suffix",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!FieldValTRIM,"Line",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_LINE!FieldVal,"Load","9999","From",v.Local.sQuery,"NewSuffix",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CURRENT_ORDER_SUFFIX!FieldVal,"Keep","2")
 			F.Data.Datatable.SetValue("dtLoad",v.Local.sSel(v.Local.i),"ORDER_SUFFIX",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CURRENT_ORDER_SUFFIX!FieldVal)
 		F.Intrinsic.Control.Next(v.Local.i)	
 		gui.frmShip.lblRunMRP.Visible(True)
@@ -9315,20 +9761,23 @@ v.Local.iCnt.Declare
 'filter for selected rows
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
 'verify that we have a checked value in SELECT and load is not 0. 
-F.Data.Datatable.Select("dtLoad","SELECT = 1 and [LOAD NUMBER] <> 0",v.Local.sSel)
+F.Data.Datatable.Select("dtLoad","SELECT = 1 AND VISROW = 1 and [LOAD NUMBER] <> 0",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
 		F.Intrinsic.Control.For(v.Local.i,0,v.Local.sSel.UBound)
 			'update gridview with load# assigned
 			'F.Data.Datatable.SetValue("dtLoad",v.Local.sSel(v.Local.i),"LOAD NUMBER","0","DROP SEQ","0","Carrier Number","","Carrier Load Number","","Carrier Trailer","","Staging Bin","","Dock ID","","Truck Type ID","","Truck Description","","Truck Max Weight(lbs)","0","Truck SF Capacity","0","Pick By Date","1900-01-01","Ship Date","1900-01-01")	
+			v.Local.sQuery.Set(v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).LOAD NUMBER!FieldVal)
 			F.Data.Datatable.SetValue("dtLoad",v.Local.sSel(v.Local.i),"LOAD NUMBER","0","DROP SEQ","0")	
 			'F.Intrinsic.String.Build("Update Load_Plan Set Load_No = '{0}', Load_Seq = 0, Carrier = '', Carrier_load_num = '', carrier_trailer = '', truck_type = '-1', staging_bin = '', Dock_no = '', PICK_BY_DATE = '1900-01-01', SHIP_DATE = '1900-01-01' Where ORDER_NO = '{1}' And ORDER_SUFFIX = '{2}' ANd ORDER_LINE = '{3}' and CUSTOMER = '{4}'","0",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_LINE!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CUSTOMER!FieldVal,v.Local.sSQL)
 '			F.Intrinsic.String.Build("Update Load_Plan Set Load_No = '0', ORDER_SUFFIX = '{5}' Where ORDER_NO = '{1}' And ORDER_SUFFIX = '{2}' AND ORDER_LINE = '{3}' and CUSTOMER = '{4}'",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).Load Number!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!FieldValTRIM,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_LINE!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CUSTOMER!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CURRENT_ORDER_SUFFIX!FieldVal,v.Local.sSQL)
 			'03/11/26 - change to not update order suffix to current from order header
 			F.Intrinsic.String.Build("Update Load_Plan Set Load_No = '0', ORDER_SUFFIX = '{2}' Where ORDER_NO = '{1}' And ORDER_SUFFIX = '{2}' AND ORDER_LINE = '{3}' and CUSTOMER = '{4}'",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).Load Number!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!FieldValTRIM,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_LINE!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CUSTOMER!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CURRENT_ORDER_SUFFIX!FieldVal,v.Local.sSQL)
 			f.ODBC.Connection!con.Execute(v.Local.sSQL)
+			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,"Suffix",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!FieldValTRIM,"Line",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_LINE!FieldVal,"Load","0","From",v.Local.sQuery,"NewSuffix",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!FieldValTRIM,"Keep","2")
 		F.Intrinsic.Control.Next(v.Local.i)	
 		gui.frmShip.lblRunMRP.Visible(True)
 f.Intrinsic.Control.Else
@@ -9342,6 +9791,86 @@ Function.Intrinsic.Control.Catch
 	F.Intrinsic.Control.CallSub(frmShip_UnLoad)	
 Function.Intrinsic.Control.EndTry
 Program.Sub.Load_MoveToLoad0.End
+
+Program.Sub.EnsurePickRelease.Start
+Function.Intrinsic.Control.Try
+v.Local.sSQL.Declare(String)
+v.Local.sRet.Declare(String)
+v.Local.sError.Declare(String)
+v.Local.iPos.Declare(Long)
+v.Local.sSQL.Set("SELECT COUNT(*) FROM dbo.fSQLTables(NULL,'GAB_7546_PICK_RELEASE','TABLE')")
+F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sRet)
+Function.Intrinsic.Control.If(V.Local.sRet.Trim,=,"0")
+	v.Local.sSQL.Set("CREATE TABLE GAB_7546_PICK_RELEASE (ORDER_NO CHAR(7) NOT NULL, ORDER_SUFFIX CHAR(4) NOT NULL, ORDER_LINE CHAR(4) NOT NULL, LOAD_NO INTEGER NOT NULL, RELEASED_DATE DATE, RELEASED_TIME TIME, PRIMARY KEY (ORDER_NO, ORDER_SUFFIX, ORDER_LINE, LOAD_NO))")
+	f.ODBC.Connection!con.Execute(V.Local.sSQL)
+Function.Intrinsic.Control.EndIf
+v.Local.sSQL.Set("SELECT COLUMN_NAME FROM dbo.fSQLColumns(NULL,'GAB_7546_PICK_RELEASE',NULL)")
+F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sRet)
+F.Intrinsic.String.InStr(V.Local.sRet,"RELEASED_TIME",V.Local.iPos)
+Function.Intrinsic.Control.If(V.Local.iPos,=,0)
+	v.Local.sSQL.Set("ALTER TABLE GAB_7546_PICK_RELEASE ADD RELEASED_TIME TIME")
+	f.ODBC.Connection!con.Execute(V.Local.sSQL)
+Function.Intrinsic.Control.EndIf
+v.Local.sSQL.Set("SELECT COUNT(*) FROM dbo.fSQLTables(NULL,'V_GAB_7546_PICK_NOW','VIEW')")
+F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sRet)
+Function.Intrinsic.Control.If(V.Local.sRet.Trim,=,"0")
+	v.Local.sRet.Set("0")
+Function.Intrinsic.Control.Else
+	v.Local.sSQL.Set("SELECT COLUMN_NAME FROM dbo.fSQLColumns(NULL,'V_GAB_7546_PICK_NOW',NULL)")
+	F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sRet)
+	F.Intrinsic.String.InStr(V.Local.sRet,"EARLIEST_RELEASE",V.Local.iPos)
+	Function.Intrinsic.Control.If(V.Local.iPos,=,0)
+		v.Local.sRet.Set("0")
+	Function.Intrinsic.Control.Else
+		v.Local.sRet.Set("1")
+	Function.Intrinsic.Control.EndIf
+Function.Intrinsic.Control.EndIf
+Function.Intrinsic.Control.If(V.Local.sRet.Trim,=,"0")
+	v.Local.sSQL.Set("DROP VIEW IF EXISTS V_GAB_7546_PICK_DAY")
+	f.ODBC.Connection!con.Execute(V.Local.sSQL)
+	v.Local.sSQL.Set("DROP VIEW IF EXISTS V_GAB_7546_LOAD_DISPATCH")
+	f.ODBC.Connection!con.Execute(V.Local.sSQL)
+	v.Local.sSQL.Set("DROP VIEW IF EXISTS V_GAB_7546_PICK_NOW")
+	f.ODBC.Connection!con.Execute(V.Local.sSQL)
+	v.Local.sSQL.Set("DROP VIEW IF EXISTS V_GAB_7546_PICK_LINE")
+	f.ODBC.Connection!con.Execute(V.Local.sSQL)
+	v.Local.sSQL.Set("CREATE VIEW V_GAB_7546_PICK_LINE AS SELECT CASE WHEN RTRIM(LP.ASSIGNED_TO) = '' OR RTRIM(LP.ASSIGNED_TO) = '~ANY' THEN 'Any' ELSE RTRIM(LP.ASSIGNED_TO) END AS PICKER, RTRIM(LP.ASSIGNED_TO) AS ASSIGNED_TO, LP.LOAD_NO, CASE WHEN LP.LOAD_NO = 9999 THEN 'Pre-pick' ELSE 'Load' END AS LOAD_KIND, LP.ORDER_NO, LP.ORDER_SUFFIX, LP.ORDER_LINE, OH.CUSTOMER_PO, LP.PICKED, LP.SHIPPED, LP.PICK_BY_DATE, LP.SHIP_DATE, LP.MODIFIED_DATE AS LAST_UPDATE_DATE, LP.MODIFIED_TIME AS LAST_UPDATE_TIME, CASE WHEN LP.PCKLST_DISP_FLAG = 1 AND LP.PICKED <> 1 AND LP.SHIPPED <> 1 AND R.RELEASED_DATE > '1900-01-01' THEN DATEDIFF(day, R.RELEASED_DATE, CURDATE()) ELSE NULL END AS QUEUE_DAYS, CASE WHEN LP.PCKLST_DISP_FLAG = 1 AND LP.PICKED <> 1 AND LP.SHIPPED <> 1 AND R.RELEASED_DATE > '1900-01-01' AND R.RELEASED_TIME IS NOT NULL THEN CONCAT(CONCAT(CONVERT(R.RELEASED_DATE, SQL_CHAR), ' '), CONVERT(R.RELEASED_TIME, SQL_CHAR)) ELSE NULL END AS RELEASED_AT FROM LOAD_PLAN LP LEFT JOIN GAB_7546_PICK_RELEASE R ON R.ORDER_NO = LP.ORDER_NO AND R.ORDER_SUFFIX = LP.ORDER_SUFFIX AND R.ORDER_LINE = LP.ORDER_LINE AND R.LOAD_NO = LP.LOAD_NO LEFT JOIN V_ORDER_HEADER OH ON OH.ORDER_NO = LP.ORDER_NO AND OH.ORDER_SUFFIX = LP.ORDER_SUFFIX AND OH.RECORD_NO = '  A' WHERE LP.LOAD_NO > 0")
+	f.ODBC.Connection!con.Execute(V.Local.sSQL)
+	v.Local.sSQL.Set("CREATE VIEW V_GAB_7546_PICK_NOW AS SELECT PICKER, SUM(CASE WHEN PICKED <> 1 THEN 1 ELSE 0 END) AS LINES_OPEN, SUM(CASE WHEN PICKED = 1 THEN 1 ELSE 0 END) AS LINES_PICKED_NOT_SHIPPED, COUNT(DISTINCT LOAD_NO) AS LOADS, MIN(CASE WHEN PICKED <> 1 AND PICK_BY_DATE > '1900-01-01' THEN PICK_BY_DATE ELSE NULL END) AS OLDEST_PICK_BY_STILL_OPEN, MAX(QUEUE_DAYS) AS LONGEST_QUEUE_DAYS, MIN(RELEASED_AT) AS EARLIEST_RELEASE FROM V_GAB_7546_PICK_LINE WHERE SHIPPED <> 1 GROUP BY PICKER")
+	f.ODBC.Connection!con.Execute(V.Local.sSQL)
+	v.Local.sSQL.Set("CREATE VIEW V_GAB_7546_LOAD_DISPATCH AS SELECT LOAD_NO, LOAD_KIND, SUM(CASE WHEN PICKED <> 1 THEN 1 ELSE 0 END) AS LINES_OPEN, SUM(CASE WHEN PICKED = 1 THEN 1 ELSE 0 END) AS LINES_PICKED, MIN(CASE WHEN SHIP_DATE > '1900-01-01' THEN SHIP_DATE ELSE NULL END) AS SHIP_DATE, MIN(CASE WHEN PICK_BY_DATE > '1900-01-01' THEN PICK_BY_DATE ELSE NULL END) AS OLDEST_PICK_BY, MAX(CASE WHEN PICKER = 'Any' THEN 1 ELSE 0 END) AS ANY_STILL_ASSIGNED, MAX(QUEUE_DAYS) AS LONGEST_QUEUE_DAYS, MIN(RELEASED_AT) AS EARLIEST_RELEASE FROM V_GAB_7546_PICK_LINE WHERE SHIPPED <> 1 GROUP BY LOAD_NO, LOAD_KIND")
+	f.ODBC.Connection!con.Execute(V.Local.sSQL)
+	v.Local.sSQL.Set("CREATE VIEW V_GAB_7546_PICK_DAY AS SELECT PICKER, SUM(CASE WHEN PICKED = 1 AND LAST_UPDATE_DATE = CURDATE() THEN 1 ELSE 0 END) AS LINES_PICKED_TODAY, COUNT(DISTINCT CASE WHEN PICKED = 1 AND LAST_UPDATE_DATE = CURDATE() THEN ORDER_NO ELSE NULL END) AS ORDERS_TOUCHED_TODAY, COUNT(DISTINCT CASE WHEN PICKED = 1 AND LAST_UPDATE_DATE = CURDATE() THEN LOAD_NO ELSE NULL END) AS LOADS_TOUCHED_TODAY, SUM(CASE WHEN SHIPPED = 1 AND LAST_UPDATE_DATE = CURDATE() THEN 1 ELSE 0 END) AS LINES_SHIPPED_TODAY, SUM(CASE WHEN SHIPPED <> 1 AND PICKED <> 1 THEN 1 ELSE 0 END) AS LINES_STILL_OPEN, SUM(CASE WHEN SHIPPED <> 1 AND PICKED <> 1 AND PICK_BY_DATE > '1900-01-01' AND PICK_BY_DATE < CURDATE() THEN 1 ELSE 0 END) AS LINES_OPEN_PAST_PICK_BY FROM V_GAB_7546_PICK_LINE GROUP BY PICKER")
+	f.ODBC.Connection!con.Execute(V.Local.sSQL)
+Function.Intrinsic.Control.EndIf
+Function.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("The picking queue was not created. {0}",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndTry
+Program.Sub.EnsurePickRelease.End
+
+Program.Sub.RecordPickQueue.Start
+Function.Intrinsic.Control.Try
+v.Local.sSQL.Declare(String)
+v.Local.sError.Declare(String)
+Function.Intrinsic.Control.If(V.Args.Keep,=,"1")
+	F.Intrinsic.String.Build("UPDATE GAB_7546_PICK_RELEASE SET LOAD_NO = {0} WHERE ORDER_NO = '{1}' AND ORDER_SUFFIX = '{2}' AND ORDER_LINE = '{3}' AND LOAD_NO = 0 AND {0} = 9999",V.Args.Load,V.Args.Order,V.Args.Suffix,V.Args.Line,V.Local.sSQL)
+	f.ODBC.Connection!con.Execute(V.Local.sSQL)
+	F.Intrinsic.String.Build("INSERT INTO GAB_7546_PICK_RELEASE (ORDER_NO, ORDER_SUFFIX, ORDER_LINE, LOAD_NO, RELEASED_DATE, RELEASED_TIME) SELECT LP.ORDER_NO, LP.ORDER_SUFFIX, LP.ORDER_LINE, LP.LOAD_NO, CURDATE(), CURTIME() FROM LOAD_PLAN LP WHERE LP.ORDER_NO = '{0}' AND LP.ORDER_SUFFIX = '{1}' AND LP.ORDER_LINE = '{2}' AND LP.LOAD_NO = {3} AND NOT EXISTS (SELECT * FROM GAB_7546_PICK_RELEASE R WHERE R.ORDER_NO = LP.ORDER_NO AND R.ORDER_SUFFIX = LP.ORDER_SUFFIX AND R.ORDER_LINE = LP.ORDER_LINE AND R.LOAD_NO = LP.LOAD_NO)",V.Args.Order,V.Args.Suffix,V.Args.Line,V.Args.Load,V.Local.sSQL)
+	f.ODBC.Connection!con.Execute(V.Local.sSQL)
+Function.Intrinsic.Control.Else
+	Function.Intrinsic.Control.If(V.Args.Keep,=,"2")
+		F.Intrinsic.String.Build("UPDATE GAB_7546_PICK_RELEASE SET LOAD_NO = {0}, ORDER_SUFFIX = '{1}' WHERE ORDER_NO = '{2}' AND ORDER_SUFFIX = '{3}' AND ORDER_LINE = '{4}' AND LOAD_NO = {5}",V.Args.Load,V.Args.NewSuffix,V.Args.Order,V.Args.Suffix,V.Args.Line,V.Args.From,V.Local.sSQL)
+		f.ODBC.Connection!con.Execute(V.Local.sSQL)
+	Function.Intrinsic.Control.Else
+		F.Intrinsic.String.Build("DELETE FROM GAB_7546_PICK_RELEASE WHERE ORDER_NO = '{0}' AND ORDER_SUFFIX = '{1}' AND ORDER_LINE = '{2}' AND LOAD_NO = {3}",V.Args.Order,V.Args.Suffix,V.Args.Line,V.Args.Load,V.Local.sSQL)
+		f.ODBC.Connection!con.Execute(V.Local.sSQL)
+	Function.Intrinsic.Control.EndIf
+Function.Intrinsic.Control.EndIf
+Function.Intrinsic.Control.Catch
+	F.Intrinsic.UI.Msgbox("The queue date was not saved. Close this screen and open it again, then mark Ready to Pick.")
+Function.Intrinsic.Control.EndTry
+Program.Sub.RecordPickQueue.End
 
 Program.Sub.Load_ReadyToPick.Start
 Function.Intrinsic.Control.Try
@@ -9359,8 +9888,9 @@ v.Local.iCnt.Declare
 'filter for selected rows
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
 'verify that we have a checked value in SELECT and load is not 0. 
-F.Data.Datatable.Select("dtLoad","SELECT = 1 and [LOAD NUMBER] <> 0",v.Local.sSel)
+F.Data.Datatable.Select("dtLoad","SELECT = 1 AND VISROW = 1 and [LOAD NUMBER] <> 0",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
@@ -9369,6 +9899,7 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 			F.Data.Datatable.SetValue("dtLoad",v.Local.sSel(v.Local.i),"SELECT",0,"READY TO PICK",1)
 			F.Intrinsic.String.Build("Update Load_Plan Set PCKLST_DISP_FLAG = 1 Where ORDER_NO = '{1}' And ORDER_SUFFIX = '{2}' ANd ORDER_LINE = '{3}' and CUSTOMER = '{4}' and Load_No = '{0}'",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).LOAD NUMBER!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_LINE!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CUSTOMER!FieldVal,v.Local.sSQL)
 			f.ODBC.Connection!con.Execute(v.Local.sSQL)
+			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,"Suffix",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!FieldVal,"Line",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_LINE!FieldVal,"Load",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).LOAD NUMBER!FieldVal,"Keep","1")
 		F.Intrinsic.Control.Next(v.Local.i)	
 		gui.frmShip.lblRunMRP.Visible(True)
 f.Intrinsic.Control.Else
@@ -9399,8 +9930,9 @@ v.Local.iCnt.Declare
 'filter for selected rows
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
 'verify that we have a checked value in SELECT and load is not 0. 
-F.Data.Datatable.Select("dtLoad","SELECT = 1 and [LOAD NUMBER] <> 0 and [READY TO PICK] <> 0",v.Local.sSel)
+F.Data.Datatable.Select("dtLoad","SELECT = 1 AND VISROW = 1 and [LOAD NUMBER] <> 0 and [READY TO PICK] <> 0",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
@@ -9409,6 +9941,7 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 			F.Data.Datatable.SetValue("dtLoad",v.Local.sSel(v.Local.i),"SELECT",0,"READY TO PICK",0)
 			F.Intrinsic.String.Build("Update Load_Plan Set PCKLST_DISP_FLAG = 0 Where ORDER_NO = '{1}' And ORDER_SUFFIX = '{2}' ANd ORDER_LINE = '{3}' and CUSTOMER = '{4}' and Load_No = '{0}'",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).LOAD NUMBER!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_LINE!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CUSTOMER!FieldVal,v.Local.sSQL)
 			f.ODBC.Connection!con.Execute(v.Local.sSQL)
+			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,"Suffix",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!FieldVal,"Line",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_LINE!FieldVal,"Load",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).LOAD NUMBER!FieldVal,"Keep","0")
 		F.Intrinsic.Control.Next(v.Local.i)	
 		gui.frmShip.lblRunMRP.Visible(True)
 f.Intrinsic.Control.Else
@@ -9439,8 +9972,9 @@ v.Local.iCnt.Declare
 'filter for selected rows
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
 'verify that we have a checked value in SELECT and load is not 0. 
-F.Data.Datatable.Select("dtLoad","SELECT = 1 and [LOAD NUMBER] <> 0 and [PICKED] = 0",v.Local.sSel)
+F.Data.Datatable.Select("dtLoad","SELECT = 1 AND VISROW = 1 and [LOAD NUMBER] <> 0 and [PICKED] = 0",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
@@ -9479,8 +10013,9 @@ v.Local.iCnt.Declare
 'filter for selected rows
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
 'verify that we have a checked value in SELECT and load is not 0. 
-F.Data.Datatable.Select("dtLoad","SELECT = 1 and [LOAD NUMBER] <> 0 and [PICKED] = 1",v.Local.sSel)
+F.Data.Datatable.Select("dtLoad","SELECT = 1 AND VISROW = 1 and [LOAD NUMBER] <> 0 and [PICKED] = 1",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
@@ -9519,8 +10054,9 @@ v.Local.iCnt.Declare
 'filter for selected rows
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
 'verify that we have a checked value in SELECT and load is 0. 
-F.Data.Datatable.Select("dtLoad","[SELECT] = 1 and [LOAD NUMBER] = 0 and [PACKING LIST] is null",v.Local.sSel)
+F.Data.Datatable.Select("dtLoad","[SELECT] = 1 AND [VISROW] = 1 and [LOAD NUMBER] = 0 and [PACKING LIST] is null",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
@@ -9528,6 +10064,7 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 			'Delete rows from load_plan
 			F.Intrinsic.String.Build("delete from Load_Plan Where ORDER_NO = '{1}' And ORDER_SUFFIX = '{2}' ANd ORDER_LINE = '{3}' and CUSTOMER = '{4}' and Load_No = '{0}'",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).LOAD NUMBER!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_LINE!FieldVal,v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).CUSTOMER!FieldVal,v.Local.sSQL)
 			f.ODBC.Connection!con.Execute(v.Local.sSQL)
+			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,"Suffix",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!FieldVal,"Line",v.DataTable.dtLoad(v.Local.sSel(v.Local.i)).ORDER_LINE!FieldVal,"Load","0","Keep","0")
 			f.Data.Datatable.DeleteRow("dtLoad",v.Local.sSel(v.Local.i))
 		F.Intrinsic.Control.Next(v.Local.i)	
 		gui.frmShip.lblRunMRP.Visible(True)
@@ -9560,8 +10097,9 @@ v.Local.btest.Declare
 'filter for selected rows
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
 'verify that we have a checked value in SELECT and load is not 0. 
-F.Data.Datatable.Select("dtLoad","SELECT = 1 and [LOAD NUMBER] <> 0 and [LOAD NUMBER] <> 9999 and [VALIDATED] = 0 and [PACKING LIST]<>''",v.Local.sSel)
+F.Data.Datatable.Select("dtLoad","SELECT = 1 AND VISROW = 1 and [LOAD NUMBER] <> 0 and [LOAD NUMBER] <> 9999 and [VALIDATED] = 0 and [PACKING LIST]<>''",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
@@ -9577,7 +10115,7 @@ f.Intrinsic.Control.Else
 F.Intrinsic.Control.EndIf		
 'update outside PO lines as VALIDATED to user_4
 
-F.Data.Datatable.Select("dtLoad","SELECT = 1 and [LOAD NUMBER] <> 0 and [LOAD NUMBER] <> 9999 and [VALIDATED] = 0 and [Carrier Load Number]<>'' AND [OPOL] <> ''",v.Local.sSel)
+F.Data.Datatable.Select("dtLoad","SELECT = 1 AND VISROW = 1 and [LOAD NUMBER] <> 0 and [LOAD NUMBER] <> 9999 and [VALIDATED] = 0 and [Carrier Load Number]<>'' AND [OPOL] <> ''",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
@@ -9621,8 +10159,9 @@ v.Local.btest.Declare
 'filter for selected rows
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
 'verify that we have a checked value in SELECT and load is not 0. 
-F.Data.Datatable.Select("dtLoad","SELECT = 1 and [LOAD NUMBER] <> 0 and [LOAD NUMBER] <> 9999 and [VALIDATED] = 1 and [PACKING LIST]<>''",v.Local.sSel)
+F.Data.Datatable.Select("dtLoad","SELECT = 1 AND VISROW = 1 and [LOAD NUMBER] <> 0 and [LOAD NUMBER] <> 9999 and [VALIDATED] = 1 and [PACKING LIST]<>''",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
@@ -9639,7 +10178,7 @@ f.Intrinsic.Control.EndIf
 
 'update outside PO lines as VALIDATED to user_4
 
-F.Data.Datatable.Select("dtLoad","SELECT = 1 and [LOAD NUMBER] <> 0 and [LOAD NUMBER] <> 9999 and [VALIDATED] = 1 and [Carrier Load Number]<>'' AND [OPOL] <> ''",v.Local.sSel)
+F.Data.Datatable.Select("dtLoad","SELECT = 1 AND VISROW = 1 and [LOAD NUMBER] <> 0 and [LOAD NUMBER] <> 9999 and [VALIDATED] = 1 and [Carrier Load Number]<>'' AND [OPOL] <> ''",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
@@ -9687,7 +10226,7 @@ V.Local.sHdrSuffix.Declare
 v.Local.sUserID.Set(v.Caller.user)
 
 'validate if any rows selected are validated but missing packing list
-v.Local.sFilterString.Set("[SELECT] = 1  AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999 AND [PACKING LIST]='' AND [ORDER_SUFFIX] <> 'P'")
+v.Local.sFilterString.Set("[SELECT] = 1 AND [VISROW] = 1  AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999 AND [PACKING LIST]='' AND [ORDER_SUFFIX] <> 'P'")
 f.Data.DataView.Create("dtLoad","dvloadshipy",22,v.Local.sFilterString,"")
 	f.Data.DataView.ToDataTable("dtload","dvloadshipy","dtloadshipy",True)
 	F.Data.Datatable.Select("dtloadshipy","",v.Local.sSel)	
@@ -9702,7 +10241,7 @@ f.Data.DataView.Create("dtLoad","dvloadshipy",22,v.Local.sFilterString,"")
 	f.Data.Datatable.Close("dtloadshipy")	
 
 'validate if any rows selected are not validated
-v.Local.sFilterString.Set("[SELECT] = 1 AND [VALIDATED]=0")
+v.Local.sFilterString.Set("[SELECT] = 1 AND [VISROW] = 1 AND [VALIDATED]=0")
 f.Data.DataView.Create("dtLoad","dvloadshipx",22,v.Local.sFilterString,"")
 	f.Data.DataView.ToDataTable("dtload","dvloadshipx","dtloadshipx",True)
 	F.Data.Datatable.Select("dtloadshipx","[VALIDATED]=0",v.Local.sSel)	
@@ -9717,7 +10256,7 @@ f.Data.DataView.Create("dtLoad","dvloadshipx",22,v.Local.sFilterString,"")
 	f.Data.Datatable.Close("dtloadshipx")
 	
 'validate if any rows selected do not have load ship date set and not 1/1/1900
-v.Local.sFilterString.Set("[SELECT] = 1 AND [SHIP DATE] = #1/1/1900#")
+v.Local.sFilterString.Set("[SELECT] = 1 AND [VISROW] = 1 AND [SHIP DATE] = #1/1/1900#")
 f.Data.DataView.Create("dtLoad","dvloadshipdate",22,v.Local.sFilterString,"")
 	f.Data.DataView.ToDataTable("dtload","dvloadshipdate","dtloadshipdate",True)
 	F.Data.Datatable.Select("dtloadshipdate","[SHIP DATE]=#1/1/1900#",v.Local.sSel)	
@@ -9732,7 +10271,7 @@ f.Data.DataView.Create("dtLoad","dvloadshipdate",22,v.Local.sFilterString,"")
 	f.Data.Datatable.Close("dtloadshipdate")	
 
 'validate if any selected rows have a carrier flagged for shipping interface
-v.Local.sFilterString.Set("[SELECT] = 1 AND [CARRIER_CD] <> ''")
+v.Local.sFilterString.Set("[SELECT] = 1 AND [VISROW] = 1 AND [CARRIER_CD] <> ''")
 f.Data.DataView.Create("dtLoad","dvloadshipcarr",22,v.Local.sFilterString,"")
 	f.Data.DataView.ToDataTableDistinct("dtload","dvloadshipcarr","dtloadshipcarr","CARRIER_CD",True)
 	F.Data.Datatable.Select("dtloadshipcarr","[CARRIER_CD] <> ''",v.Local.sSel)
@@ -9759,8 +10298,9 @@ f.Data.DataView.Create("dtLoad","dvloadshipcarr",22,v.Local.sFilterString,"")
 'filter for selected rows to process
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
 'verify that we have a checked value in SELECT and load is not 0 or 9999 AND only sales orders. 
-v.Local.sFilterString.Set("[SELECT] = 1 AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999 AND [PACKING LIST] <> '' AND [ORDER_SUFFIX] <> 'P' AND [VALIDATED]=1")
+v.Local.sFilterString.Set("[SELECT] = 1 AND [VISROW] = 1 AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999 AND [PACKING LIST] <> '' AND [ORDER_SUFFIX] <> 'P' AND [VALIDATED]=1")
 f.Data.DataView.Create("dtLoad","dvloadship",22,v.Local.sFilterString,"")
 
 '02/05/26 validate if any rows are staged with qty but no matching allocated qty
@@ -9832,7 +10372,7 @@ F.Intrinsic.Control.For(V.Local.iCnt,0,v.DataTable.dtloadship0.RowCount--,1)
 F.Intrinsic.Control.Next(V.Local.iCnt)	
 
 'verify that we have a checked value in SELECT and load is not 0 or 9999 AND ORDER_SUFFIX = 'P'. 
-v.Local.sFilterString.Set("[SELECT] = 1 AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999 AND [ORDER_SUFFIX] = 'P' AND [VALIDATED]=1")
+v.Local.sFilterString.Set("[SELECT] = 1 AND [VISROW] = 1 AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999 AND [ORDER_SUFFIX] = 'P' AND [VALIDATED]=1")
 f.Data.DataView.Create("dtLoad","dvloadshipOSP",22,v.Local.sFilterString,"")
 
 f.Data.DataView.ToDataTable("dtload","dvloadshipOSP","dtloadshipOSP",True)
@@ -10190,7 +10730,8 @@ F.Intrinsic.Control.If(V.Global.bIsPOR020,=,False)
 	F.Intrinsic.Control.ExitSub
 F.Intrinsic.Control.EndIf
 
-V.Local.sFilterString.Set("[SELECT] = 1 AND [SHP_HLD_FLAG] = True")
+F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
+V.Local.sFilterString.Set("[SELECT] = 1 AND [VISROW] = 1 AND [SHP_HLD_FLAG] = True")
 F.Data.DataView.Create("dtLoad","dvloadhold",22,V.Local.sFilterString,"")
 F.Data.DataView.ToDataTable("dtLoad","dvloadhold","dtloadhold",True)
 F.Data.DataTable.Select("dtloadhold","",V.Local.sSel)
@@ -10237,6 +10778,8 @@ v.Local.dPickDate.Declare(Date)
 v.Local.sSQL.Declare(String)
 v.Local.sQuery.Declare(String)
 v.Local.iCnt.Declare
+v.Local.iWait.Declare(Long)
+v.Local.iLeft.Declare(Long)
 v.Local.sParam.Declare
 
 '6/1/26 BS - POR020: Block if any selected rows are on shipping hold
@@ -10245,21 +10788,23 @@ F.Intrinsic.Control.If(V.Global.bLoadHoldBlock,=,True)
 	F.Intrinsic.Control.ExitSub
 F.Intrinsic.Control.EndIf
 
-'filter for selected rows — block events only during data extraction
+'filter for selected rows â€” block events only during data extraction
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
 'verify that we have a checked value in SELECT and load is not 0. 
-v.Local.sFilterString.Set("[SELECT] = 1 and [PACKING LIST] <> ''")
+v.Local.sFilterString.Set("[SELECT] = 1 AND [VISROW] = 1 and [PACKING LIST] <> ''")
 f.Data.DataView.Create("dtLoad","dvloadPL",22,v.Local.sFilterString,"")
-f.Data.DataView.ToDataTableDistinct("dtload","dvloadPL","dtloadPL","PACKING LIST",)
-F.Data.Datatable.Select("dtLoadPL","[PACKING LIST] <> ''",v.Local.sSel)
-'7/23/26 BS - Close DataView and unblock events before print loop so the print pipeline can process
+f.Data.DataView.ToDataTableDistinct("dtload","dvloadPL","dtloadPL","WAY_BILL*!*PACKING LIST",True)
 f.Data.DataView.Close("dtLoad","dvloadPL")
+F.Intrinsic.Control.CallSub(SortPackingListTable)
+F.Data.Datatable.Select("dtLoadPL","[PACKING LIST] <> ''",v.Local.sSel)
 Function.Intrinsic.Control.UnBlockEvents
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
-		F.Intrinsic.Control.For(v.Local.i,0,v.Local.sSel.UBound)
+		V.Local.iCnt.Set(V.Local.sSel.UBound)
+		F.Intrinsic.Control.For(v.Local.i,0,V.Local.iCnt)
 			'Print packing list		
 '			f.Intrinsic.String.Build("{1}!*!{1}!*!{1}!*!{1}!*!{1}!*!{1}!*!Y!*!{0}!*!{1}!*!{1};",v.DataTable.dtLoadPL(v.Local.sSel(v.Local.i)).PACKING LIST!FieldVal,"*!*ZDR*!*",V.Local.sParam)
 '			f.Global.General.CallWrapperSync(910070,v.Local.sParam)
@@ -10270,9 +10815,18 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 			F.Global.Callwrapper.SetProperty("PL","PackingListNumber",v.DataTable.dtLoadPL(v.Local.sSel(v.Local.i)).PACKING LIST!FieldVal)
 			F.Global.Callwrapper.SetProperty("PL","Staged",True)
 			F.Global.CallWrapper.Run("PL")
-			'7/23/26 BS - 3s delay between PL prints; uses Sleep (not SleepMS) to pump the message loop
-			F.Intrinsic.Control.If(V.Local.i,<,V.Local.sSel.UBound)
-				F.Intrinsic.UI.Sleep(3)
+			'-- Same wait the BOL button uses, so the next packing list does not step on this print.
+			F.Intrinsic.Control.If(V.Local.i,<,V.Local.iCnt)
+				V.Local.sRet.Set("Waiting 5 seconds before next packing list...")
+				F.Intrinsic.UI.InvokeWaitDialog(V.Local.sRet)
+				F.Intrinsic.Control.For(V.Local.iWait,1,5)
+					F.Intrinsic.Math.Sub(6,V.Local.iWait,V.Local.iLeft)
+					F.Intrinsic.String.Build("Waiting {0} seconds before next packing list...",V.Local.iLeft,V.Local.sRet)
+					F.Intrinsic.UI.ChangeWaitStatus(V.Local.sRet)
+					F.Intrinsic.UI.Sleep(1)
+					F.Intrinsic.UI.DoEvents
+				F.Intrinsic.Control.Next(V.Local.iWait)
+				F.Intrinsic.UI.CloseWaitDialog
 			F.Intrinsic.Control.EndIf
 		F.Intrinsic.Control.Next(v.Local.i)	
 f.Intrinsic.Control.Else
@@ -10281,6 +10835,7 @@ Function.Intrinsic.Control.EndIf
 f.Data.Datatable.Close("dtloadPL")
 f.Intrinsic.Control.ExitSub
 Function.Intrinsic.Control.Catch
+	F.Intrinsic.UI.CloseWaitDialog
 	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
 	F.Intrinsic.UI.Msgbox(V.Local.sError)
 	F.Intrinsic.Control.CallSub(frmShip_UnLoad)	
@@ -10320,6 +10875,10 @@ V.Local.sSuff.Declare(String,"")
 V.Local.iBIRunID.Declare
 V.Local.iLogID.Declare
 V.Local.iRet.Declare
+V.Local.iCnt.Declare(Long)
+V.Local.iWait.Declare(Long)
+V.Local.iLeft.Declare(Long)
+V.Local.sRet.Declare(String)
 
 '6/1/26 BS - POR020: Block if any selected rows are on shipping hold
 F.Intrinsic.Control.CallSub(ValidateLoad_ShipHold)
@@ -10333,10 +10892,13 @@ V.Local.sDefault.Set(V.Printer.DefaultPrinter)
 'filter for selected rows
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
 'verify that we have a checked value in SELECT and load is not 0. 
-v.Local.sFilterString.Set("[SELECT] = 1 and [PACKING LIST] <> ''")
+v.Local.sFilterString.Set("[SELECT] = 1 AND [VISROW] = 1 and [PACKING LIST] <> ''")
 f.Data.DataView.Create("dtLoad","dvloadPL",22,v.Local.sFilterString,"")
-f.Data.DataView.ToDataTableDistinct("dtload","dvloadPL","dtloadPL","PACKING LIST",)
+f.Data.DataView.ToDataTableDistinct("dtload","dvloadPL","dtloadPL","WAY_BILL*!*PACKING LIST",True)
+f.Data.DataView.Close("dtLoad","dvloadPL")
+F.Intrinsic.Control.CallSub(SortPackingListTable)
 F.Data.Datatable.Select("dtLoadPL","[PACKING LIST] <> ''",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
@@ -10356,12 +10918,13 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 		V.Local.sPrinter.Set(v.Ambient.PRINTERDIALOGSELECTION)
 		F.Intrinsic.Printer.SetDefaultPrinter(V.Local.sPrinter)
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
+		V.Local.iCnt.Set(V.Local.sSel.UBound)
 		
 		F.ODBC.Connection!ConP.OpenCompanyConnection
 		
 		F.ODBC.Connection!ConP.ExecuteAndReturn("Select GRP_ID From ATG_DOC_GRP Where rtrim(ucase(GRP_NAME)) = 'CERTS'",V.Local.sGrpID)
 		
-		F.Intrinsic.Control.For(v.Local.i,0,v.Local.sSel.UBound,1)
+		F.Intrinsic.Control.For(v.Local.i,0,V.Local.iCnt,1)
 			F.Intrinsic.String.Build("Delete From BI_PACKING_LIST Where Terminal = '{0}'",V.Caller.Terminal,V.Local.sSQL)
 			F.ODBC.Connection!ConP.Execute(V.Local.sSQL)
 
@@ -10486,6 +11049,18 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 				F.Data.Datatable.DeleteRow("dtDoc")
 				F.Data.Datatable.AcceptChanges("dtDoc")
 			F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.If(V.Local.i,<,V.Local.iCnt)
+				V.Local.sRet.Set("Waiting 5 seconds before next packing list...")
+				F.Intrinsic.UI.InvokeWaitDialog(V.Local.sRet)
+				F.Intrinsic.Control.For(V.Local.iWait,1,5)
+					F.Intrinsic.Math.Sub(6,V.Local.iWait,V.Local.iLeft)
+					F.Intrinsic.String.Build("Waiting {0} seconds before next packing list...",V.Local.iLeft,V.Local.sRet)
+					F.Intrinsic.UI.ChangeWaitStatus(V.Local.sRet)
+					F.Intrinsic.UI.Sleep(1)
+					F.Intrinsic.UI.DoEvents
+				F.Intrinsic.Control.Next(V.Local.iWait)
+				F.Intrinsic.UI.CloseWaitDialog
+			F.Intrinsic.Control.EndIf
 			
 		F.Intrinsic.Control.Next(v.Local.i)
 		
@@ -10513,10 +11088,10 @@ Function.Intrinsic.Control.EndIf
 F.Intrinsic.Printer.SetDefaultPrinter(V.Local.sDefault)
 
 f.Data.Datatable.Close("dtloadPL")
-f.Data.DataView.Close("dtLoad","dvloadPL")
 Function.Intrinsic.Control.UnBlockEvents
 
 Function.Intrinsic.Control.Catch
+	F.Intrinsic.UI.CloseWaitDialog
 	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",v.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
 	F.Intrinsic.UI.Msgbox(V.Local.sError)
 	F.Intrinsic.Control.CallSub(frmShip_UnLoad)	
@@ -10540,12 +11115,13 @@ v.Local.iWait.Declare(Long)
 v.Local.iLeft.Declare(Long)
 v.Local.sParam.Declare
 
-'filter for selected rows — block events only during data extraction
+'filter for selected rows â€” block events only during data extraction
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
 'verify that we have a checked value in SELECT and load is not 0. 
 'filter distinct BOLs
-v.Local.sFilterString.Set("[SELECT] = 1 and [WAY_BILL] <> ''")
+v.Local.sFilterString.Set("[SELECT] = 1 AND [VISROW] = 1 and [WAY_BILL] <> ''")
 f.Data.DataView.Create("dtLoad","dvloadbol",22,v.Local.sFilterString,"")
 f.Data.DataView.ToDataTableDistinct("dtload","dvloadbol","dtloadbol","WAY_BILL",)
 F.Data.Datatable.Select("dtLoadbol","[WAY_BILL] <> ''",v.Local.sSel)
@@ -11121,7 +11697,8 @@ F.Intrinsic.Control.EndIf
 
 Function.Intrinsic.Control.BlockEvents
 Function.Data.DataTable.AcceptChanges("dtLoad")
-v.Local.sFilterString.Set("[SELECT] = 1 and [Carrier Load Number] <> '' and [ORDER_SUFFIX] = 'P'")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
+v.Local.sFilterString.Set("[SELECT] = 1 AND [VISROW] = 1 and [Carrier Load Number] <> '' and [ORDER_SUFFIX] = 'P'")
 f.Data.DataView.Create("dtLoad","dvloadPOPL",22,v.Local.sFilterString,"")
 f.Data.DataView.ToDataTableDistinct("dtload","dvloadPOPL","dtloadPOPL","Carrier Load Number",)
 F.Data.Datatable.Select("dtLoadPOPL","[Carrier Load Number] <> ''",v.Local.sSel)
@@ -11245,10 +11822,12 @@ F.Intrinsic.Control.EndIf
 
 F.Intrinsic.Control.If(V.Local.iTab,=,0)
 	F.Data.DataTable.AcceptChanges("dtAllShip")
-	F.Data.Datatable.Select("dtAllShip","ASSIGNPICKER = 1",V.Local.sSel)
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtAllShip","GSGC","GsGCAllShip","GV","gvAllShip")
+	F.Data.Datatable.Select("dtAllShip","ASSIGNPICKER = 1 AND VISROW = 1",V.Local.sSel)
 F.Intrinsic.Control.Else
 	F.Data.DataTable.AcceptChanges("dtDueShip")
-	F.Data.Datatable.Select("dtDueShip","ASSIGNPICKER = 1",V.Local.sSel)
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtDueShip","GSGC","GsGCDue","GV","gvDue")
+	F.Data.Datatable.Select("dtDueShip","ASSIGNPICKER = 1 AND VISROW = 1",V.Local.sSel)
 F.Intrinsic.Control.EndIf
 
 F.Intrinsic.Control.If(V.Local.sSel,=,"***NORETURN***")
@@ -11570,7 +12149,7 @@ V.Local.iLiveLast.Declare(Long)
 
 F.Data.DataTable.AcceptChanges("dtSplitLines")
 
-'7546 UDF 03/25/2026: Dynamic user field lookup — query V_OE_USER_FLDS_LN for label "SPLIT FROM LINE"
+'7546 UDF 03/25/2026: Dynamic user field lookup â€” query V_OE_USER_FLDS_LN for label "SPLIT FROM LINE"
 '      to determine which ORDER_LINES column to write the original line number to. If not configured, skip.
 V.Local.sUFColumn.Set("")
 F.ODBC.Connection!con.ExecuteAndReturn("SELECT RTRIM(KEY_ID) FROM V_OE_USER_FLDS_LN WHERE RTRIM(LABEL) = 'SPLIT FROM LINE'",V.Local.sUFReturn)
@@ -12427,10 +13006,12 @@ F.Intrinsic.Control.EndIf
 
 F.Intrinsic.Control.If(V.Local.iTab,=,0)
 	F.Data.DataTable.AcceptChanges("dtAllShip")
-	F.Data.Datatable.Select("dtAllShip","ASSIGNPICKER = 1",V.Local.sSel)
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtAllShip","GSGC","GsGCAllShip","GV","gvAllShip")
+	F.Data.Datatable.Select("dtAllShip","ASSIGNPICKER = 1 AND VISROW = 1",V.Local.sSel)
 F.Intrinsic.Control.Else
 	F.Data.DataTable.AcceptChanges("dtDueShip")
-	F.Data.Datatable.Select("dtDueShip","ASSIGNPICKER = 1",V.Local.sSel)
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtDueShip","GSGC","GsGCDue","GV","gvDue")
+	F.Data.Datatable.Select("dtDueShip","ASSIGNPICKER = 1 AND VISROW = 1",V.Local.sSel)
 F.Intrinsic.Control.EndIf
 
 F.Intrinsic.Control.If(V.Local.sSel,=,"***NORETURN***")
@@ -12469,7 +13050,7 @@ F.Intrinsic.Control.Catch
 F.Intrinsic.Control.EndTry
 Program.Sub.EditSalesOrder_Click.End
 
-'7546 UDF 04/06/2026: RowCellClick handler for Split SO Line grid — opens Document Control for the SO.
+'7546 UDF 04/06/2026: RowCellClick handler for Split SO Line grid â€” opens Document Control for the SO.
 Program.Sub.GsGCSplit_RowCellClick.Start
 F.Intrinsic.Control.Try
 V.Local.sError.Declare
@@ -12685,6 +13266,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20261103095646363$}$CursorSigned
-${$7$}$File Version:1.0.20261103175646.0
+${$6$}$bstevens$}$20261103220635382$}$CursorSigned
+${$7$}$File Version:1.0.20261104060635.0
 Program.Sub.Comments.End
