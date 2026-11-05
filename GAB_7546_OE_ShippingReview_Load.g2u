@@ -9585,6 +9585,35 @@ Function.Intrinsic.Control.SelectCase(v.Args.Column)
 				F.Intrinsic.Control.Next(V.Local.i)
 			F.Intrinsic.Control.EndIf
 		F.Intrinsic.Control.EndIf
+		'-- Customer 40000: the shipment waybill becomes this line's customer PO.
+		Gui.frmShip.GsGCShipped.GetCellValueByColumnName("gvShipped","CUSTOMER",V.Args.RowIndex,V.Local.sOrderNumber)
+		V.Local.sOrderNumber.Set(V.Local.sOrderNumber.Trim)
+		F.Intrinsic.String.LPad(V.Local.sOrderNumber,"0",6,V.Local.sOrderNumber)
+		F.Intrinsic.Control.If(V.Local.sOrderNumber,=,"040000")
+			Gui.frmShip.GsGCShipped.GetCellValueByColumnName("gvShipped","CUSTOMER_PO",V.Args.RowIndex,V.Local.sText)
+			V.Local.sText.Set(V.Local.sText.Trim)
+			F.Intrinsic.Control.If(V.Local.sText,=,"")
+				F.Intrinsic.UI.Msgbox("Customer PO is blank, so the waybill was not changed.")
+			F.Intrinsic.Control.Else
+				F.Intrinsic.String.Left(V.Local.sText,19,V.Local.sText)
+				V.Local.sSafe.Set(V.Local.sText.PSQLFriendly)
+				F.Intrinsic.String.Build("UPDATE SHIPMENT_HEADER SET WAY_BILL = '{0}' WHERE PCK_NO = '{1}' AND (RTRIM(CUSTOMER) = '040000' OR RTRIM(CUSTOMER) = '40000');",V.Local.sSafe,V.Local.sPackinglist.Trim,V.Local.sSQL)
+				F.ODBC.Connection!con.Execute(V.Local.sSQL)
+				F.Intrinsic.String.Build("PCK_NO = '{0}'",V.Local.sPackinglist,V.Local.sFilter)
+				F.Data.Datatable.Select("dtShipped",V.Local.sFilter,V.Local.sSel)
+				F.Intrinsic.Control.If(V.Local.sSel.Trim,<>,"***NORETURN***")
+					F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+					F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
+						Gui.frmShip.GsGCShipped.GetCellValueByColumnName("gvShipped","CUSTOMER",V.Local.sSel(V.Local.i),V.Local.sOrderNumber)
+						V.Local.sOrderNumber.Set(V.Local.sOrderNumber.Trim)
+						F.Intrinsic.String.LPad(V.Local.sOrderNumber,"0",6,V.Local.sOrderNumber)
+						F.Intrinsic.Control.If(V.Local.sOrderNumber,=,"040000")
+							F.Data.Datatable.SetValue("dtShipped",V.Local.sSel(V.Local.i),"WAY_BILL",V.Local.sText)
+						F.Intrinsic.Control.EndIf
+					F.Intrinsic.Control.Next(V.Local.i)
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
 		Function.Intrinsic.Control.UnBlockEvents
 		
 Function.Intrinsic.Control.EndSelect
@@ -13345,6 +13374,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20261105070814785$}$CursorSigned
-${$7$}$File Version:1.0.20261105150814.0
+${$6$}$bstevens$}$20261105104706871$}$CursorSigned
+${$7$}$File Version:1.0.20261105184706.0
 Program.Sub.Comments.End
