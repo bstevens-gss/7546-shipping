@@ -1709,6 +1709,7 @@ F.Intrinsic.Control.Try
 		Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","LN_USER_3","CellForeColor", V.Enum.ThemeColors!ColorBlack)
 		Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","LN_USER_4","CellForeColor", V.Enum.ThemeColors!ColorBlack)
 		Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","LN_USER_5","CellForeColor", V.Enum.ThemeColors!ColorBlack)
+		Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","CellBackColor",V.Enum.ThemeColors!ColorBlue.Highlight)
 		
 F.Intrinsic.Control.EndSelect
 	
@@ -6916,6 +6917,8 @@ Program.Sub.LoadShippedGV.Start
 	Gui.frmShip.GsGCShipped.SuspendLayout()
 	Gui.frmShip.GsGCShipped.SetGridViewProperty("gvShipped","MultiSelect",True)
 	Gui.frmShip.GsGCShipped.SetGridViewProperty("gvShipped","OptionBehaviorEditable",True)
+	'-- Scanner suffix is Enter. Move to the tracking cell on the next row.
+	Gui.frmShip.GsGCShipped.SetGridViewProperty("gvShipped","EnterKeyNavigation","Vertical")
 	Gui.frmShip.GsGCShipped.SetGridViewProperty("gvShipped","AllowSort",True)
 	Gui.frmShip.GsGCShipped.SetGridViewProperty("gvShipped","AllowFilter",True)
 	Gui.frmShip.GsGCShipped.SetGridViewProperty("gvShipped","OptionsDetailShowDetailTabs",False)
@@ -7061,7 +7064,7 @@ Program.Sub.LoadShippedGV.Start
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","SHIP_ID","ReadOnly",True)
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","SHIP_ID","HeaderHAlignment","Center")
 	
-	'PRO_NO, TRACKING_NO, WAY_BILL â€” display only; edits stay on the Load tab
+	'-- Pro Number and BOL stay display only. Tracking Number can be scanned or typed.
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","Caption","Pro Number")
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","MinWidth","125")
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","AllowEdit",False)
@@ -7072,8 +7075,8 @@ Program.Sub.LoadShippedGV.Start
 
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","Caption","Tracking Number")
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","MinWidth","125")
-	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","AllowEdit",False)
-	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","ReadOnly",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","AllowEdit",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","ReadOnly",False)
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","HeaderHAlignment","Center")
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","CellHAlignment","Center")
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","VisibleIndex","1")
@@ -7957,7 +7960,8 @@ Program.Sub.ApplyCanonicalColumnContract.Start
 	Gui.frmShip.GsGCLoad.SetColumnProperty("gvLoad","VISROW","ShowInColumnChooser",False)
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","LAST_CHG_BY","Caption","Last Change By")
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","LAST_CHG_BY","ShowInColumnChooser",True)
-	'-- Shipped pro / tracking / BOL stay visible and read-only after layout restore
+	'-- Shipped pro and BOL stay visible and read-only after layout restore. Tracking Number stays editable. Enter moves to the cell below.
+	Gui.frmShip.GsGCShipped.SetGridViewProperty("gvShipped","EnterKeyNavigation","Vertical")
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","Caption","Pro Number")
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","AllowEdit",False)
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","ReadOnly",True)
@@ -7965,8 +7969,8 @@ Program.Sub.ApplyCanonicalColumnContract.Start
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","VisibleIndex","0")
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","PRO_NO","ShowInColumnChooser",True)
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","Caption","Tracking Number")
-	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","AllowEdit",False)
-	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","ReadOnly",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","AllowEdit",True)
+	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","ReadOnly",False)
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","Visible",True)
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","VisibleIndex","1")
 	Gui.frmShip.GsGCShipped.SetColumnProperty("gvShipped","TRACKING_NO","ShowInColumnChooser",True)
@@ -9517,6 +9521,13 @@ v.Local.sOrderSuffix.Declare(String)
 v.Local.sOrderLine.Declare(String)
 v.Local.sSQL.Declare(String)
 v.Local.sText.Declare(String)
+V.Local.sPackinglist.Declare(String)
+V.Local.sWaybill.Declare(String)
+V.Local.sFilter.Declare(String)
+V.Local.sSel.Declare
+V.Local.i.Declare(Long)
+V.Local.sRet.Declare(String)
+V.Local.sSafe.Declare(String)
 
 Function.Intrinsic.Control.SelectCase(v.Args.Column)
 	F.Intrinsic.Control.CaseAny("LN_USER_1","LN_USER_2","LN_USER_3","LN_USER_4","LN_USER_5")
@@ -9532,6 +9543,48 @@ Function.Intrinsic.Control.SelectCase(v.Args.Column)
 		F.Intrinsic.String.Build("UPDATE SHIPMENT_LINES SET {0} = '{1}' WHERE ORDER_NO = '{2}' AND ORDER_SUFFIX ='{3}' AND ORDER_REC = '{4}';",V.Args.Column,V.Local.sText,V.Local.sOrderNumber,V.Local.sOrderSuffix,v.Local.sOrderLine,V.Local.sSQL)
 		F.ODBC.Connection!con.Execute(V.Local.sSQL)
 		
+		Function.Intrinsic.Control.UnBlockEvents
+
+	F.Intrinsic.Control.CaseAny("Tracking Number","TRACKING_NO")
+		'-- Tracking number: copy to every shipped row on this packing list. Save on the shipment header, and on the BOL when this shipment already has one.
+		Function.Intrinsic.Control.BlockEvents
+		Gui.frmShip.GsGCShipped.GetCellValueByColumnName("gvShipped","PCK_NO",V.Args.RowIndex,V.Local.sPackinglist)
+		F.Intrinsic.Control.If(V.Local.sPackinglist.Trim,=,"")
+			F.Intrinsic.UI.Msgbox("Cannot edit tracking number - no shipment exists for this line.")
+			F.Data.Datatable.SetValue("dtShipped",V.Args.RowIndex,"TRACKING_NO","")
+			Function.Intrinsic.Control.UnBlockEvents
+			F.Intrinsic.Control.ExitSub
+		F.Intrinsic.Control.EndIf
+		V.Local.sRet.Set(V.Args.Value.Trim)
+		V.Local.sSafe.Set(V.Local.sRet.PSQLFriendly)
+		F.Data.Datatable.SetValue("dtShipped",V.Args.RowIndex,"TRACKING_NO",V.Local.sRet)
+		F.Intrinsic.String.Build("PCK_NO = '{0}'",V.Local.sPackinglist,V.Local.sFilter)
+		F.Data.Datatable.Select("dtShipped",V.Local.sFilter,V.Local.sSel)
+		F.Intrinsic.Control.If(V.Local.sSel.Trim,<>,"***NORETURN***")
+			F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+			F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
+				F.Data.Datatable.SetValue("dtShipped",V.Local.sSel(V.Local.i),"TRACKING_NO",V.Local.sRet)
+			F.Intrinsic.Control.Next(V.Local.i)
+		F.Intrinsic.Control.EndIf
+		V.Local.sText.Set(V.Local.sPackinglist.Trim)
+		F.Intrinsic.String.Build("UPDATE SHIPMENT_HEADER SET TRACKING_NO = '{0}' WHERE PCK_NO = '{1}';",V.Local.sSafe,V.Local.sText,V.Local.sSQL)
+		F.ODBC.Connection!con.Execute(V.Local.sSQL)
+		Gui.frmShip.GsGCShipped.GetCellValueByColumnName("gvShipped","WAY_BILL",V.Args.RowIndex,V.Local.sWaybill)
+		F.Intrinsic.Control.If(V.Local.sWaybill.Trim,<>,"")
+			V.Local.sText.Set(V.Local.sWaybill.Trim)
+			F.Intrinsic.String.Build("UPDATE BOL_HEADER SET TRACKING_NO = '{0}' WHERE WAYBILL_NO = '{1}';",V.Local.sSafe,V.Local.sText,V.Local.sSQL)
+			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.DataTable.dtLoad.Exists)
+			F.Intrinsic.String.Build("[Packing List] = '{0}'",V.Local.sPackinglist,V.Local.sFilter)
+			F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
+			F.Intrinsic.Control.If(V.Local.sSel.Trim,<>,"***NORETURN***")
+				F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+				F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
+					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"TRACKING_NO",V.Local.sRet)
+				F.Intrinsic.Control.Next(V.Local.i)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
 		Function.Intrinsic.Control.UnBlockEvents
 		
 Function.Intrinsic.Control.EndSelect
@@ -11239,7 +11292,7 @@ Program.Sub.LoadLpn.Start
 		F.Data.DataTable.Close("dtLpnPallet")
 	F.Intrinsic.Control.EndIf
 	'-- Pallets packed on this packing list. User defined number comes from the pallet record for the same list.
-	F.Intrinsic.String.Build("SELECT MAX(RTRIM(D.PLLT_NO)) AS PLLT_NO, MAX(RTRIM(P.USR_DFND_NO)) AS USR_DFND_NO FROM V_BOL_PACK_DTL D LEFT JOIN V_BOL_PALLET_NUM P ON P.PCK_NO = D.PCK_NO AND P.PLLT_NO = D.PLLT_NO WHERE D.PCK_NO = '{0}' AND RTRIM(D.PLLT_NO) <> '' AND D.PLLT_NO <> '00000000' GROUP BY D.PLLT_NO ORDER BY D.PLLT_NO",V.Local.sSafe,V.Local.sSQL)
+	F.Intrinsic.String.Build("SELECT MAX(RTRIM(D.PLLT_NO)) AS PLLT_NO, MAX(RTRIM(P.USR_DFND_NO)) AS USR_DFND_NO FROM BOL_PACK_DTL D LEFT JOIN V_BOL_PALLET_NUM P ON P.PCK_NO = D.PCK_NO AND P.PLLT_NO = D.PLLT_NO WHERE D.PCK_NO = '{0}' AND RTRIM(D.PLLT_NO) <> '' AND D.PLLT_NO <> '00000000' GROUP BY D.PLLT_NO ORDER BY D.PLLT_NO",V.Local.sSafe,V.Local.sSQL)
 	F.Data.DataTable.CreateFromSQL("dtLpnPallet","con",V.Local.sSQL,True)
 	F.Intrinsic.Control.If(V.DataTable.dtLpnPallet.RowCount--,>=,0)
 		Gui.frmLpn.GsGCLpnPallet.AddGridViewFromDataTable("gvLpnPallet","dtLpnPallet")
@@ -11273,7 +11326,7 @@ Program.Sub.LoadLpn.Start
 		F.Data.DataTable.Close("dtLpnCarton")
 	F.Intrinsic.Control.EndIf
 	'-- Cartons packed on this packing list. User defined number and tracking come from the carton record for the same list.
-	F.Intrinsic.String.Build("SELECT MAX(RTRIM(D.CRTN_NO)) AS CRTN_NO, MAX(RTRIM(C.USER_DFND_NO)) AS USER_DFND_NO, MAX(RTRIM(C.TRACKING_NO)) AS TRACKING_NO FROM V_BOL_PACK_DTL D LEFT JOIN V_BOL_CARTON_NUM C ON C.PCK_NO = D.PCK_NO AND C.CRTN_NO = D.CRTN_NO WHERE D.PCK_NO = '{0}' AND RTRIM(D.CRTN_NO) <> '' AND D.CRTN_NO <> '00000000' GROUP BY D.CRTN_NO ORDER BY D.CRTN_NO",V.Local.sSafe,V.Local.sSQL)
+	F.Intrinsic.String.Build("SELECT MAX(RTRIM(D.CRTN_NO)) AS CRTN_NO, MAX(RTRIM(C.USER_DFND_NO)) AS USER_DFND_NO, MAX(RTRIM(C.TRACKING_NO)) AS TRACKING_NO FROM BOL_PACK_DTL D LEFT JOIN V_BOL_CARTON_NUM C ON C.PCK_NO = D.PCK_NO AND C.CRTN_NO = D.CRTN_NO WHERE D.PCK_NO = '{0}' AND RTRIM(D.CRTN_NO) <> '' AND D.CRTN_NO <> '00000000' GROUP BY D.CRTN_NO ORDER BY D.CRTN_NO",V.Local.sSafe,V.Local.sSQL)
 	F.Data.DataTable.CreateFromSQL("dtLpnCarton","con",V.Local.sSQL,True)
 	F.Intrinsic.Control.If(V.DataTable.dtLpnCarton.RowCount--,>=,0)
 		Gui.frmLpn.GsGCLpnCarton.AddGridViewFromDataTable("gvLpnCarton","dtLpnCarton")
@@ -13292,6 +13345,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20261104130647806$}$CursorSigned
-${$7$}$File Version:1.0.20261104210647.0
+${$6$}$bstevens$}$20261105070814785$}$CursorSigned
+${$7$}$File Version:1.0.20261105150814.0
 Program.Sub.Comments.End
