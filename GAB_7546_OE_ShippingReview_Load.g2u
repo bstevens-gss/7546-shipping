@@ -10337,6 +10337,9 @@ V.Local.sTransIDNew.Declare
 V.Local.sUserID.Declare
 V.Local.sPackSuffix.Declare
 V.Local.sHdrSuffix.Declare
+V.Local.sNowStamp.Declare
+V.Local.sDateChg.Declare
+V.Local.sTimeChg.Declare
 
 v.Local.sUserID.Set(v.Caller.user)
 
@@ -10458,8 +10461,8 @@ f.Data.Datatable.Close("dtloadShipv")
 f.Data.DataView.ToDataTable("dtload","dvloadship","dtloadship0",True)
 v.local.iCnt.Set(0)	
 F.Intrinsic.Control.For(V.Local.iCnt,0,v.DataTable.dtloadship0.RowCount--,1)
-	'-- This line passed the Ship Load checks. Flag it shipped and picked. Other lines on the load stay as they are.
-	F.Intrinsic.String.Build("update load_plan set shipped = 1, picked = 1 where order_no = '{0}' and order_line = '{1}' and order_suffix = '{2}' and load_no = {3}",V.DataTable.dtloadship0(V.Local.iCnt).ORDER_NO!FieldVal,V.DataTable.dtloadship0(V.Local.iCnt).ORDER_LINE!FieldVal,V.DataTable.dtloadship0(V.Local.iCnt).ORDER_SUFFIX!FieldVal,V.DataTable.dtloadship0(V.Local.iCnt).LOAD NUMBER!FieldVal,V.Local.sSQL)
+	'-- This line passed the Ship Load checks. Flag every unshipped load line on this packing list, including a line that was not checked.
+	F.Intrinsic.String.Build("update load_plan set shipped = 1, picked = 1 where shipped <> 1 and exists (select 1 from staging_quantity h where h.pck_no = '{0}' and h.order_no = load_plan.order_no and h.line = load_plan.order_line)",V.DataTable.dtloadship0(V.Local.iCnt).PACKING LIST!FieldValTrim,V.Local.sSQL)
 	F.ODBC.Connection!Con.Execute(V.Local.sSQL)
 	'-- SHP710 next-seq on unshipped LOAD_PLAN only: packing suffix >= header next-seq -> packing+1; else header. Never decrease. Skip lines that already have a staged packing (SHP_STATUS=0). Do not write ORDER_HEADER.
 	F.Intrinsic.Control.If(V.DataTable.dtPackSfx.Exists)
@@ -10508,6 +10511,10 @@ f.Data.DataView.ToDataTableDistinct("dtload","dvloadship","dtloadShip","PACKING 
 F.Data.Datatable.Select("dtLoadShip","[PACKING LIST] <> ''",v.Local.sSel)
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
+		V.Local.sNowStamp.Set(V.Ambient.Now.FormatYYYYMMDDHHNNSS)
+		F.Intrinsic.String.Mid(V.Local.sNowStamp,1,8,V.Local.sDateChg)
+		F.Intrinsic.String.Mid(V.Local.sNowStamp,9,6,V.Local.sTimeChg)
+		F.Intrinsic.String.Concat(V.Local.sTimeChg,"00",V.Local.sTimeChg)
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)			
 		F.Intrinsic.Control.For(v.Local.i,0,v.Local.sSel.UBound)
 			'Ship staged packing lists				
@@ -10523,7 +10530,7 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 			
 			'WRITE TO WIRELESS_LINE			
 			'sTransIDNew,'0000','S40',sPL			
-			F.Intrinsic.String.Build("insert into WIRELESS_LINE (TRANS_ID,SEQ,TRANS_TYPE,FIELD_1,ERROR_ID) values ('{0}','0000','S40','{1}',0)",V.Local.sTransIDNew,v.DataTable.dtLoadShip(v.Local.sSel(v.Local.i)).PACKING LIST!FieldVal,V.Local.sSQL)
+			F.Intrinsic.String.Build("insert into WIRELESS_LINE (TRANS_ID,SEQ,TRANS_TYPE,FIELD_1,ERROR_ID,DATE_LAST_CHG,TIME_LAST_CHG,LAST_CHG_BY) values ('{0}','0000','S40','{1}',0,'{2}','{3}','{4}')",V.Local.sTransIDNew,v.DataTable.dtLoadShip(v.Local.sSel(v.Local.i)).PACKING LIST!FieldVal,V.Local.sDateChg,V.Local.sTimeChg,V.Local.sUserID,V.Local.sSQL)
 			F.ODBC.Connection!Con.Execute(V.Local.sSQL)
 					
 			'REMOVE ATTEMPTED_FLAG FOR WIREPOLL TO PROCESS
@@ -13381,6 +13388,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20261105190928135$}$CursorSigned
-${$7$}$File Version:1.0.20261106030928.0
+${$6$}$bstevens$}$20261105202526318$}$CursorSigned
+${$7$}$File Version:1.0.20261106042526.0
 Program.Sub.Comments.End
