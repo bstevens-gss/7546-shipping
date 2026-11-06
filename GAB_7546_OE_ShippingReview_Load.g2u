@@ -1891,6 +1891,8 @@ Program.Sub.LoadOpenOrders.Start
 	V.Local.sFilter.Declare
 	v.Local.sQuery.Declare(string)
 	V.Local.iOnLoad.Declare(Long)
+	V.Local.iFullMax.Declare(Long)
+	V.Local.fQtyFull.Declare
 	V.Local.sOlKey.Declare(String)
 	
 	Gui.frmShip.lblStatus.Visible(True)
@@ -2027,11 +2029,16 @@ Program.Sub.LoadOpenOrders.Start
 	F.Data.DataTable.FillFromDictionary("dtAllShip0","dFirstBin","PARTLOC","FIRST_BIN")
 
 	'-- Full on-hand is the starting quantity minus bins that start with O. The running total still uses QTY_ONHAND.
-	F.Data.DataTable.AddColumn("dtAllShip0","QTY_OBIN","Float",0)
+	F.Data.DataTable.AddColumn("dtAllShip0","QTY_OBIN","String","0")
 	F.Data.DataTable.FillFromDictionary("dtAllShip0","dOBin","PARTLOC","QTY_OBIN")
-	F.Data.DataTable.AddExpressionColumn("dtAllShip0","QTY_ONHAND_FULL_X","Float","[QTY_ONHAND] - [QTY_OBIN]")
-	F.Data.DataTable.CopyColumn("dtAllShip0","QTY_ONHAND_FULL_X","QTY_ONHAND_FULL",True)
-	F.Data.DataTable.RemoveColumn("dtAllShip0","QTY_ONHAND_FULL_X")
+	F.Data.DataTable.AddColumn("dtAllShip0","QTY_ONHAND_FULL","Float",0)
+	F.Intrinsic.Control.If(V.DataTable.dtAllShip0.RowCount,>,0)
+		F.Intrinsic.Math.Sub(V.DataTable.dtAllShip0.RowCount,1,V.Local.iFullMax)
+		F.Intrinsic.Control.For(V.Local.iOnLoad,0,V.Local.iFullMax,1)
+			F.Intrinsic.Math.Sub(V.DataTable.dtAllShip0(V.Local.iOnLoad).QTY_ONHAND!FieldValFloat,V.DataTable.dtAllShip0(V.Local.iOnLoad).QTY_OBIN!FieldValFloat,V.Local.fQtyFull)
+			F.Data.DataTable.SetValue("dtAllShip0",V.Local.iOnLoad,"QTY_ONHAND_FULL",V.Local.fQtyFull)
+		F.Intrinsic.Control.Next(V.Local.iOnLoad)
+	F.Intrinsic.Control.EndIf
 	F.Data.DataTable.RemoveColumn("dtAllShip0","QTY_OBIN")
 
 	'-- Ship days from dShipDays (customer + ship-to, carrier NONE)
@@ -13374,6 +13381,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20261105104706871$}$CursorSigned
-${$7$}$File Version:1.0.20261105184706.0
+${$6$}$bstevens$}$20261105190928135$}$CursorSigned
+${$7$}$File Version:1.0.20261106030928.0
 Program.Sub.Comments.End
