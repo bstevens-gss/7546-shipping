@@ -6018,7 +6018,8 @@ Program.Sub.LoadStagingDetails.Start
 
 	F.Data.DataTable.CreateFromSQL("dtStagingDetails","con","Select CAST(VSQ.PCK_NO AS NUMERIC(7,0)) AS PCK_NO,VSQ.ORDER_NO,VSQ.LINE,VSQ.PART,VSQ.LOC,VSL.Order_Desc as Description,VSL.QTY_ORDERED,VSL.QTY_SHIPPED,VSL.QTY_BO,VIM.QTY_ONHAND,VOL.CUSTOMER_PART,VOL.PHASE AS PHASE FROM V_STAGING_QUANTITY VSQ LEFT JOIN V_ORDER_LINES VOL ON VSQ.ORDER_NO = VOL.ORDER_NO AND VSQ.LINE = VOL.RECORD_NO LEFT JOIN V_SHIPMENT_LINES VSL ON VOL.ORDER_NO = VSL.ORDER_NO AND VOL.RECORD_NO = VSL.ORDER_REC  AND VSQ.PCK_NO = VSL.PCK_NO LEFT JOIN V_INVENTORY_MSTR VIM ON VOL.PART = VIM.PART AND VOL.LOCATION = VIM.LOCATION ORDER BY VSQ.ORDER_NO, VSQ.LINE;",True)
 		
-	F.Data.DataTable.CreateFromSQL("dtLTemp","con","Select ORDER_NO, RECORD_NO As Line, OL.Part,OL.Location As LOC, OL.Description, Qty_Ordered, QTY_Shipped,qty_BO,Customer_Part,  IM.Qty_ONHAND  From V_ORDER_LINES OL Left Join Inventory_MSTR IM On OL.Part=IM.Part and OL.Location = IM.Location Where ORDER_NO In(Select ORDER_NO from STAGING_QUANTITY)  AND Order_No+'-'+RECORD_NO NOT In(Select Order_No+'-'+Line from STAGING_QUANTITY) ;")
+	' [7546] - Custom Bugs - 11/10/2026 - Skip order lines already on Shipped Orders. A shipped line (line ship status not 0, qty shipped not 0) was being attached to the open packing list because another line on the same order is still staged.
+	F.Data.DataTable.CreateFromSQL("dtLTemp","con","Select ORDER_NO, RECORD_NO As Line, OL.Part,OL.Location As LOC, OL.Description, Qty_Ordered, QTY_Shipped,qty_BO,Customer_Part,  IM.Qty_ONHAND  From V_ORDER_LINES OL Left Join Inventory_MSTR IM On OL.Part=IM.Part and OL.Location = IM.Location Where ORDER_NO In(Select ORDER_NO from STAGING_QUANTITY)  AND Order_No+'-'+RECORD_NO NOT In(Select Order_No+'-'+Line from STAGING_QUANTITY) AND NOT EXISTS (SELECT 1 FROM V_SHIPMENT_LINES SL WHERE SL.ORDER_NO = OL.ORDER_NO AND SL.ORDER_REC = OL.RECORD_NO AND SL.LN_SHP_STAT <> '0' AND SL.QTY_SHIPPED <> 0) ;")
 	F.Data.DataTable.AddColumn("dtLTemp", "PCK_NO", "Long")
 	F.Data.Dictionary.CreateFromSQL("dDict", "con", "Select distinct order_no, CAST(PCK_NO AS NUMERIC(7,0)) AS PCK_NO from STAGING_QUANTITY;")
 	F.Data.Dictionary.SetDefaultReturn("dDict", 0)
@@ -13388,6 +13389,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20261105202526318$}$CursorSigned
-${$7$}$File Version:1.0.20261106042526.0
+${$6$}$bstevens$}$20261110104354552$}$CursorSigned
+${$7$}$File Version:1.0.20261110184354.0
 Program.Sub.Comments.End
