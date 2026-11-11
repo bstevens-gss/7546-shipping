@@ -10900,10 +10900,16 @@ v.Local.i.Declare(Long)
 v.Local.dPickDate.Declare(Date)
 v.Local.sSQL.Declare(String)
 v.Local.sQuery.Declare(String)
-v.Local.iCnt.Declare
+v.Local.iCnt.Declare(Long)
 v.Local.iWait.Declare(Long)
 v.Local.iLeft.Declare(Long)
+v.Local.iTotal.Declare(Long)
+v.Local.iShow.Declare(Long)
 v.Local.sParam.Declare
+v.Local.sThis.Declare(String)
+v.Local.sNext.Declare(String)
+v.Local.sSent.Declare(String)
+v.Local.sStatus.Declare(String)
 
 '6/1/26 BS - POR020: Block if any selected rows are on shipping hold
 F.Intrinsic.Control.CallSub(ValidateLoad_ShipHold)
@@ -10927,31 +10933,60 @@ Function.Intrinsic.Control.UnBlockEvents
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
 		V.Local.iCnt.Set(V.Local.sSel.UBound)
+		F.Intrinsic.Math.Add(V.Local.iCnt,1,V.Local.iTotal)
+		V.Local.sSent.Set("")
 		F.Intrinsic.Control.For(v.Local.i,0,V.Local.iCnt)
-			'Print packing list		
-'			f.Intrinsic.String.Build("{1}!*!{1}!*!{1}!*!{1}!*!{1}!*!{1}!*!Y!*!{0}!*!{1}!*!{1};",v.DataTable.dtLoadPL(v.Local.sSel(v.Local.i)).PACKING LIST!FieldVal,"*!*ZDR*!*",V.Local.sParam)
-'			f.Global.General.CallWrapperSync(910070,v.Local.sParam)
-'12/30/24 -BS changed to used .NET callwrapper to print packing lists
+			' [7546] - Custom Bugs - 11/11/2026 - Name each packing list and stop the batch when the print is rejected.
+			V.Local.sThis.Set(v.DataTable.dtLoadPL(v.Local.sSel(v.Local.i)).PACKING LIST!FieldValTrim)
+			F.Intrinsic.Math.Add(V.Local.i,1,V.Local.iShow)
+			F.Intrinsic.String.Build("Printing packing list {0} ({1} of {2})...",V.Local.sThis,V.Local.iShow,V.Local.iTotal,V.Local.sRet)
+			'-- Open the pause once. A second Invoke after Close does not show, so later lists only change the text.
+			F.Intrinsic.Control.If(V.Local.i,=,0)
+				F.Intrinsic.UI.InvokeWaitDialog(V.Local.sRet)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.UI.ChangeWaitStatus(V.Local.sRet)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.UI.DoEvents
 			F.Global.Callwrapper.New("PL","Sales.Shipping.PrintPackingList")
 			F.Global.Callwrapper.SetProperty("PL","CompanyCode",v.Caller.CompanyCode)
 			F.Global.Callwrapper.SetProperty("PL","CallingProgram","CW")
 			F.Global.Callwrapper.SetProperty("PL","PackingListNumber",v.DataTable.dtLoadPL(v.Local.sSel(v.Local.i)).PACKING LIST!FieldVal)
 			F.Global.Callwrapper.SetProperty("PL","Staged",True)
 			F.Global.CallWrapper.Run("PL")
-			'-- Same wait the BOL button uses, so the next packing list does not step on this print.
+			F.Global.CallWrapper.GetProperty("PL","Status",V.Local.sStatus)
+			V.Local.sStatus.Set(V.Local.sStatus.Trim)
+			'-- Runtime returns Successful, not Success. Only a real rejection stops the batch.
+			F.Intrinsic.Control.If(V.Local.sStatus.UCase,<>,"0")
+				F.Intrinsic.Control.If(V.Local.sStatus.UCase,<>,"SUCCESS")
+					F.Intrinsic.Control.If(V.Local.sStatus.UCase,<>,"SUCCESSFUL")
+						F.Intrinsic.UI.CloseWaitDialog
+						F.Intrinsic.String.Build("Packing list {0} was rejected ({1}). The rest of this batch was not sent.",V.Local.sThis,V.Local.sStatus,V.Local.sRet)
+						F.Intrinsic.UI.Msgbox(V.Local.sRet,"Warning")
+						F.Data.Datatable.Close("dtloadPL")
+						F.Intrinsic.Control.ExitSub
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.If(V.Local.sSent,=,"")
+				V.Local.sSent.Set(V.Local.sThis)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.String.Build("{0}, {1}",V.Local.sSent,V.Local.sThis,V.Local.sSent)
+			F.Intrinsic.Control.EndIf
+			'-- 5 seconds between lists so the next print does not step on this one. Sleep pumps the print; do not use SleepMS.
 			F.Intrinsic.Control.If(V.Local.i,<,V.Local.iCnt)
-				V.Local.sRet.Set("Waiting 5 seconds before next packing list...")
-				F.Intrinsic.UI.InvokeWaitDialog(V.Local.sRet)
+				V.Local.sNext.Set(v.DataTable.dtLoadPL(v.Local.sSel(V.Local.iShow)).PACKING LIST!FieldValTrim)
 				F.Intrinsic.Control.For(V.Local.iWait,1,5)
 					F.Intrinsic.Math.Sub(6,V.Local.iWait,V.Local.iLeft)
-					F.Intrinsic.String.Build("Waiting {0} seconds before next packing list...",V.Local.iLeft,V.Local.sRet)
+					F.Intrinsic.String.Build("Sent {0} ({1} of {2}). Waiting {3} seconds before {4}.",V.Local.sThis,V.Local.iShow,V.Local.iTotal,V.Local.iLeft,V.Local.sNext,V.Local.sRet)
 					F.Intrinsic.UI.ChangeWaitStatus(V.Local.sRet)
 					F.Intrinsic.UI.Sleep(1)
 					F.Intrinsic.UI.DoEvents
 				F.Intrinsic.Control.Next(V.Local.iWait)
-				F.Intrinsic.UI.CloseWaitDialog
 			F.Intrinsic.Control.EndIf
-		F.Intrinsic.Control.Next(v.Local.i)	
+		F.Intrinsic.Control.Next(v.Local.i)
+		F.Intrinsic.UI.CloseWaitDialog
+		F.Intrinsic.String.Build("Sent these packing lists: {0}",V.Local.sSent,V.Local.sRet)
+		F.Intrinsic.UI.Msgbox(V.Local.sRet)
 f.Intrinsic.Control.Else
 	F.Intrinsic.UI.Msgbox("Please select rows from load with packing lists.  Click OK to Exit.","Warning")
 Function.Intrinsic.Control.EndIf
@@ -11001,7 +11036,12 @@ V.Local.iRet.Declare
 V.Local.iCnt.Declare(Long)
 V.Local.iWait.Declare(Long)
 V.Local.iLeft.Declare(Long)
+V.Local.iTotal.Declare(Long)
+V.Local.iShow.Declare(Long)
 V.Local.sRet.Declare(String)
+V.Local.sThis.Declare(String)
+V.Local.sNext.Declare(String)
+V.Local.sSent.Declare(String)
 
 '6/1/26 BS - POR020: Block if any selected rows are on shipping hold
 F.Intrinsic.Control.CallSub(ValidateLoad_ShipHold)
@@ -11023,6 +11063,8 @@ f.Data.DataView.ToDataTableDistinct("dtload","dvloadPL","dtloadPL","WAY_BILL*!*P
 f.Data.DataView.Close("dtLoad","dvloadPL")
 F.Intrinsic.Control.CallSub(SortPackingListTable)
 F.Data.Datatable.Select("dtLoadPL","[PACKING LIST] <> ''",v.Local.sSel)
+' [7546] - Custom Bugs - 11/11/2026 - Unblock before the print loop so the pause can pump each packing list.
+Function.Intrinsic.Control.UnBlockEvents
 
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 	F.Data.Datatable.Create("dtLotBin",True)
@@ -11042,18 +11084,34 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 		F.Intrinsic.Printer.SetDefaultPrinter(V.Local.sPrinter)
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
 		V.Local.iCnt.Set(V.Local.sSel.UBound)
+		F.Intrinsic.Math.Add(V.Local.iCnt,1,V.Local.iTotal)
+		V.Local.sSent.Set("")
 		
 		F.ODBC.Connection!ConP.OpenCompanyConnection
 		
 		F.ODBC.Connection!ConP.ExecuteAndReturn("Select GRP_ID From ATG_DOC_GRP Where rtrim(ucase(GRP_NAME)) = 'CERTS'",V.Local.sGrpID)
 		
 		F.Intrinsic.Control.For(v.Local.i,0,V.Local.iCnt,1)
+			V.Local.sThis.Set(v.DataTable.dtLoadPL(v.Local.sSel(v.Local.i)).PACKING LIST!FieldValTrim)
+			F.Intrinsic.Math.Add(V.Local.i,1,V.Local.iShow)
+			F.Intrinsic.String.Build("Printing packing list {0} ({1} of {2})...",V.Local.sThis,V.Local.iShow,V.Local.iTotal,V.Local.sRet)
+			F.Intrinsic.Control.If(V.Local.i,=,0)
+				F.Intrinsic.UI.InvokeWaitDialog(V.Local.sRet)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.UI.ChangeWaitStatus(V.Local.sRet)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.UI.DoEvents
 			F.Intrinsic.String.Build("Delete From BI_PACKING_LIST Where Terminal = '{0}'",V.Caller.Terminal,V.Local.sSQL)
 			F.ODBC.Connection!ConP.Execute(V.Local.sSQL)
 
 			'Print packing list		
 			F.Intrinsic.String.Concat("","!*!","","!*!!*!N!*!Y!*!N!*!Y!*!",v.DataTable.dtLoadPL(v.Local.sSel(v.Local.i)).PACKING LIST!FieldVal,"!*!!*!!*!|~|CRYSTAL-OVERRIDE|~|",V.Local.sParam)
 			F.Global.General.CallWrapperSyncBIO(910070,V.Local.sParam)
+			F.Intrinsic.Control.If(V.Local.sSent,=,"")
+				V.Local.sSent.Set(V.Local.sThis)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.String.Build("{0}, {1}",V.Local.sSent,V.Local.sThis,V.Local.sSent)
+			F.Intrinsic.Control.EndIf
 			
 			F.Intrinsic.String.Build("select Top 1 Rptid from BI_PACKING_LIST Where Pck_no = '{0}' and Terminal = '{1}'",v.DataTable.dtLoadPL(v.Local.sSel(v.Local.i)).PACKING LIST!FieldVal,V.Caller.Terminal,V.Local.sSQL)
 			
@@ -11173,19 +11231,20 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 				F.Data.Datatable.AcceptChanges("dtDoc")
 			F.Intrinsic.Control.EndIf
 			F.Intrinsic.Control.If(V.Local.i,<,V.Local.iCnt)
-				V.Local.sRet.Set("Waiting 5 seconds before next packing list...")
-				F.Intrinsic.UI.InvokeWaitDialog(V.Local.sRet)
+				V.Local.sNext.Set(v.DataTable.dtLoadPL(v.Local.sSel(V.Local.iShow)).PACKING LIST!FieldValTrim)
 				F.Intrinsic.Control.For(V.Local.iWait,1,5)
 					F.Intrinsic.Math.Sub(6,V.Local.iWait,V.Local.iLeft)
-					F.Intrinsic.String.Build("Waiting {0} seconds before next packing list...",V.Local.iLeft,V.Local.sRet)
+					F.Intrinsic.String.Build("Sent {0} ({1} of {2}). Waiting {3} seconds before {4}.",V.Local.sThis,V.Local.iShow,V.Local.iTotal,V.Local.iLeft,V.Local.sNext,V.Local.sRet)
 					F.Intrinsic.UI.ChangeWaitStatus(V.Local.sRet)
 					F.Intrinsic.UI.Sleep(1)
 					F.Intrinsic.UI.DoEvents
 				F.Intrinsic.Control.Next(V.Local.iWait)
-				F.Intrinsic.UI.CloseWaitDialog
 			F.Intrinsic.Control.EndIf
 			
 		F.Intrinsic.Control.Next(v.Local.i)
+		F.Intrinsic.UI.CloseWaitDialog
+		F.Intrinsic.String.Build("Sent these packing lists: {0}",V.Local.sSent,V.Local.sRet)
+		F.Intrinsic.UI.Msgbox(V.Local.sRet)
 		
 		F.ODBC.Connection!ConP.Close
 		
@@ -11211,7 +11270,6 @@ Function.Intrinsic.Control.EndIf
 F.Intrinsic.Printer.SetDefaultPrinter(V.Local.sDefault)
 
 f.Data.Datatable.Close("dtloadPL")
-Function.Intrinsic.Control.UnBlockEvents
 
 Function.Intrinsic.Control.Catch
 	F.Intrinsic.UI.CloseWaitDialog
@@ -11233,10 +11291,15 @@ v.Local.i.Declare(Long)
 v.Local.dPickDate.Declare(Date)
 v.Local.sSQL.Declare(String)
 v.Local.sQuery.Declare(String)
-v.Local.iCnt.Declare
+v.Local.iCnt.Declare(Long)
 v.Local.iWait.Declare(Long)
 v.Local.iLeft.Declare(Long)
+v.Local.iTotal.Declare(Long)
+v.Local.iShow.Declare(Long)
 v.Local.sParam.Declare
+v.Local.sThis.Declare(String)
+v.Local.sNext.Declare(String)
+v.Local.sSent.Declare(String)
 
 'filter for selected rows â€” block events only during data extraction
 Function.Intrinsic.Control.BlockEvents
@@ -11255,23 +11318,40 @@ Function.Intrinsic.Control.UnBlockEvents
 Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")	
 		F.Intrinsic.String.Split(v.Local.sSel,"*!*",v.Local.sSEL)
 		V.Local.iCnt.Set(V.Local.sSel.UBound)
+		F.Intrinsic.Math.Add(V.Local.iCnt,1,V.Local.iTotal)
+		V.Local.sSent.Set("")
 		F.Intrinsic.Control.For(v.Local.i,0,V.Local.iCnt)
-			'Print BOL
-			f.Global.General.CallWrapperSync(910060,v.DataTable.dtLoadbol(v.Local.sSel(v.Local.i)).WAY_BILL!FieldValTRIM)
-			'8/20/26 BS - 5s delay between BOL prints; 1s Sleep ticks pump the message loop (not SleepMS)
-			F.Intrinsic.Control.If(V.Local.i,<,V.Local.iCnt)
-				V.Local.sRet.Set("Waiting 5 seconds before next BOL print...")
+			' [7546] - Custom Bugs - 11/11/2026 - Name each BOL. This wrapper has no Status to read.
+			V.Local.sThis.Set(v.DataTable.dtLoadbol(v.Local.sSel(v.Local.i)).WAY_BILL!FieldValTrim)
+			F.Intrinsic.Math.Add(V.Local.i,1,V.Local.iShow)
+			F.Intrinsic.String.Build("Printing BOL {0} ({1} of {2})...",V.Local.sThis,V.Local.iShow,V.Local.iTotal,V.Local.sRet)
+			F.Intrinsic.Control.If(V.Local.i,=,0)
 				F.Intrinsic.UI.InvokeWaitDialog(V.Local.sRet)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.UI.ChangeWaitStatus(V.Local.sRet)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.UI.DoEvents
+			F.Global.General.CallWrapperSync(910060,v.DataTable.dtLoadbol(v.Local.sSel(v.Local.i)).WAY_BILL!FieldValTRIM)
+			F.Intrinsic.Control.If(V.Local.sSent,=,"")
+				V.Local.sSent.Set(V.Local.sThis)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.String.Build("{0}, {1}",V.Local.sSent,V.Local.sThis,V.Local.sSent)
+			F.Intrinsic.Control.EndIf
+			'-- 5 seconds between BOLs. Sleep pumps the print; do not use SleepMS.
+			F.Intrinsic.Control.If(V.Local.i,<,V.Local.iCnt)
+				V.Local.sNext.Set(v.DataTable.dtLoadbol(v.Local.sSel(V.Local.iShow)).WAY_BILL!FieldValTrim)
 				F.Intrinsic.Control.For(V.Local.iWait,1,5)
 					F.Intrinsic.Math.Sub(6,V.Local.iWait,V.Local.iLeft)
-					F.Intrinsic.String.Build("Waiting {0} seconds before next BOL print...",V.Local.iLeft,V.Local.sRet)
+					F.Intrinsic.String.Build("Sent {0} ({1} of {2}). Waiting {3} seconds before {4}.",V.Local.sThis,V.Local.iShow,V.Local.iTotal,V.Local.iLeft,V.Local.sNext,V.Local.sRet)
 					F.Intrinsic.UI.ChangeWaitStatus(V.Local.sRet)
 					F.Intrinsic.UI.Sleep(1)
 					F.Intrinsic.UI.DoEvents
 				F.Intrinsic.Control.Next(V.Local.iWait)
-				F.Intrinsic.UI.CloseWaitDialog
 			F.Intrinsic.Control.EndIf
-		F.Intrinsic.Control.Next(v.Local.i)	
+		F.Intrinsic.Control.Next(v.Local.i)
+		F.Intrinsic.UI.CloseWaitDialog
+		F.Intrinsic.String.Build("Sent these BOLs: {0}",V.Local.sSent,V.Local.sRet)
+		F.Intrinsic.UI.Msgbox(V.Local.sRet)
 f.Intrinsic.Control.Else
 	F.Intrinsic.UI.Msgbox("No BOL/Waybill number found for the selected rows. Please ensure a BOL exists before printing.  Click OK to Exit.","Warning")
 Function.Intrinsic.Control.EndIf
@@ -13389,6 +13469,6 @@ Program.Sub.SyncCarrierFromLoad.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20261110104354552$}$CursorSigned
-${$7$}$File Version:1.0.20261110184354.0
+${$6$}$bstevens$}$20261111083512133$}$CursorSigned
+${$7$}$File Version:1.0.20261111163512.0
 Program.Sub.Comments.End
