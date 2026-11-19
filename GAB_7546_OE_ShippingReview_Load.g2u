@@ -2259,8 +2259,6 @@ Program.Sub.LoadLoad.Start
 	
 	'Clean Truck_Type value in LOAD_PLAN table
 	f.Intrinsic.Control.CallSub("Clean_Load_Plan_TruckType")
-	'-- [POR020] - Custom Bugs - 11/19/2026 - Collapse duplicate unshipped order/lines before the Load grid reads them.
-	F.Intrinsic.Control.CallSub(CollapseLoadPlanDupes,"Order","")
 	
 	V.Global.bLoadData.Set(True)
 	f.Intrinsic.StringBuilder.Create("Query")
@@ -8810,8 +8808,6 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 		'F.Data.Datatable.SaveToDB("dtSaveOrderPicker","con","Load_Plan","ORDER_NO*!*ORDER_SUFFIX*!*ORDER_LINE",256,"CUSTOMER@!@CUSTOMER*!*ORDER_NO@!@ORDER_NO*!*ORDER_SUFFIX@!@ORDER_SUFFIX*!*ORDER_LINE@!@ORDER_LINE*!*PICK_BY_DATE@!@PICK_BY_DATE*!*PICKED@!@PICKED*!*SHIPPED@!@SHIPPED*!*Assigned_To@!@Assigned_To*!*MODIFIED_BY@!@MODIFIED_BY*!*MODIFIED_TIME@!@MODIFIED_TIME*!*MODIFIED_DATE@!@MODIFIED_DATE")
 		'loop through dtorderpicker
 
-		'-- [POR020] - Custom Bugs - 11/19/2026 - Remove duplicate suffixes before assigning this batch.
-		F.Intrinsic.Control.CallSub(CollapseLoadPlanDupes,"Order","")
 		f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dtSaveOrderPicker.RowCount--,1)
 			F.Intrinsic.Control.CallSub(SaveLoadPlanLine,"Customer",v.DataTable.dtSaveOrderPicker(v.Local.i).CUSTOMER!FIELDVAL,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"PickDate",v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,"Assigned",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,"ModBy",v.DataTable.dtSaveOrderPicker(v.Local.i).Modified_BY!FIELDVAL,"ModTime",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_TIME!FIELDVAL,"ModDate",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_DATE!FieldValPervasiveDate,"TargetLoad","0","SetReady","0")
 		f.Intrinsic.Control.Next(v.Local.i)
@@ -8927,8 +8923,6 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 		'F.Data.Datatable.SaveToDB("dtSaveOrderPicker","con","Load_Plan","ORDER_NO*!*ORDER_SUFFIX*!*ORDER_LINE",256,"CUSTOMER@!@CUSTOMER*!*ORDER_NO@!@ORDER_NO*!*ORDER_SUFFIX@!@ORDER_SUFFIX*!*ORDER_LINE@!@ORDER_LINE*!*PICK_BY_DATE@!@PICK_BY_DATE*!*PICKED@!@PICKED*!*SHIPPED@!@SHIPPED*!*Assigned_To@!@Assigned_To*!*MODIFIED_BY@!@MODIFIED_BY*!*MODIFIED_TIME@!@MODIFIED_TIME*!*MODIFIED_DATE@!@MODIFIED_DATE")
 		'loop through dtorderpicker
 
-		'-- [POR020] - Custom Bugs - 11/19/2026 - Remove duplicate suffixes before assigning this batch.
-		F.Intrinsic.Control.CallSub(CollapseLoadPlanDupes,"Order","")
 		f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dtSaveOrderPicker.RowCount--,1)
 			F.Intrinsic.Control.CallSub(SaveLoadPlanLine,"Customer",v.DataTable.dtSaveOrderPicker(v.Local.i).CUSTOMER!FIELDVAL,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"PickDate",v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,"Assigned",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,"ModBy",v.DataTable.dtSaveOrderPicker(v.Local.i).Modified_BY!FIELDVAL,"ModTime",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_TIME!FIELDVAL,"ModDate",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_DATE!FieldValPervasiveDate,"TargetLoad","9999","SetReady","1")
 			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"Load","9999","Keep","1")
@@ -9046,8 +9040,6 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 		'F.Data.Datatable.SaveToDB("dtSaveOrderPicker","con","Load_Plan","ORDER_NO*!*ORDER_SUFFIX*!*ORDER_LINE",256,"CUSTOMER@!@CUSTOMER*!*ORDER_NO@!@ORDER_NO*!*ORDER_SUFFIX@!@ORDER_SUFFIX*!*ORDER_LINE@!@ORDER_LINE*!*PICK_BY_DATE@!@PICK_BY_DATE*!*PICKED@!@PICKED*!*SHIPPED@!@SHIPPED*!*Assigned_To@!@Assigned_To*!*MODIFIED_BY@!@MODIFIED_BY*!*MODIFIED_TIME@!@MODIFIED_TIME*!*MODIFIED_DATE@!@MODIFIED_DATE")
 		'loop through dtorderpicker
 
-		'-- [POR020] - Custom Bugs - 11/19/2026 - Remove duplicate suffixes before assigning this batch.
-		F.Intrinsic.Control.CallSub(CollapseLoadPlanDupes,"Order","")
 		f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dtSaveOrderPicker.RowCount--,1)
 			F.Intrinsic.Control.CallSub(SaveLoadPlanLine,"Customer",v.DataTable.dtSaveOrderPicker(v.Local.i).CUSTOMER!FIELDVAL,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"PickDate",v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,"Assigned",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,"ModBy",v.DataTable.dtSaveOrderPicker(v.Local.i).Modified_BY!FIELDVAL,"ModTime",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_TIME!FIELDVAL,"ModDate",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_DATE!FieldValPervasiveDate,"TargetLoad","0","SetReady","0")
 		f.Intrinsic.Control.Next(v.Local.i)
@@ -9162,8 +9154,6 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 		'F.Data.Datatable.SaveToDB("dtSaveOrderPicker","con","Load_Plan","ORDER_NO*!*ORDER_SUFFIX*!*ORDER_LINE",256,"CUSTOMER@!@CUSTOMER*!*ORDER_NO@!@ORDER_NO*!*ORDER_SUFFIX@!@ORDER_SUFFIX*!*ORDER_LINE@!@ORDER_LINE*!*PICK_BY_DATE@!@PICK_BY_DATE*!*PICKED@!@PICKED*!*SHIPPED@!@SHIPPED*!*Assigned_To@!@Assigned_To*!*MODIFIED_BY@!@MODIFIED_BY*!*MODIFIED_TIME@!@MODIFIED_TIME*!*MODIFIED_DATE@!@MODIFIED_DATE")
 		'loop through dtorderpicker
 
-		'-- [POR020] - Custom Bugs - 11/19/2026 - Remove duplicate suffixes before assigning this batch.
-		F.Intrinsic.Control.CallSub(CollapseLoadPlanDupes,"Order","")
 		f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dtSaveOrderPicker.RowCount--,1)
 			F.Intrinsic.Control.CallSub(SaveLoadPlanLine,"Customer",v.DataTable.dtSaveOrderPicker(v.Local.i).CUSTOMER!FIELDVAL,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"PickDate",v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,"Assigned",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,"ModBy",v.DataTable.dtSaveOrderPicker(v.Local.i).Modified_BY!FIELDVAL,"ModTime",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_TIME!FIELDVAL,"ModDate",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_DATE!FieldValPervasiveDate,"TargetLoad","9999","SetReady","1")
 			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"Load","9999","Keep","1")
@@ -9266,8 +9256,6 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 			F.Data.Datatable.AddRow("dtSaveOrderPicker","CUSTOMER",v.DataTable.dtAllShip(v.Local.sSel(v.Local.i)).CUSTOMER!FieldVal,"ORDER_NO",v.DataTable.dtAllShip(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,"ORDER_SUFFIX",v.DataTable.dtAllShip(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!Fieldval,"ORDER_LINE",v.DataTable.dtAllShip(v.Local.sSel(v.Local.i)).ORDER_LINE!Fieldval,"PICK_BY_DATE",v.Local.dPickDate,"PICKED",0,"Shipped",0,"Assigned_To",v.Local.sRet(0).Trim,"MODIFIED_BY",v.Caller.User,"Modified_Time",v.Ambient.Time.FormatHh:Nn:Ss,"Modified_Date",v.Ambient.Date)
 		F.Intrinsic.Control.Next(v.Local.i)
 
-		'-- [POR020] - Custom Bugs - 11/19/2026 - Remove duplicate suffixes before assigning this batch.
-		F.Intrinsic.Control.CallSub(CollapseLoadPlanDupes,"Order","")
 		f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dtSaveOrderPicker.RowCount--,1)
 			F.Intrinsic.Control.CallSub(SaveLoadPlanLine,"Customer",v.DataTable.dtSaveOrderPicker(v.Local.i).CUSTOMER!FIELDVAL,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"PickDate",v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,"Assigned",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,"ModBy",v.DataTable.dtSaveOrderPicker(v.Local.i).Modified_BY!FIELDVAL,"ModTime",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_TIME!FIELDVAL,"ModDate",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_DATE!FieldValPervasiveDate,"TargetLoad","9999","SetReady","1")
 			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"Load","9999","Keep","1")
@@ -9382,8 +9370,6 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 			F.Data.Datatable.AddRow("dtSaveOrderPicker","CUSTOMER",v.DataTable.dtDueShip(v.Local.sSel(v.Local.i)).CUSTOMER!FieldVal,"ORDER_NO",v.DataTable.dtDueShip(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,"ORDER_SUFFIX",v.DataTable.dtDueShip(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!Fieldval,"ORDER_LINE",v.DataTable.dtDueShip(v.Local.sSel(v.Local.i)).ORDER_LINE!Fieldval,"PICK_BY_DATE",v.Local.dPickDate,"PICKED",0,"Shipped",0,"Assigned_To",v.Local.sRet(0).Trim,"MODIFIED_BY",v.Caller.User,"Modified_Time",v.Ambient.Time.FormatHh:Nn:Ss,"Modified_Date",v.Ambient.Date)
 		F.Intrinsic.Control.Next(v.Local.i)
 
-		'-- [POR020] - Custom Bugs - 11/19/2026 - Remove duplicate suffixes before assigning this batch.
-		F.Intrinsic.Control.CallSub(CollapseLoadPlanDupes,"Order","")
 		f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dtSaveOrderPicker.RowCount--,1)
 			F.Intrinsic.Control.CallSub(SaveLoadPlanLine,"Customer",v.DataTable.dtSaveOrderPicker(v.Local.i).CUSTOMER!FIELDVAL,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"PickDate",v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,"Assigned",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,"ModBy",v.DataTable.dtSaveOrderPicker(v.Local.i).Modified_BY!FIELDVAL,"ModTime",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_TIME!FIELDVAL,"ModDate",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_DATE!FieldValPervasiveDate,"TargetLoad","9999","SetReady","1")
 			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"Load","9999","Keep","1")
@@ -15731,6 +15717,6 @@ Program.Sub.Click_Sync_ControlTower.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20261119091327635$}$CursorSigned
-${$7$}$File Version:1.0.20261119171327.0
+${$6$}$bstevens$}$20261119093906497$}$CursorSigned
+${$7$}$File Version:1.0.20261119173906.0
 Program.Sub.Comments.End
