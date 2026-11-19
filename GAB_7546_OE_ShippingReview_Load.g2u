@@ -534,6 +534,54 @@ Gui.frmSplitLine..ContextMenuAddItem("CTXSPLIT","RemoveSplitPiece",0,"Remove Pie
 Gui.frmSplitLine..ContextMenuSetItemEventHandler("CTXSPLIT","RemoveSplitPiece","SplitSOLine_RemovePiece")
 Gui.frmSplitLine..ContextMenuAddItem("CTXSPLIT","ResetSplitColumns",0,"Reset Grid Serialization")
 Gui.frmSplitLine..ContextMenuSetItemEventHandler("CTXSPLIT","ResetSplitColumns","ResetSplitGridColumns")
+'7546 11/11/2026: Confirm pallet count and weight before a Control Tower send.
+Gui.frmCt..Create(BaseForm)
+Gui.frmCt..Caption("Send to Control Tower")
+Gui.frmCt..Size(18000,5600)
+Gui.frmCt..Position(0,0)
+Gui.frmCt..BackColor(-2147483633)
+Gui.frmCt..MaxButton(True)
+Gui.frmCt..MinButton(False)
+Gui.frmCt..MousePointer(0)
+Gui.frmCt..Event(UnLoad,frmCt_UnLoad)
+Gui.frmCt..Sizeable(True)
+Gui.frmCt..MinX(12000)
+Gui.frmCt..MinY(4000)
+Gui.frmCt..AlwaysOnTop(False)
+Gui.frmCt..FontName("Tahoma")
+Gui.frmCt..FontSize(8.25)
+Gui.frmCt..ControlBox(True)
+Gui.frmCt..Moveable(True)
+Gui.frmCt..ShowInTaskBar(True)
+Gui.frmCt..TitleBar(True)
+Gui.frmCt.lblCt.Create(Label,"Check the pallet count and weight. More than 12 pallets is a full truck and can be sent before the load is picked. Press Enter in a cell you change, then Send.",True,17600,400,0,120,60,True,0,"Arial",9,-2147483633,0,0)
+Gui.frmCt.lblCt.BorderStyle(0)
+Gui.frmCt.GsGCCt.Create(GsGridControl)
+Gui.frmCt.GsGCCt.Size(17600,3600)
+Gui.frmCt.GsGCCt.Position(120,500)
+Gui.frmCt.GsGCCt.Anchor(15)
+Gui.frmCt.GsGCCt.Enabled(True)
+Gui.frmCt.GsGCCt.Visible(True)
+Gui.frmCt.cmdCtSend.Create(Button)
+Gui.frmCt.cmdCtSend.Size(2200,450)
+Gui.frmCt.cmdCtSend.Position(12800,4300)
+Gui.frmCt.cmdCtSend.Anchor(10)
+Gui.frmCt.cmdCtSend.Caption("Send")
+Gui.frmCt.cmdCtSend.Event(Click,Click_CtSend)
+Gui.frmCt.cmdCtSend.Enabled(True)
+Gui.frmCt.cmdCtSend.Visible(True)
+Gui.frmCt.cmdCtSend.FontName("Tahoma")
+Gui.frmCt.cmdCtSend.FontSize(8.25)
+Gui.frmCt.cmdCtCancel.Create(Button)
+Gui.frmCt.cmdCtCancel.Size(2200,450)
+Gui.frmCt.cmdCtCancel.Position(15200,4300)
+Gui.frmCt.cmdCtCancel.Anchor(10)
+Gui.frmCt.cmdCtCancel.Caption("Cancel")
+Gui.frmCt.cmdCtCancel.Event(Click,Click_CtCancel)
+Gui.frmCt.cmdCtCancel.Enabled(True)
+Gui.frmCt.cmdCtCancel.Visible(True)
+Gui.frmCt.cmdCtCancel.FontName("Tahoma")
+Gui.frmCt.cmdCtCancel.FontSize(8.25)
 Program.Sub.ScreenSU.End
 
 Program.Sub.Preflight.Start
@@ -570,6 +618,48 @@ Program.Sub.Preflight.Start
 	V.Global.sPOPackPrinter.Declare(String,"")
 	v.Global.b5235.Declare
 	V.Global.b5055.Declare(Boolean,False)
+	'7546 11/11/2026: Control Tower send and sync. Declared before the Load menu is built.
+	V.Global.bCtCompany.Declare(Boolean,False)
+	V.Global.bCtContact.Declare(Boolean,False)
+	V.Global.bCtOk.Declare(Boolean,False)
+	V.Global.bCtSend.Declare(Boolean,False)
+	V.Global.sCtClean.Declare(String,"")
+	V.Global.sCtAlpha.Declare(String,"")
+	V.Global.sCtFirst.Declare(String,"")
+	V.Global.sCtLast.Declare(String,"")
+	V.Global.sCtPhone.Declare(String,"")
+	V.Global.sCtEmail.Declare(String,"")
+	V.Global.sCtMessage.Declare(String,"")
+	V.Global.sCtJson.Declare(String,"")
+	V.Global.sCtShort.Declare(String,"")
+	V.Global.sCtCode.Declare(String,"")
+	V.Global.sCtBody.Declare(String,"")
+	V.Global.sCtToken.Declare(String,"")
+	V.Global.dCtExpire.Declare(Date)
+	F.Intrinsic.Date.DateSerial(1900,1,1,V.Global.dCtExpire)
+	V.Global.sCtHost.Declare(String,"")
+	V.Global.sCtAudNote.Declare(String,"")
+	V.Global.sCtJoined.Declare(String,"")
+	V.Global.sCtLoad.Declare(String,"")
+	V.Global.sCtOrigin.Declare(String,"")
+	V.Global.sCtDest.Declare(String,"")
+	V.Global.sCtWhen.Declare(String,"")
+	V.Global.sCtPo.Declare(String,"")
+	V.Global.sCtStaged.Declare(String,"")
+	V.Global.sCtPallets.Declare(String,"")
+	V.Global.sCtWeight.Declare(String,"")
+	V.Global.sCtMode.Declare(String,"")
+	V.Global.sCtDesc.Declare(String,"")
+	V.Global.sCtOFirst.Declare(String,"")
+	V.Global.sCtOLast.Declare(String,"")
+	V.Global.sCtOPhone.Declare(String,"")
+	V.Global.sCtOEmail.Declare(String,"")
+	V.Global.sCtDFirst.Declare(String,"")
+	V.Global.sCtDLast.Declare(String,"")
+	V.Global.sCtDPhone.Declare(String,"")
+	V.Global.sCtDEmail.Declare(String,"")
+	V.Global.sCtId.Declare(String,"")
+	V.Global.sCtGridBound.Declare(String,"")
 	V.Global.bCarrierPalletLab.Declare(Boolean,False)
 	V.Global.bLpnCartonBound.Declare(Boolean,False)
 	V.Global.bLpnPalletBound.Declare(Boolean,False)
@@ -591,6 +681,10 @@ Program.Sub.Preflight.Start
 	V.Global.sFrtClassNMFC.Declare
 	V.Global.sFrtClassWarned.Declare
 	V.Global.sFrtClassWtPallets.Declare
+	'11/13/26 BS - Packing list pause is 5 seconds times the copy count. 2 copies is the fallback.
+	V.Global.iPlCopies.Declare(Long,2)
+	V.Global.iPlPause.Declare(Long,10)
+	V.Global.sPlCopyNote.Declare(String,"2 copies assumed")
 Program.Sub.Preflight.End
 Program.Sub.Main.Start
 	F.Intrinsic.Control.Try
@@ -696,6 +790,7 @@ Program.Sub.Main.End
 Program.Sub.frmShip_UnLoad.Start
 	F.Intrinsic.Control.Try
 	V.Local.sError.Declare
+	F.Intrinsic.Control.CallSub(Ct_DropToken)
 	
 	F.Intrinsic.Control.If(V.Global.bLoadData)
 		F.Intrinsic.Control.CallSub(Serialize)
@@ -979,6 +1074,14 @@ Program.Sub.SetContextMenus.Start
 			Gui.frmShip..ContextMenuSetItemEventHandler(V.Local.sContextMenuName,"RefreshLoad","Click_Refresh_Load")
 			Gui.frmShip..ContextMenuAddItem(V.Local.sContextMenuName,"ApplyShipDate",0,"Apply ship date to paperwork")
 			Gui.frmShip..ContextMenuSetItemEventHandler(V.Local.sContextMenuName,"ApplyShipDate","Click_ApplyShipDate")
+			'7546 11/11/2026: Control Tower send and sync. PLA and UDF only.
+			F.Intrinsic.Control.CallSub(Ct_CompanyOk)
+			F.Intrinsic.Control.If(V.Global.bCtCompany,=,True)
+				Gui.frmShip..ContextMenuAddItem(V.Local.sContextMenuName,"SendControlTower",0,"Send to Control Tower")
+				Gui.frmShip..ContextMenuSetItemEventHandler(V.Local.sContextMenuName,"SendControlTower","Click_Send_ControlTower")
+				Gui.frmShip..ContextMenuAddItem(V.Local.sContextMenuName,"SyncControlTower",0,"Sync load status")
+				Gui.frmShip..ContextMenuSetItemEventHandler(V.Local.sContextMenuName,"SyncControlTower","Click_Sync_ControlTower")
+			F.Intrinsic.Control.EndIf
 		F.Intrinsic.Control.EndIf
 		Gui.frmShip..ContextMenuSetItemEventHandler(V.Local.sContextMenuName,"Export","ExportGrids")
 		Gui.frmShip..ContextMenuSetItemEventHandler(V.Local.sContextMenuName,"ResetColumns","ResetGridColumns")
@@ -2156,6 +2259,8 @@ Program.Sub.LoadLoad.Start
 	
 	'Clean Truck_Type value in LOAD_PLAN table
 	f.Intrinsic.Control.CallSub("Clean_Load_Plan_TruckType")
+	'-- [POR020] - Custom Bugs - 11/19/2026 - Collapse duplicate unshipped order/lines before the Load grid reads them.
+	F.Intrinsic.Control.CallSub(CollapseLoadPlanDupes,"Order","")
 	
 	V.Global.bLoadData.Set(True)
 	f.Intrinsic.StringBuilder.Create("Query")
@@ -8705,17 +8810,10 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 		'F.Data.Datatable.SaveToDB("dtSaveOrderPicker","con","Load_Plan","ORDER_NO*!*ORDER_SUFFIX*!*ORDER_LINE",256,"CUSTOMER@!@CUSTOMER*!*ORDER_NO@!@ORDER_NO*!*ORDER_SUFFIX@!@ORDER_SUFFIX*!*ORDER_LINE@!@ORDER_LINE*!*PICK_BY_DATE@!@PICK_BY_DATE*!*PICKED@!@PICKED*!*SHIPPED@!@SHIPPED*!*Assigned_To@!@Assigned_To*!*MODIFIED_BY@!@MODIFIED_BY*!*MODIFIED_TIME@!@MODIFIED_TIME*!*MODIFIED_DATE@!@MODIFIED_DATE")
 		'loop through dtorderpicker
 
+		'-- [POR020] - Custom Bugs - 11/19/2026 - Remove duplicate suffixes before assigning this batch.
+		F.Intrinsic.Control.CallSub(CollapseLoadPlanDupes,"Order","")
 		f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dtSaveOrderPicker.RowCount--,1)
-			F.Intrinsic.String.Build("Select * From LOAD_PLAN Where ORDER_NO ='{0}' And ORDER_SUFFIX = '{1}' And ORDER_LINe ='{2}'",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!Fieldval,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!Fieldval,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!Fieldval,v.Local.sSQL)
-			f.ODBC.Connection!con.OpenLocalRecordsetRO("rstORD",v.Local.ssql)
-			Function.Intrinsic.Control.If(v.ODBC.con!rstORD.EOF,=,True)
-				F.Intrinsic.String.Build("Insert Into Load_PLan (Customer,ORDER_NO,ORDER_SUFFIX,ORDER_LINE,LOAD_NO,LOAD_SEQ,CARRIER,CARRIER_LOAD_NUM,CARRIER_TRAILER,TRUCK_TYPE,STAGING_BIN,BIN_LOC,PICK_BY_DATE,SHIP_DATE,ASSIGNED_TO,PICKED,DOCK_NO,PICKUP_TIME,DROPOFF_TIME,NOTES,SHIPPED,MOBILE_SEQUENCE,MODIFIED_BY,MODIFIED_TIME,MODIFIED_DATE) VALUES('{0}','{1}','{2}','{3}','0','0','','','','-1','','','{4}','1900-01-01','{5}',0,'','1900-01-01 12:00:00','1900-01-01 12:00:00','','0','0','{6}','{7}','{8}')",v.DataTable.dtSaveOrderPicker(v.Local.i).CUSTOMER!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).Modified_BY!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_TIME!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_DATE!FieldValPervasiveDate,v.Local.sSQL) 
-				
-			Function.Intrinsic.Control.Else
-				F.Intrinsic.String.Build("Update Load_Plan Set Assigned_To = '{0}',PICK_BY_DATE ='{1}',Modified_By = '{2}', MODIFIED_TIME = '{3}',Modified_Date = '{4}' Where ORDER_NO = '{5}' And ORDER_SUFFIX = '{6}' ANd ORDER_LINE = '{7}'",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_BY!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Time!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Date!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,v.Local.sSQL)				
-			Function.Intrinsic.Control.EndIf
-			f.ODBC.Connection!con.Execute(v.Local.sSQL)
-			F.ODBC.con!rstORD.Close
+			F.Intrinsic.Control.CallSub(SaveLoadPlanLine,"Customer",v.DataTable.dtSaveOrderPicker(v.Local.i).CUSTOMER!FIELDVAL,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"PickDate",v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,"Assigned",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,"ModBy",v.DataTable.dtSaveOrderPicker(v.Local.i).Modified_BY!FIELDVAL,"ModTime",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_TIME!FIELDVAL,"ModDate",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_DATE!FieldValPervasiveDate,"TargetLoad","0","SetReady","0")
 		f.Intrinsic.Control.Next(v.Local.i)
 		
 		F.Data.Datatable.Close("dtSaveOrderPicker")
@@ -8829,17 +8927,11 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 		'F.Data.Datatable.SaveToDB("dtSaveOrderPicker","con","Load_Plan","ORDER_NO*!*ORDER_SUFFIX*!*ORDER_LINE",256,"CUSTOMER@!@CUSTOMER*!*ORDER_NO@!@ORDER_NO*!*ORDER_SUFFIX@!@ORDER_SUFFIX*!*ORDER_LINE@!@ORDER_LINE*!*PICK_BY_DATE@!@PICK_BY_DATE*!*PICKED@!@PICKED*!*SHIPPED@!@SHIPPED*!*Assigned_To@!@Assigned_To*!*MODIFIED_BY@!@MODIFIED_BY*!*MODIFIED_TIME@!@MODIFIED_TIME*!*MODIFIED_DATE@!@MODIFIED_DATE")
 		'loop through dtorderpicker
 
+		'-- [POR020] - Custom Bugs - 11/19/2026 - Remove duplicate suffixes before assigning this batch.
+		F.Intrinsic.Control.CallSub(CollapseLoadPlanDupes,"Order","")
 		f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dtSaveOrderPicker.RowCount--,1)
-			F.Intrinsic.String.Build("Select * From LOAD_PLAN Where ORDER_NO ='{0}' And ORDER_SUFFIX = '{1}' And ORDER_LINe ='{2}'",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!Fieldval,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!Fieldval,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!Fieldval,v.Local.sSQL)
-			f.ODBC.Connection!con.OpenLocalRecordsetRO("rstORD",v.Local.ssql)
-			Function.Intrinsic.Control.If(v.ODBC.con!rstORD.EOF,=,True)
-				F.Intrinsic.String.Build("Insert Into Load_PLan (Customer,ORDER_NO,ORDER_SUFFIX,ORDER_LINE,LOAD_NO,LOAD_SEQ,CARRIER,CARRIER_LOAD_NUM,CARRIER_TRAILER,TRUCK_TYPE,STAGING_BIN,BIN_LOC,PICK_BY_DATE,SHIP_DATE,ASSIGNED_TO,PICKED,DOCK_NO,PICKUP_TIME,DROPOFF_TIME,NOTES,SHIPPED,MOBILE_SEQUENCE,MODIFIED_BY,MODIFIED_TIME,MODIFIED_DATE,PCKLST_DISP_FLAG) VALUES('{0}','{1}','{2}','{3}','9999','0','','','','-1','','','{4}','1900-01-01','{5}',0,'','1900-01-01 12:00:00','1900-01-01 12:00:00','','0','0','{6}','{7}','{8}',1)",v.DataTable.dtSaveOrderPicker(v.Local.i).CUSTOMER!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).Modified_BY!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_TIME!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_DATE!FieldValPervasiveDate,v.Local.sSQL) 
-			Function.Intrinsic.Control.Else
-				F.Intrinsic.String.Build("Update Load_Plan Set Assigned_To = '{0}',PICK_BY_DATE ='{1}',Modified_By = '{2}', MODIFIED_TIME = '{3}',Modified_Date = '{4}',Load_No = 9999,PCKLST_DISP_FLAG = 1 Where ORDER_NO = '{5}' And ORDER_SUFFIX = '{6}' ANd ORDER_LINE = '{7}' AND LOAD_NO = 0",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_BY!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Time!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Date!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,v.Local.sSQL)				
-			Function.Intrinsic.Control.EndIf
-			f.ODBC.Connection!con.Execute(v.Local.sSQL)
+			F.Intrinsic.Control.CallSub(SaveLoadPlanLine,"Customer",v.DataTable.dtSaveOrderPicker(v.Local.i).CUSTOMER!FIELDVAL,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"PickDate",v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,"Assigned",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,"ModBy",v.DataTable.dtSaveOrderPicker(v.Local.i).Modified_BY!FIELDVAL,"ModTime",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_TIME!FIELDVAL,"ModDate",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_DATE!FieldValPervasiveDate,"TargetLoad","9999","SetReady","1")
 			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"Load","9999","Keep","1")
-			F.ODBC.con!rstORD.Close
 		f.Intrinsic.Control.Next(v.Local.i)
 		
 		F.Data.Datatable.Close("dtSaveOrderPicker")
@@ -8954,17 +9046,10 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 		'F.Data.Datatable.SaveToDB("dtSaveOrderPicker","con","Load_Plan","ORDER_NO*!*ORDER_SUFFIX*!*ORDER_LINE",256,"CUSTOMER@!@CUSTOMER*!*ORDER_NO@!@ORDER_NO*!*ORDER_SUFFIX@!@ORDER_SUFFIX*!*ORDER_LINE@!@ORDER_LINE*!*PICK_BY_DATE@!@PICK_BY_DATE*!*PICKED@!@PICKED*!*SHIPPED@!@SHIPPED*!*Assigned_To@!@Assigned_To*!*MODIFIED_BY@!@MODIFIED_BY*!*MODIFIED_TIME@!@MODIFIED_TIME*!*MODIFIED_DATE@!@MODIFIED_DATE")
 		'loop through dtorderpicker
 
+		'-- [POR020] - Custom Bugs - 11/19/2026 - Remove duplicate suffixes before assigning this batch.
+		F.Intrinsic.Control.CallSub(CollapseLoadPlanDupes,"Order","")
 		f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dtSaveOrderPicker.RowCount--,1)
-			F.Intrinsic.String.Build("Select * From LOAD_PLAN Where ORDER_NO ='{0}' And ORDER_SUFFIX = '{1}' And ORDER_LINe ='{2}'",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!Fieldval,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!Fieldval,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!Fieldval,v.Local.sSQL)
-			f.ODBC.Connection!con.OpenLocalRecordsetRO("rstORD",v.Local.ssql)
-			Function.Intrinsic.Control.If(v.ODBC.con!rstORD.EOF,=,True)
-				F.Intrinsic.String.Build("Insert Into Load_PLan (Customer,ORDER_NO,ORDER_SUFFIX,ORDER_LINE,LOAD_NO,LOAD_SEQ,CARRIER,CARRIER_LOAD_NUM,CARRIER_TRAILER,TRUCK_TYPE,STAGING_BIN,BIN_LOC,PICK_BY_DATE,SHIP_DATE,ASSIGNED_TO,PICKED,DOCK_NO,PICKUP_TIME,DROPOFF_TIME,NOTES,SHIPPED,MOBILE_SEQUENCE,MODIFIED_BY,MODIFIED_TIME,MODIFIED_DATE) VALUES('{0}','{1}','{2}','{3}','0','0','','','','-1','','','{4}','1900-01-01','{5}',0,'','1900-01-01 12:00:00','1900-01-01 12:00:00','','0','0','{6}','{7}','{8}')",v.DataTable.dtSaveOrderPicker(v.Local.i).CUSTOMER!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).Modified_BY!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_TIME!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_DATE!FieldValPervasiveDate,v.Local.sSQL) 
-				
-			Function.Intrinsic.Control.Else
-				F.Intrinsic.String.Build("Update Load_Plan Set Assigned_To = '{0}',PICK_BY_DATE ='{1}',Modified_By = '{2}', MODIFIED_TIME = '{3}',Modified_Date = '{4}' Where ORDER_NO = '{5}' And ORDER_SUFFIX = '{6}' ANd ORDER_LINE = '{7}'",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_BY!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Time!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Date!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,v.Local.sSQL)				
-			Function.Intrinsic.Control.EndIf
-			f.ODBC.Connection!con.Execute(v.Local.sSQL)
-			F.ODBC.con!rstORD.Close
+			F.Intrinsic.Control.CallSub(SaveLoadPlanLine,"Customer",v.DataTable.dtSaveOrderPicker(v.Local.i).CUSTOMER!FIELDVAL,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"PickDate",v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,"Assigned",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,"ModBy",v.DataTable.dtSaveOrderPicker(v.Local.i).Modified_BY!FIELDVAL,"ModTime",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_TIME!FIELDVAL,"ModDate",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_DATE!FieldValPervasiveDate,"TargetLoad","0","SetReady","0")
 		f.Intrinsic.Control.Next(v.Local.i)
 		
 		F.Data.Datatable.Close("dtSaveOrderPicker")
@@ -9077,18 +9162,11 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 		'F.Data.Datatable.SaveToDB("dtSaveOrderPicker","con","Load_Plan","ORDER_NO*!*ORDER_SUFFIX*!*ORDER_LINE",256,"CUSTOMER@!@CUSTOMER*!*ORDER_NO@!@ORDER_NO*!*ORDER_SUFFIX@!@ORDER_SUFFIX*!*ORDER_LINE@!@ORDER_LINE*!*PICK_BY_DATE@!@PICK_BY_DATE*!*PICKED@!@PICKED*!*SHIPPED@!@SHIPPED*!*Assigned_To@!@Assigned_To*!*MODIFIED_BY@!@MODIFIED_BY*!*MODIFIED_TIME@!@MODIFIED_TIME*!*MODIFIED_DATE@!@MODIFIED_DATE")
 		'loop through dtorderpicker
 
+		'-- [POR020] - Custom Bugs - 11/19/2026 - Remove duplicate suffixes before assigning this batch.
+		F.Intrinsic.Control.CallSub(CollapseLoadPlanDupes,"Order","")
 		f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dtSaveOrderPicker.RowCount--,1)
-			F.Intrinsic.String.Build("Select * From LOAD_PLAN Where ORDER_NO ='{0}' And ORDER_SUFFIX = '{1}' And ORDER_LINe ='{2}'",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!Fieldval,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!Fieldval,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!Fieldval,v.Local.sSQL)
-			f.ODBC.Connection!con.OpenLocalRecordsetRO("rstORD",v.Local.ssql)
-			Function.Intrinsic.Control.If(v.ODBC.con!rstORD.EOF,=,True)
-				F.Intrinsic.String.Build("Insert Into Load_PLan (Customer,ORDER_NO,ORDER_SUFFIX,ORDER_LINE,LOAD_NO,LOAD_SEQ,CARRIER,CARRIER_LOAD_NUM,CARRIER_TRAILER,TRUCK_TYPE,STAGING_BIN,BIN_LOC,PICK_BY_DATE,SHIP_DATE,ASSIGNED_TO,PICKED,DOCK_NO,PICKUP_TIME,DROPOFF_TIME,NOTES,SHIPPED,MOBILE_SEQUENCE,MODIFIED_BY,MODIFIED_TIME,MODIFIED_DATE,PCKLST_DISP_FLAG) VALUES('{0}','{1}','{2}','{3}','9999','0','','','','-1','','','{4}','1900-01-01','{5}',0,'','1900-01-01 12:00:00','1900-01-01 12:00:00','','0','0','{6}','{7}','{8}',1)",v.DataTable.dtSaveOrderPicker(v.Local.i).CUSTOMER!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).Modified_BY!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_TIME!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_DATE!FieldValPervasiveDate,v.Local.sSQL) 
-				
-			Function.Intrinsic.Control.Else
-				F.Intrinsic.String.Build("Update Load_Plan Set Assigned_To = '{0}',PICK_BY_DATE ='{1}',Modified_By = '{2}', MODIFIED_TIME = '{3}',Modified_Date = '{4}',Load_No = 9999, ,PCKLST_DISP_FLAG = 1 Where ORDER_NO = '{5}' And ORDER_SUFFIX = '{6}' ANd ORDER_LINE = '{7}' and LOAD_NO = 0",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_BY!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Time!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Date!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,v.Local.sSQL)				
-			Function.Intrinsic.Control.EndIf
-			f.ODBC.Connection!con.Execute(v.Local.sSQL)
+			F.Intrinsic.Control.CallSub(SaveLoadPlanLine,"Customer",v.DataTable.dtSaveOrderPicker(v.Local.i).CUSTOMER!FIELDVAL,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"PickDate",v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,"Assigned",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,"ModBy",v.DataTable.dtSaveOrderPicker(v.Local.i).Modified_BY!FIELDVAL,"ModTime",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_TIME!FIELDVAL,"ModDate",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_DATE!FieldValPervasiveDate,"TargetLoad","9999","SetReady","1")
 			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"Load","9999","Keep","1")
-			F.ODBC.con!rstORD.Close
 		f.Intrinsic.Control.Next(v.Local.i)
 		
 		F.Data.Datatable.Close("dtSaveOrderPicker")
@@ -9188,17 +9266,11 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 			F.Data.Datatable.AddRow("dtSaveOrderPicker","CUSTOMER",v.DataTable.dtAllShip(v.Local.sSel(v.Local.i)).CUSTOMER!FieldVal,"ORDER_NO",v.DataTable.dtAllShip(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,"ORDER_SUFFIX",v.DataTable.dtAllShip(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!Fieldval,"ORDER_LINE",v.DataTable.dtAllShip(v.Local.sSel(v.Local.i)).ORDER_LINE!Fieldval,"PICK_BY_DATE",v.Local.dPickDate,"PICKED",0,"Shipped",0,"Assigned_To",v.Local.sRet(0).Trim,"MODIFIED_BY",v.Caller.User,"Modified_Time",v.Ambient.Time.FormatHh:Nn:Ss,"Modified_Date",v.Ambient.Date)
 		F.Intrinsic.Control.Next(v.Local.i)
 
+		'-- [POR020] - Custom Bugs - 11/19/2026 - Remove duplicate suffixes before assigning this batch.
+		F.Intrinsic.Control.CallSub(CollapseLoadPlanDupes,"Order","")
 		f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dtSaveOrderPicker.RowCount--,1)
-			F.Intrinsic.String.Build("Select * From LOAD_PLAN Where ORDER_NO ='{0}' And ORDER_SUFFIX = '{1}' And ORDER_LINe ='{2}'",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!Fieldval,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!Fieldval,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!Fieldval,v.Local.sSQL)
-			f.ODBC.Connection!con.OpenLocalRecordsetRO("rstORD",v.Local.ssql)
-			Function.Intrinsic.Control.If(v.ODBC.con!rstORD.EOF,=,True)
-				F.Intrinsic.String.Build("Insert Into Load_PLan (Customer,ORDER_NO,ORDER_SUFFIX,ORDER_LINE,LOAD_NO,LOAD_SEQ,CARRIER,CARRIER_LOAD_NUM,CARRIER_TRAILER,TRUCK_TYPE,STAGING_BIN,BIN_LOC,PICK_BY_DATE,SHIP_DATE,ASSIGNED_TO,PICKED,DOCK_NO,PICKUP_TIME,DROPOFF_TIME,NOTES,SHIPPED,MOBILE_SEQUENCE,MODIFIED_BY,MODIFIED_TIME,MODIFIED_DATE,PCKLST_DISP_FLAG) VALUES('{0}','{1}','{2}','{3}','9999','0','','','','-1','','','{4}','1900-01-01','{5}',0,'','1900-01-01 12:00:00','1900-01-01 12:00:00','','0','0','{6}','{7}','{8}',1)",v.DataTable.dtSaveOrderPicker(v.Local.i).CUSTOMER!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).Modified_BY!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_TIME!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_DATE!FieldValPervasiveDate,v.Local.sSQL)
-			Function.Intrinsic.Control.Else
-				F.Intrinsic.String.Build("Update Load_Plan Set Assigned_To = '{0}',PICK_BY_DATE ='{1}',Modified_By = '{2}', MODIFIED_TIME = '{3}',Modified_Date = '{4}',Load_No = 9999,PCKLST_DISP_FLAG = 1 Where ORDER_NO = '{5}' And ORDER_SUFFIX = '{6}' ANd ORDER_LINE = '{7}' AND LOAD_NO = 0",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_BY!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Time!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Date!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,v.Local.sSQL)
-			Function.Intrinsic.Control.EndIf
-			f.ODBC.Connection!con.Execute(v.Local.sSQL)
+			F.Intrinsic.Control.CallSub(SaveLoadPlanLine,"Customer",v.DataTable.dtSaveOrderPicker(v.Local.i).CUSTOMER!FIELDVAL,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"PickDate",v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,"Assigned",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,"ModBy",v.DataTable.dtSaveOrderPicker(v.Local.i).Modified_BY!FIELDVAL,"ModTime",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_TIME!FIELDVAL,"ModDate",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_DATE!FieldValPervasiveDate,"TargetLoad","9999","SetReady","1")
 			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"Load","9999","Keep","1")
-			F.ODBC.con!rstORD.Close
 		f.Intrinsic.Control.Next(v.Local.i)
 
 		'Print pick list for each order line assigned to load 9999
@@ -9310,17 +9382,11 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 			F.Data.Datatable.AddRow("dtSaveOrderPicker","CUSTOMER",v.DataTable.dtDueShip(v.Local.sSel(v.Local.i)).CUSTOMER!FieldVal,"ORDER_NO",v.DataTable.dtDueShip(v.Local.sSel(v.Local.i)).ORDER_NO!FieldVal,"ORDER_SUFFIX",v.DataTable.dtDueShip(v.Local.sSel(v.Local.i)).ORDER_SUFFIX!Fieldval,"ORDER_LINE",v.DataTable.dtDueShip(v.Local.sSel(v.Local.i)).ORDER_LINE!Fieldval,"PICK_BY_DATE",v.Local.dPickDate,"PICKED",0,"Shipped",0,"Assigned_To",v.Local.sRet(0).Trim,"MODIFIED_BY",v.Caller.User,"Modified_Time",v.Ambient.Time.FormatHh:Nn:Ss,"Modified_Date",v.Ambient.Date)
 		F.Intrinsic.Control.Next(v.Local.i)
 
+		'-- [POR020] - Custom Bugs - 11/19/2026 - Remove duplicate suffixes before assigning this batch.
+		F.Intrinsic.Control.CallSub(CollapseLoadPlanDupes,"Order","")
 		f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dtSaveOrderPicker.RowCount--,1)
-			F.Intrinsic.String.Build("Select * From LOAD_PLAN Where ORDER_NO ='{0}' And ORDER_SUFFIX = '{1}' And ORDER_LINe ='{2}'",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!Fieldval,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!Fieldval,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!Fieldval,v.Local.sSQL)
-			f.ODBC.Connection!con.OpenLocalRecordsetRO("rstORD",v.Local.ssql)
-			Function.Intrinsic.Control.If(v.ODBC.con!rstORD.EOF,=,True)
-				F.Intrinsic.String.Build("Insert Into Load_PLan (Customer,ORDER_NO,ORDER_SUFFIX,ORDER_LINE,LOAD_NO,LOAD_SEQ,CARRIER,CARRIER_LOAD_NUM,CARRIER_TRAILER,TRUCK_TYPE,STAGING_BIN,BIN_LOC,PICK_BY_DATE,SHIP_DATE,ASSIGNED_TO,PICKED,DOCK_NO,PICKUP_TIME,DROPOFF_TIME,NOTES,SHIPPED,MOBILE_SEQUENCE,MODIFIED_BY,MODIFIED_TIME,MODIFIED_DATE,PCKLST_DISP_FLAG) VALUES('{0}','{1}','{2}','{3}','9999','0','','','','-1','','','{4}','1900-01-01','{5}',0,'','1900-01-01 12:00:00','1900-01-01 12:00:00','','0','0','{6}','{7}','{8}',1)",v.DataTable.dtSaveOrderPicker(v.Local.i).CUSTOMER!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).Modified_BY!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_TIME!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_DATE!FieldValPervasiveDate,v.Local.sSQL)
-			Function.Intrinsic.Control.Else
-				F.Intrinsic.String.Build("Update Load_Plan Set Assigned_To = '{0}',PICK_BY_DATE ='{1}',Modified_By = '{2}', MODIFIED_TIME = '{3}',Modified_Date = '{4}',Load_No = 9999,PCKLST_DISP_FLAG = 1 Where ORDER_NO = '{5}' And ORDER_SUFFIX = '{6}' ANd ORDER_LINE = '{7}' AND LOAD_NO = 0",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_BY!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Time!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).modified_Date!FieldValPervasiveDate,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,v.Local.sSQL)
-			Function.Intrinsic.Control.EndIf
-			f.ODBC.Connection!con.Execute(v.Local.sSQL)
+			F.Intrinsic.Control.CallSub(SaveLoadPlanLine,"Customer",v.DataTable.dtSaveOrderPicker(v.Local.i).CUSTOMER!FIELDVAL,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"PickDate",v.DataTable.dtSaveOrderPicker(v.Local.i).PICK_BY_DATE!FieldValPervasiveDate,"Assigned",v.DataTable.dtSaveOrderPicker(v.Local.i).ASSIGNED_TO!FIELDVAL,"ModBy",v.DataTable.dtSaveOrderPicker(v.Local.i).Modified_BY!FIELDVAL,"ModTime",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_TIME!FIELDVAL,"ModDate",v.DataTable.dtSaveOrderPicker(v.Local.i).MODIFIED_DATE!FieldValPervasiveDate,"TargetLoad","9999","SetReady","1")
 			F.Intrinsic.Control.CallSub(RecordPickQueue,"Order",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_NO!FIELDVAL,"Suffix",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_SUFFIX!FIELDVAL,"Line",v.DataTable.dtSaveOrderPicker(v.Local.i).ORDER_LINE!FIELDVAL,"Load","9999","Keep","1")
-			F.ODBC.con!rstORD.Close
 		f.Intrinsic.Control.Next(v.Local.i)
 
 		'Print pick list for each order line assigned to load 9999
@@ -10341,6 +10407,8 @@ V.Local.sHdrSuffix.Declare
 V.Local.sNowStamp.Declare
 V.Local.sDateChg.Declare
 V.Local.sTimeChg.Declare
+V.Local.sSeen.Declare(String)
+V.Local.sLoadShip.Declare(String)
 
 v.Local.sUserID.Set(v.Caller.user)
 
@@ -10460,35 +10528,47 @@ f.Intrinsic.Control.endif
 f.Data.Datatable.Close("dtloadShipv")
 
 f.Data.DataView.ToDataTable("dtload","dvloadship","dtloadship0",True)
-v.local.iCnt.Set(0)	
+v.local.iCnt.Set(0)
+'-- [POR020] - Custom Bugs - 11/19/2026 - Collapse duplicate suffixes before any shipped flag is written, and only flag the load being shipped.
+F.Data.Dictionary.Create("dShipSeen")
+F.Data.Dictionary.SetDefaultReturn("dShipSeen","")
 F.Intrinsic.Control.For(V.Local.iCnt,0,v.DataTable.dtloadship0.RowCount--,1)
-	'-- This line passed the Ship Load checks. Flag every unshipped load line on this packing list, including a line that was not checked.
-	F.Intrinsic.String.Build("update load_plan set shipped = 1, picked = 1 where shipped <> 1 and exists (select 1 from staging_quantity h where h.pck_no = '{0}' and h.order_no = load_plan.order_no and h.line = load_plan.order_line)",V.DataTable.dtloadship0(V.Local.iCnt).PACKING LIST!FieldValTrim,V.Local.sSQL)
-	F.ODBC.Connection!Con.Execute(V.Local.sSQL)
-	'-- SHP710 next-seq on unshipped LOAD_PLAN only: packing suffix >= header next-seq -> packing+1; else header. Never decrease. Skip lines that already have a staged packing (SHP_STATUS=0). Do not write ORDER_HEADER.
-	F.Intrinsic.Control.If(V.DataTable.dtPackSfx.Exists)
-		F.Data.Datatable.Close("dtPackSfx")
+	V.Local.sSeen.Set(V.DataTable.dtloadship0(V.Local.iCnt).ORDER_NO!FieldValTrim)
+	V.Local.sLoadShip.Set(V.Dictionary.dShipSeen![V.Local.sSeen])
+	F.Intrinsic.Control.If(V.Local.sLoadShip,=,"")
+		F.Intrinsic.Control.CallSub(CollapseLoadPlanDupes,"Order",V.Local.sSeen)
+		F.Data.Dictionary.AddItem("dShipSeen",V.Local.sSeen,"1",True)
 	F.Intrinsic.Control.EndIf
-	F.Intrinsic.String.Build("SELECT TOP 1 RTRIM(ORDER_SUFFIX) AS ORDER_SUFFIX FROM V_SHIPMENT_HEADER WHERE PCK_NO='{0}' AND ORDER_NO='{1}' AND RECORD_TYPE='A' ORDER BY ORDER_REC",V.DataTable.dtloadship0(V.Local.iCnt).PACKING LIST!FieldValTrim,V.DataTable.dtloadship0(V.Local.iCnt).ORDER_NO!FieldVal,V.Local.sSQL)
-	F.Data.DataTable.CreateFromSQL("dtPackSfx","con",V.Local.sSQL)
-	F.Intrinsic.Control.If(V.DataTable.dtPackSfx.RowCount,>,0)
-		V.Local.sPackSuffix.Set(V.DataTable.dtPackSfx(0).ORDER_SUFFIX!FieldValTrim)
-		V.Local.sHdrSuffix.Set(V.DataTable.dtloadship0(V.Local.iCnt).CURRENT_ORDER_SUFFIX!FieldValTrim)
-		F.Intrinsic.Control.If(V.Local.sPackSuffix.IsNumeric,=,True)
-			F.Intrinsic.Control.If(V.Local.sHdrSuffix.IsNumeric,=,True)
-				F.Intrinsic.String.LPad(V.Local.sPackSuffix,"0",4,V.Local.sPackSuffix)
-				F.Intrinsic.String.LPad(V.Local.sHdrSuffix,"0",4,V.Local.sHdrSuffix)
-				F.Intrinsic.Control.If(V.Local.sPackSuffix,>=,V.Local.sHdrSuffix)
-					F.Intrinsic.String.Build("UPDATE load_plan SET order_suffix = CASE WHEN (CAST('{1}' AS INTEGER) + 1) < 10 THEN '000' + CAST((CAST('{1}' AS INTEGER) + 1) AS VARCHAR(1)) WHEN (CAST('{1}' AS INTEGER) + 1) < 100 THEN '00' + CAST((CAST('{1}' AS INTEGER) + 1) AS VARCHAR(2)) WHEN (CAST('{1}' AS INTEGER) + 1) < 1000 THEN '0' + CAST((CAST('{1}' AS INTEGER) + 1) AS VARCHAR(3)) ELSE CAST((CAST('{1}' AS INTEGER) + 1) AS VARCHAR(4)) END WHERE shipped = 0 AND order_no = '{0}' AND CAST(RTRIM(order_suffix) AS INTEGER) <= (CAST('{1}' AS INTEGER) + 1) AND NOT EXISTS (SELECT 1 FROM V_STAGING_QUANTITY H INNER JOIN V_SHIPMENT_HEADER S ON S.PCK_NO=H.PCK_NO AND S.ORDER_NO=H.ORDER_NO WHERE H.ORDER_NO=load_plan.ORDER_NO AND H.LINE=load_plan.ORDER_LINE AND RTRIM(S.SHP_STATUS)='0') ",V.DataTable.dtloadship0(V.Local.iCnt).ORDER_NO!FieldVal,V.Local.sPackSuffix,V.Local.sSQL)
-				F.Intrinsic.Control.Else
-					F.Intrinsic.String.Build("UPDATE load_plan SET order_suffix = CASE WHEN CAST('{1}' AS INTEGER) < 10 THEN '000' + CAST(CAST('{1}' AS INTEGER) AS VARCHAR(1)) WHEN CAST('{1}' AS INTEGER) < 100 THEN '00' + CAST(CAST('{1}' AS INTEGER) AS VARCHAR(2)) WHEN CAST('{1}' AS INTEGER) < 1000 THEN '0' + CAST(CAST('{1}' AS INTEGER) AS VARCHAR(3)) ELSE CAST(CAST('{1}' AS INTEGER) AS VARCHAR(4)) END WHERE shipped = 0 AND order_no = '{0}' AND CAST(RTRIM(order_suffix) AS INTEGER) <= CAST('{1}' AS INTEGER) AND NOT EXISTS (SELECT 1 FROM V_STAGING_QUANTITY H INNER JOIN V_SHIPMENT_HEADER S ON S.PCK_NO=H.PCK_NO AND S.ORDER_NO=H.ORDER_NO WHERE H.ORDER_NO=load_plan.ORDER_NO AND H.LINE=load_plan.ORDER_LINE AND RTRIM(S.SHP_STATUS)='0') ",V.DataTable.dtloadship0(V.Local.iCnt).ORDER_NO!FieldVal,V.Local.sHdrSuffix,V.Local.sSQL)
-				F.Intrinsic.Control.EndIf
-				F.ODBC.Connection!Con.Execute(V.Local.sSQL)
-			F.Intrinsic.Control.EndIf
+	V.Local.sLoadShip.Set(V.DataTable.dtloadship0(V.Local.iCnt).LOAD NUMBER!FieldValTrim)
+	F.Intrinsic.Control.If(V.Local.sLoadShip.IsNumeric,=,True)
+		F.Intrinsic.String.Build("update load_plan set shipped = 1, picked = 1 where shipped <> 1 and load_no = {1} and exists (select 1 from staging_quantity h where h.pck_no = '{0}' and h.order_no = load_plan.order_no and h.line = load_plan.order_line)",V.DataTable.dtloadship0(V.Local.iCnt).PACKING LIST!FieldValTrim,V.Local.sLoadShip,V.Local.sSQL)
+		'-- gab-lint-ignore: W21
+		F.ODBC.Connection!Con.Execute(V.Local.sSQL)
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.Next(V.Local.iCnt)
+F.Data.Dictionary.Close("dShipSeen")
+'-- SHP710 next-seq once per order, after the shipped flags. One unshipped row per line, so the suffix change cannot hit a duplicate key.
+F.Data.Dictionary.Create("dShipSeen")
+F.Data.Dictionary.SetDefaultReturn("dShipSeen","")
+F.Intrinsic.Control.For(V.Local.iCnt,0,v.DataTable.dtloadship0.RowCount--,1)
+	V.Local.sSeen.Set(V.DataTable.dtloadship0(V.Local.iCnt).ORDER_NO!FieldValTrim)
+	V.Local.sLoadShip.Set(V.Dictionary.dShipSeen![V.Local.sSeen])
+	F.Intrinsic.Control.If(V.Local.sLoadShip,=,"")
+		F.Intrinsic.Control.If(V.DataTable.dtPackSfx.Exists)
+			F.Data.Datatable.Close("dtPackSfx")
 		F.Intrinsic.Control.EndIf
+		F.Intrinsic.String.Build("SELECT TOP 1 RTRIM(ORDER_SUFFIX) AS ORDER_SUFFIX FROM V_SHIPMENT_HEADER WHERE PCK_NO='{0}' AND ORDER_NO='{1}' AND RECORD_TYPE='A' ORDER BY ORDER_REC",V.DataTable.dtloadship0(V.Local.iCnt).PACKING LIST!FieldValTrim,V.DataTable.dtloadship0(V.Local.iCnt).ORDER_NO!FieldVal,V.Local.sSQL)
+		F.Data.DataTable.CreateFromSQL("dtPackSfx","con",V.Local.sSQL)
+		F.Intrinsic.Control.If(V.DataTable.dtPackSfx.RowCount,>,0)
+			V.Local.sPackSuffix.Set(V.DataTable.dtPackSfx(0).ORDER_SUFFIX!FieldValTrim)
+			V.Local.sHdrSuffix.Set(V.DataTable.dtloadship0(V.Local.iCnt).CURRENT_ORDER_SUFFIX!FieldValTrim)
+			F.Intrinsic.Control.CallSub(SyncUnshippedLoadSuffix,"Order",V.Local.sSeen,"Pack",V.Local.sPackSuffix,"Header",V.Local.sHdrSuffix)
+		F.Intrinsic.Control.EndIf
+		F.Data.Datatable.Close("dtPackSfx")
+		F.Data.Dictionary.AddItem("dShipSeen",V.Local.sSeen,"1",True)
 	F.Intrinsic.Control.EndIf
-	F.Data.Datatable.Close("dtPackSfx")
-F.Intrinsic.Control.Next(V.Local.iCnt)	
+F.Intrinsic.Control.Next(V.Local.iCnt)
+F.Data.Dictionary.Close("dShipSeen")
 
 'verify that we have a checked value in SELECT and load is not 0 or 9999 AND ORDER_SUFFIX = 'P'. 
 v.Local.sFilterString.Set("[SELECT] = 1 AND [VISROW] = 1 AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999 AND [ORDER_SUFFIX] = 'P' AND [VALIDATED]=1")
@@ -10557,6 +10637,354 @@ Function.Intrinsic.Control.Catch
 Function.Intrinsic.Control.EndTry
 
 Program.Sub.Click_Load_Ship.End
+
+Program.Sub.CollapseLoadPlanDupes.Start
+'-- Drop extra unshipped LOAD_PLAN rows that share an order and line.
+'-- [POR020] - Custom Bugs - 11/19/2026 - A second suffix from the Open Orders 9999 assign collides when Ship Load rewrites the old suffix.
+V.Local.sError.Declare(String)
+V.Local.sSQL.Declare(String)
+V.Local.sOrder.Declare(String)
+V.Local.sLine.Declare(String)
+V.Local.sSfx.Declare(String)
+V.Local.sLoad.Declare(String)
+V.Local.sHdr.Declare(String)
+V.Local.sKey.Declare(String)
+V.Local.sSt.Declare(String)
+V.Local.sBest.Declare(String)
+V.Local.sIdx.Declare(String)
+V.Local.sSfxPad.Declare(String)
+V.Local.sHdrPad.Declare(String)
+V.Local.sPackFlag.Declare(String)
+V.Local.i.Declare(Long)
+V.Local.iScore.Declare(Long)
+V.Local.iBest.Declare(Long)
+V.Local.iSfx.Declare(Long)
+V.Local.iRank.Declare(Long)
+V.Local.iMatch.Declare(Long)
+V.Local.iPart.Declare(Long)
+V.Local.iStaged.Declare(Long)
+V.Local.iCntHit.Declare(Long)
+F.Intrinsic.Control.Try
+V.Local.sOrder.Set(V.Args.Order)
+'-- Duplicate groups only. Blank Order scans every group. A value limits the pass to that sales order.
+F.Intrinsic.String.Build("SELECT RTRIM(LP.ORDER_NO) AS ORDER_NO, RTRIM(LP.ORDER_LINE) AS ORDER_LINE, RTRIM(LP.ORDER_SUFFIX) AS ORDER_SUFFIX, RTRIM(CAST(LP.LOAD_NO AS VARCHAR(10))) AS LOAD_NO, RTRIM(H.ORDER_SUFFIX) AS HDR_SUFFIX, CASE WHEN EXISTS (SELECT 1 FROM V_STAGING_QUANTITY Q INNER JOIN V_SHIPMENT_HEADER S ON S.PCK_NO = Q.PCK_NO AND S.ORDER_NO = Q.ORDER_NO AND RTRIM(S.ORDER_SUFFIX) = RTRIM(LP.ORDER_SUFFIX) WHERE Q.ORDER_NO = LP.ORDER_NO AND Q.LINE = LP.ORDER_LINE AND RTRIM(S.SHP_STATUS) = '0') THEN 1 ELSE 0 END AS ON_OPEN_PACK FROM LOAD_PLAN LP INNER JOIN V_ORDER_HEADER H ON H.ORDER_NO = LP.ORDER_NO AND H.RECORD_NO = '  A' INNER JOIN (SELECT ORDER_NO, ORDER_LINE FROM LOAD_PLAN WHERE SHIPPED <> 1 AND RTRIM(ORDER_SUFFIX) <> 'P' AND ('{0}' = '' OR RTRIM(ORDER_NO) = '{0}') GROUP BY ORDER_NO, ORDER_LINE HAVING COUNT(*) > 1) DUP ON DUP.ORDER_NO = LP.ORDER_NO AND DUP.ORDER_LINE = LP.ORDER_LINE WHERE LP.SHIPPED <> 1 AND RTRIM(LP.ORDER_SUFFIX) <> 'P' AND ('{0}' = '' OR RTRIM(LP.ORDER_NO) = '{0}') ORDER BY LP.ORDER_NO, LP.ORDER_LINE, LP.ORDER_SUFFIX",V.Local.sOrder,V.Local.sSQL)
+F.Data.DataTable.CreateFromSQL("dtLpDup","con",V.Local.sSQL)
+F.Intrinsic.Control.If(V.DataTable.dtLpDup.RowCount,>,0)
+	F.Data.Dictionary.Create("dDupStg")
+	F.Data.Dictionary.SetDefaultReturn("dDupStg","0")
+	F.Data.Dictionary.Create("dDupScore")
+	F.Data.Dictionary.SetDefaultReturn("dDupScore","-1")
+	F.Data.Dictionary.Create("dDupRow")
+	F.Data.Dictionary.SetDefaultReturn("dDupRow","")
+	'-- Rank each unshipped row. A staged suffix match is counted separately so two open packings are left alone.
+	F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.dtLpDup.RowCount--,1)
+		V.Local.sOrder.Set(V.DataTable.dtLpDup(V.Local.i).ORDER_NO!FieldValTrim)
+		V.Local.sLine.Set(V.DataTable.dtLpDup(V.Local.i).ORDER_LINE!FieldValTrim)
+		V.Local.sSfx.Set(V.DataTable.dtLpDup(V.Local.i).ORDER_SUFFIX!FieldValTrim)
+		V.Local.sLoad.Set(V.DataTable.dtLpDup(V.Local.i).LOAD_NO!FieldValTrim)
+		V.Local.sHdr.Set(V.DataTable.dtLpDup(V.Local.i).HDR_SUFFIX!FieldValTrim)
+		V.Local.sPackFlag.Set(V.DataTable.dtLpDup(V.Local.i).ON_OPEN_PACK!FieldValTrim)
+		F.Intrinsic.String.Build("{0}~{1}",V.Local.sOrder,V.Local.sLine,V.Local.sKey)
+		V.Local.sSt.Set(V.Dictionary.dDupStg![V.Local.sKey])
+		V.Local.iStaged.Set(V.Local.sSt.Trim.Long)
+		F.Intrinsic.Control.If(V.Local.sPackFlag.IsNumeric,=,True)
+			F.Intrinsic.Control.If(V.Local.sPackFlag.Trim.Long,=,1)
+				F.Intrinsic.Math.Add(V.Local.iStaged,1,V.Local.iStaged)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.String.Build("{0}",V.Local.iStaged,V.Local.sSt)
+		F.Data.Dictionary.AddItem("dDupStg",V.Local.sKey,V.Local.sSt,True)
+		V.Local.iMatch.Set(0)
+		V.Local.iSfx.Set(0)
+		V.Local.iRank.Set(2)
+		F.Intrinsic.Control.If(V.Local.sSfx.IsNumeric,=,True)
+			F.Intrinsic.Control.If(V.Local.sHdr.IsNumeric,=,True)
+				V.Local.sSfxPad.Set(V.Local.sSfx)
+				V.Local.sHdrPad.Set(V.Local.sHdr)
+				F.Intrinsic.String.LPad(V.Local.sSfxPad,"0",4,V.Local.sSfxPad)
+				F.Intrinsic.String.LPad(V.Local.sHdrPad,"0",4,V.Local.sHdrPad)
+				F.Intrinsic.Control.If(V.Local.sSfxPad,=,V.Local.sHdrPad)
+					V.Local.iMatch.Set(1)
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+			V.Local.iSfx.Set(V.Local.sSfx.Trim.Long)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Local.sLoad,=,"0")
+			V.Local.iRank.Set(0)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Local.sLoad,=,"9999")
+			V.Local.iRank.Set(1)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Math.Mult(V.Local.iMatch,1000000,V.Local.iScore)
+		F.Intrinsic.Math.Mult(V.Local.iSfx,100,V.Local.iPart)
+		F.Intrinsic.Math.Add(V.Local.iScore,V.Local.iPart,V.Local.iScore)
+		F.Intrinsic.Math.Add(V.Local.iScore,V.Local.iRank,V.Local.iScore)
+		V.Local.sBest.Set(V.Dictionary.dDupScore![V.Local.sKey])
+		V.Local.iBest.Set(V.Local.sBest.Trim.Long)
+		F.Intrinsic.Control.If(V.Local.iScore,>,V.Local.iBest)
+			F.Intrinsic.String.Build("{0}",V.Local.iScore,V.Local.sBest)
+			F.Data.Dictionary.AddItem("dDupScore",V.Local.sKey,V.Local.sBest,True)
+			F.Intrinsic.String.Build("{0}",V.Local.i,V.Local.sIdx)
+			F.Data.Dictionary.AddItem("dDupRow",V.Local.sKey,V.Local.sIdx,True)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.i)
+	'-- Delete the losers. A staged keeper keeps its suffix. An unstaged keeper takes the header suffix when that key is free.
+	F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.dtLpDup.RowCount--,1)
+		V.Local.sOrder.Set(V.DataTable.dtLpDup(V.Local.i).ORDER_NO!FieldValTrim)
+		V.Local.sLine.Set(V.DataTable.dtLpDup(V.Local.i).ORDER_LINE!FieldValTrim)
+		V.Local.sSfx.Set(V.DataTable.dtLpDup(V.Local.i).ORDER_SUFFIX!FieldValTrim)
+		V.Local.sLoad.Set(V.DataTable.dtLpDup(V.Local.i).LOAD_NO!FieldValTrim)
+		V.Local.sHdr.Set(V.DataTable.dtLpDup(V.Local.i).HDR_SUFFIX!FieldValTrim)
+		V.Local.sPackFlag.Set(V.DataTable.dtLpDup(V.Local.i).ON_OPEN_PACK!FieldValTrim)
+		F.Intrinsic.String.Build("{0}~{1}",V.Local.sOrder,V.Local.sLine,V.Local.sKey)
+		F.Intrinsic.String.Build("{0}",V.Local.i,V.Local.sIdx)
+		V.Local.sSt.Set(V.Dictionary.dDupStg![V.Local.sKey])
+		V.Local.iStaged.Set(V.Local.sSt.Trim.Long)
+		V.Local.sBest.Set(V.Dictionary.dDupRow![V.Local.sKey])
+		F.Intrinsic.Control.If(V.Local.iStaged,<,2)
+			F.Intrinsic.Control.If(V.Local.iStaged,=,1)
+				V.Local.iMatch.Set(0)
+				F.Intrinsic.Control.If(V.Local.sPackFlag.IsNumeric,=,True)
+					F.Intrinsic.Control.If(V.Local.sPackFlag.Trim.Long,=,1)
+						V.Local.iMatch.Set(1)
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.If(V.Local.iMatch,<>,1)
+					F.Intrinsic.Control.If(V.Local.sLoad.IsNumeric,=,True)
+						F.Intrinsic.String.Build("DELETE FROM LOAD_PLAN WHERE RTRIM(ORDER_NO) = '{0}' AND RTRIM(ORDER_SUFFIX) = '{1}' AND RTRIM(ORDER_LINE) = '{2}' AND LOAD_NO = {3} AND SHIPPED <> 1",V.Local.sOrder,V.Local.sSfx,V.Local.sLine,V.Local.sLoad,V.Local.sSQL)
+						'-- gab-lint-ignore: W21
+						F.ODBC.Connection!con.Execute(V.Local.sSQL)
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.Else
+				F.Intrinsic.Control.If(V.Local.sBest,=,V.Local.sIdx)
+					F.Intrinsic.Control.If(V.Local.sHdr.IsNumeric,=,True)
+						F.Intrinsic.Control.If(V.Local.sSfx.IsNumeric,=,True)
+							V.Local.sSfxPad.Set(V.Local.sSfx)
+							V.Local.sHdrPad.Set(V.Local.sHdr)
+							F.Intrinsic.String.LPad(V.Local.sSfxPad,"0",4,V.Local.sSfxPad)
+							F.Intrinsic.String.LPad(V.Local.sHdrPad,"0",4,V.Local.sHdrPad)
+							F.Intrinsic.Control.If(V.Local.sSfxPad,<>,V.Local.sHdrPad)
+								F.Intrinsic.String.Build("SELECT COUNT(*) AS N FROM LOAD_PLAN WHERE RTRIM(ORDER_NO) = '{0}' AND RTRIM(ORDER_LINE) = '{1}' AND RTRIM(ORDER_SUFFIX) = '{2}'",V.Local.sOrder,V.Local.sLine,V.Local.sHdrPad,V.Local.sSQL)
+								F.Data.DataTable.CreateFromSQL("dtLpCnt","con",V.Local.sSQL)
+								V.Local.iCntHit.Set(V.DataTable.dtLpCnt(0).N!FieldValLong)
+								F.Data.DataTable.Close("dtLpCnt")
+								F.Intrinsic.Control.If(V.Local.iCntHit,=,0)
+									F.Intrinsic.Control.If(V.Local.sLoad.IsNumeric,=,True)
+										F.Intrinsic.String.Build("UPDATE LOAD_PLAN SET ORDER_SUFFIX = '{0}' WHERE RTRIM(ORDER_NO) = '{1}' AND RTRIM(ORDER_SUFFIX) = '{2}' AND RTRIM(ORDER_LINE) = '{3}' AND LOAD_NO = {4} AND SHIPPED <> 1",V.Local.sHdrPad,V.Local.sOrder,V.Local.sSfx,V.Local.sLine,V.Local.sLoad,V.Local.sSQL)
+										'-- gab-lint-ignore: W21
+										F.ODBC.Connection!con.Execute(V.Local.sSQL)
+									F.Intrinsic.Control.EndIf
+								F.Intrinsic.Control.EndIf
+							F.Intrinsic.Control.EndIf
+						F.Intrinsic.Control.EndIf
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.Else
+					F.Intrinsic.Control.If(V.Local.sLoad.IsNumeric,=,True)
+						F.Intrinsic.String.Build("DELETE FROM LOAD_PLAN WHERE RTRIM(ORDER_NO) = '{0}' AND RTRIM(ORDER_SUFFIX) = '{1}' AND RTRIM(ORDER_LINE) = '{2}' AND LOAD_NO = {3} AND SHIPPED <> 1",V.Local.sOrder,V.Local.sSfx,V.Local.sLine,V.Local.sLoad,V.Local.sSQL)
+						'-- gab-lint-ignore: W21
+						F.ODBC.Connection!con.Execute(V.Local.sSQL)
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.i)
+	F.Data.Dictionary.Close("dDupStg")
+	F.Data.Dictionary.Close("dDupScore")
+	F.Data.Dictionary.Close("dDupRow")
+F.Intrinsic.Control.EndIf
+F.Data.DataTable.Close("dtLpDup")
+F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(frmShip_UnLoad)
+F.Intrinsic.Control.EndTry
+Program.Sub.CollapseLoadPlanDupes.End
+
+Program.Sub.SyncUnshippedLoadSuffix.Start
+'-- Move the one remaining unshipped LOAD_PLAN row to the SHP710 next suffix.
+'-- [POR020] - Custom Bugs - 11/19/2026 - Per line, and only when the target suffix is not already on that line.
+V.Local.sError.Declare(String)
+V.Local.sSQL.Declare(String)
+V.Local.sOrder.Declare(String)
+V.Local.sLine.Declare(String)
+V.Local.sSfx.Declare(String)
+V.Local.sLoad.Declare(String)
+V.Local.sPack.Declare(String)
+V.Local.sHdr.Declare(String)
+V.Local.sTarget.Declare(String)
+V.Local.sSfxPad.Declare(String)
+V.Local.i.Declare(Long)
+V.Local.iNext.Declare(Long)
+V.Local.iCntHit.Declare(Long)
+F.Intrinsic.Control.Try
+V.Local.sOrder.Set(V.Args.Order)
+V.Local.sPack.Set(V.Args.Pack)
+V.Local.sHdr.Set(V.Args.Header)
+F.Intrinsic.Control.If(V.Local.sPack.IsNumeric,=,True)
+	F.Intrinsic.Control.If(V.Local.sHdr.IsNumeric,=,True)
+		F.Intrinsic.String.LPad(V.Local.sPack,"0",4,V.Local.sPack)
+		F.Intrinsic.String.LPad(V.Local.sHdr,"0",4,V.Local.sHdr)
+		F.Intrinsic.Control.If(V.Local.sPack,>=,V.Local.sHdr)
+			V.Local.iNext.Set(V.Local.sPack.Trim.Long)
+			F.Intrinsic.Math.Add(V.Local.iNext,1,V.Local.iNext)
+			F.Intrinsic.String.Build("{0}",V.Local.iNext,V.Local.sTarget)
+			F.Intrinsic.String.LPad(V.Local.sTarget,"0",4,V.Local.sTarget)
+		F.Intrinsic.Control.Else
+			V.Local.sTarget.Set(V.Local.sHdr)
+		F.Intrinsic.Control.EndIf
+		'-- Skip a line that already has an open staged packing. Those rows keep the suffix they were staged under.
+		F.Intrinsic.String.Build("SELECT RTRIM(LP.ORDER_LINE) AS ORDER_LINE, RTRIM(LP.ORDER_SUFFIX) AS ORDER_SUFFIX, RTRIM(CAST(LP.LOAD_NO AS VARCHAR(10))) AS LOAD_NO FROM LOAD_PLAN LP WHERE RTRIM(LP.ORDER_NO) = '{0}' AND LP.SHIPPED <> 1 AND RTRIM(LP.ORDER_SUFFIX) <> 'P' AND NOT EXISTS (SELECT 1 FROM V_STAGING_QUANTITY Q INNER JOIN V_SHIPMENT_HEADER S ON S.PCK_NO = Q.PCK_NO AND S.ORDER_NO = Q.ORDER_NO WHERE Q.ORDER_NO = LP.ORDER_NO AND Q.LINE = LP.ORDER_LINE AND RTRIM(S.SHP_STATUS) = '0')",V.Local.sOrder,V.Local.sSQL)
+		F.Data.DataTable.CreateFromSQL("dtLpSync","con",V.Local.sSQL)
+		F.Intrinsic.Control.If(V.DataTable.dtLpSync.RowCount,>,0)
+			F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.dtLpSync.RowCount--,1)
+				V.Local.sLine.Set(V.DataTable.dtLpSync(V.Local.i).ORDER_LINE!FieldValTrim)
+				V.Local.sSfx.Set(V.DataTable.dtLpSync(V.Local.i).ORDER_SUFFIX!FieldValTrim)
+				V.Local.sLoad.Set(V.DataTable.dtLpSync(V.Local.i).LOAD_NO!FieldValTrim)
+				F.Intrinsic.Control.If(V.Local.sSfx.IsNumeric,=,True)
+					V.Local.sSfxPad.Set(V.Local.sSfx)
+					F.Intrinsic.String.LPad(V.Local.sSfxPad,"0",4,V.Local.sSfxPad)
+					F.Intrinsic.Control.If(V.Local.sSfxPad,<>,V.Local.sTarget)
+						F.Intrinsic.String.Build("SELECT COUNT(*) AS N FROM LOAD_PLAN WHERE RTRIM(ORDER_NO) = '{0}' AND RTRIM(ORDER_LINE) = '{1}' AND RTRIM(ORDER_SUFFIX) = '{2}'",V.Local.sOrder,V.Local.sLine,V.Local.sTarget,V.Local.sSQL)
+						F.Data.DataTable.CreateFromSQL("dtLpSyncHit","con",V.Local.sSQL)
+						V.Local.iCntHit.Set(V.DataTable.dtLpSyncHit(0).N!FieldValLong)
+						F.Data.DataTable.Close("dtLpSyncHit")
+						F.Intrinsic.Control.If(V.Local.iCntHit,=,0)
+							F.Intrinsic.Control.If(V.Local.sLoad.IsNumeric,=,True)
+								F.Intrinsic.String.Build("UPDATE LOAD_PLAN SET ORDER_SUFFIX = '{0}' WHERE RTRIM(ORDER_NO) = '{1}' AND RTRIM(ORDER_SUFFIX) = '{2}' AND RTRIM(ORDER_LINE) = '{3}' AND LOAD_NO = {4} AND SHIPPED <> 1",V.Local.sTarget,V.Local.sOrder,V.Local.sSfx,V.Local.sLine,V.Local.sLoad,V.Local.sSQL)
+								'-- gab-lint-ignore: W21
+								F.ODBC.Connection!con.Execute(V.Local.sSQL)
+							F.Intrinsic.Control.EndIf
+						F.Intrinsic.Control.EndIf
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.Next(V.Local.i)
+		F.Intrinsic.Control.EndIf
+		F.Data.DataTable.Close("dtLpSync")
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(frmShip_UnLoad)
+F.Intrinsic.Control.EndTry
+Program.Sub.SyncUnshippedLoadSuffix.End
+
+Program.Sub.SaveLoadPlanLine.Start
+'-- Insert a LOAD_PLAN row only when that order and line has no unshipped row.
+'-- [POR020] - Custom Bugs - 11/19/2026 - Re-releasing a backorder from Open Orders used to insert a second suffix.
+V.Local.sError.Declare(String)
+V.Local.sSQL.Declare(String)
+V.Local.sCustomer.Declare(String)
+V.Local.sOrder.Declare(String)
+V.Local.sSuffix.Declare(String)
+V.Local.sLine.Declare(String)
+V.Local.sPick.Declare(String)
+V.Local.sAssigned.Declare(String)
+V.Local.sModBy.Declare(String)
+V.Local.sModTime.Declare(String)
+V.Local.sModDate.Declare(String)
+V.Local.sTargetLoad.Declare(String)
+V.Local.sReady.Declare(String)
+V.Local.sOldSfx.Declare(String)
+V.Local.sOldLoad.Declare(String)
+V.Local.sNewSfx.Declare(String)
+V.Local.sNewLoad.Declare(String)
+V.Local.sHave.Declare(String)
+V.Local.i.Declare(Long)
+V.Local.iHit.Declare(Long)
+V.Local.iCntHit.Declare(Long)
+F.Intrinsic.Control.Try
+V.Local.sCustomer.Set(V.Args.Customer)
+V.Local.sOrder.Set(V.Args.Order)
+V.Local.sSuffix.Set(V.Args.Suffix)
+V.Local.sLine.Set(V.Args.Line)
+V.Local.sPick.Set(V.Args.PickDate)
+V.Local.sAssigned.Set(V.Args.Assigned)
+V.Local.sModBy.Set(V.Args.ModBy)
+V.Local.sModTime.Set(V.Args.ModTime)
+V.Local.sModDate.Set(V.Args.ModDate)
+V.Local.sTargetLoad.Set(V.Args.TargetLoad)
+V.Local.sReady.Set(V.Args.SetReady)
+V.Local.sNewSfx.Set(V.Local.sSuffix)
+F.Intrinsic.Control.If(V.Local.sNewSfx.IsNumeric,=,True)
+	F.Intrinsic.String.LPad(V.Local.sNewSfx,"0",4,V.Local.sNewSfx)
+F.Intrinsic.Control.EndIf
+'-- Any unshipped row for this order and line, whatever suffix it still has.
+F.Intrinsic.String.Build("SELECT RTRIM(ORDER_SUFFIX) AS ORDER_SUFFIX, RTRIM(CAST(LOAD_NO AS VARCHAR(10))) AS LOAD_NO FROM LOAD_PLAN WHERE RTRIM(ORDER_NO) = '{0}' AND RTRIM(ORDER_LINE) = '{1}' AND SHIPPED <> 1 AND RTRIM(ORDER_SUFFIX) <> 'P'",V.Local.sOrder,V.Local.sLine,V.Local.sSQL)
+F.Data.DataTable.CreateFromSQL("dtLpOne","con",V.Local.sSQL)
+F.Intrinsic.Control.If(V.DataTable.dtLpOne.RowCount,=,0)
+	F.Intrinsic.Control.If(V.Local.sReady,=,"1")
+		F.Intrinsic.String.Build("Insert Into Load_PLan (Customer,ORDER_NO,ORDER_SUFFIX,ORDER_LINE,LOAD_NO,LOAD_SEQ,CARRIER,CARRIER_LOAD_NUM,CARRIER_TRAILER,TRUCK_TYPE,STAGING_BIN,BIN_LOC,PICK_BY_DATE,SHIP_DATE,ASSIGNED_TO,PICKED,DOCK_NO,PICKUP_TIME,DROPOFF_TIME,NOTES,SHIPPED,MOBILE_SEQUENCE,MODIFIED_BY,MODIFIED_TIME,MODIFIED_DATE,PCKLST_DISP_FLAG) VALUES('{0}','{1}','{2}','{3}','{4}','0','','','','-1','','','{5}','1900-01-01','{6}',0,'','1900-01-01 12:00:00','1900-01-01 12:00:00','','0','0','{7}','{8}','{9}',1)",V.Local.sCustomer,V.Local.sOrder,V.Local.sNewSfx,V.Local.sLine,V.Local.sTargetLoad,V.Local.sPick,V.Local.sAssigned,V.Local.sModBy,V.Local.sModTime,V.Local.sModDate,V.Local.sSQL)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.String.Build("Insert Into Load_PLan (Customer,ORDER_NO,ORDER_SUFFIX,ORDER_LINE,LOAD_NO,LOAD_SEQ,CARRIER,CARRIER_LOAD_NUM,CARRIER_TRAILER,TRUCK_TYPE,STAGING_BIN,BIN_LOC,PICK_BY_DATE,SHIP_DATE,ASSIGNED_TO,PICKED,DOCK_NO,PICKUP_TIME,DROPOFF_TIME,NOTES,SHIPPED,MOBILE_SEQUENCE,MODIFIED_BY,MODIFIED_TIME,MODIFIED_DATE) VALUES('{0}','{1}','{2}','{3}','{4}','0','','','','-1','','','{5}','1900-01-01','{6}',0,'','1900-01-01 12:00:00','1900-01-01 12:00:00','','0','0','{7}','{8}','{9}')",V.Local.sCustomer,V.Local.sOrder,V.Local.sNewSfx,V.Local.sLine,V.Local.sTargetLoad,V.Local.sPick,V.Local.sAssigned,V.Local.sModBy,V.Local.sModTime,V.Local.sModDate,V.Local.sSQL)
+	F.Intrinsic.Control.EndIf
+	F.ODBC.Connection!con.Execute(V.Local.sSQL)
+F.Intrinsic.Control.Else
+	V.Local.iHit.Set(-1)
+	F.Intrinsic.Control.If(V.DataTable.dtLpOne.RowCount,=,1)
+		V.Local.iHit.Set(0)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.dtLpOne.RowCount--,1)
+			V.Local.sHave.Set(V.DataTable.dtLpOne(V.Local.i).ORDER_SUFFIX!FieldValTrim)
+			F.Intrinsic.Control.If(V.Local.sHave.IsNumeric,=,True)
+				F.Intrinsic.String.LPad(V.Local.sHave,"0",4,V.Local.sHave)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.If(V.Local.sHave,=,V.Local.sNewSfx)
+				V.Local.iHit.Set(V.Local.i)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.Next(V.Local.i)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.iHit,>=,0)
+		V.Local.sOldSfx.Set(V.DataTable.dtLpOne(V.Local.iHit).ORDER_SUFFIX!FieldValTrim)
+		V.Local.sOldLoad.Set(V.DataTable.dtLpOne(V.Local.iHit).LOAD_NO!FieldValTrim)
+		V.Local.sNewLoad.Set(V.Local.sOldLoad)
+		F.Intrinsic.Control.If(V.Local.sTargetLoad,=,"9999")
+			F.Intrinsic.Control.If(V.Local.sOldLoad,=,"0")
+				V.Local.sNewLoad.Set("9999")
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.DataTable.dtLpOne.RowCount,>,1)
+			V.Local.sNewSfx.Set(V.Local.sOldSfx)
+			F.Intrinsic.Control.If(V.Local.sNewSfx.IsNumeric,=,True)
+				F.Intrinsic.String.LPad(V.Local.sNewSfx,"0",4,V.Local.sNewSfx)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.Else
+			F.Intrinsic.Control.If(V.Local.sOldSfx.IsNumeric,=,True)
+				F.Intrinsic.String.LPad(V.Local.sOldSfx,"0",4,V.Local.sOldSfx)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.If(V.Local.sOldSfx,<>,V.Local.sNewSfx)
+				F.Intrinsic.String.Build("SELECT COUNT(*) AS N FROM LOAD_PLAN WHERE RTRIM(ORDER_NO) = '{0}' AND RTRIM(ORDER_LINE) = '{1}' AND RTRIM(ORDER_SUFFIX) = '{2}'",V.Local.sOrder,V.Local.sLine,V.Local.sNewSfx,V.Local.sSQL)
+				F.Data.DataTable.CreateFromSQL("dtLpAssignHit","con",V.Local.sSQL)
+				V.Local.iCntHit.Set(V.DataTable.dtLpAssignHit(0).N!FieldValLong)
+				F.Data.DataTable.Close("dtLpAssignHit")
+				F.Intrinsic.Control.If(V.Local.iCntHit,>,0)
+					V.Local.sNewSfx.Set(V.Local.sOldSfx)
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Local.sOldLoad.IsNumeric,=,True)
+			F.Intrinsic.Control.If(V.Local.sNewLoad.IsNumeric,=,True)
+				F.Intrinsic.Control.If(V.Local.sReady,=,"1")
+					F.Intrinsic.String.Build("UPDATE LOAD_PLAN SET ORDER_SUFFIX = '{0}', LOAD_NO = {1}, ASSIGNED_TO = '{2}', PICK_BY_DATE = '{3}', MODIFIED_BY = '{4}', MODIFIED_TIME = '{5}', MODIFIED_DATE = '{6}', PCKLST_DISP_FLAG = 1 WHERE RTRIM(ORDER_NO) = '{7}' AND RTRIM(ORDER_SUFFIX) = '{8}' AND RTRIM(ORDER_LINE) = '{9}' AND LOAD_NO = {10} AND SHIPPED <> 1",V.Local.sNewSfx,V.Local.sNewLoad,V.Local.sAssigned,V.Local.sPick,V.Local.sModBy,V.Local.sModTime,V.Local.sModDate,V.Local.sOrder,V.Local.sOldSfx,V.Local.sLine,V.Local.sOldLoad,V.Local.sSQL)
+				F.Intrinsic.Control.Else
+					F.Intrinsic.String.Build("UPDATE LOAD_PLAN SET ORDER_SUFFIX = '{0}', LOAD_NO = {1}, ASSIGNED_TO = '{2}', PICK_BY_DATE = '{3}', MODIFIED_BY = '{4}', MODIFIED_TIME = '{5}', MODIFIED_DATE = '{6}' WHERE RTRIM(ORDER_NO) = '{7}' AND RTRIM(ORDER_SUFFIX) = '{8}' AND RTRIM(ORDER_LINE) = '{9}' AND LOAD_NO = {10} AND SHIPPED <> 1",V.Local.sNewSfx,V.Local.sNewLoad,V.Local.sAssigned,V.Local.sPick,V.Local.sModBy,V.Local.sModTime,V.Local.sModDate,V.Local.sOrder,V.Local.sOldSfx,V.Local.sLine,V.Local.sOldLoad,V.Local.sSQL)
+				F.Intrinsic.Control.EndIf
+				F.ODBC.Connection!con.Execute(V.Local.sSQL)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+F.Data.DataTable.Close("dtLpOne")
+F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.Catch
+	F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Caller.ScriptFile,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(frmShip_UnLoad)
+F.Intrinsic.Control.EndTry
+Program.Sub.SaveLoadPlanLine.End
 
 Program.Sub.Load_SelectAll.Start
 F.Intrinsic.Control.Try
@@ -10889,6 +11317,68 @@ v.Local.iRet.Declare(boolean)
 F.Global.General.LaunchMenuTask(887,5,V.Local.iRet)
 Program.Sub.Click_Launch_StagedShip.End
 
+Program.Sub.ReadPackingListCopies.Start
+' [7546] - 11/12/2026 - Report Maintenance copies are not on BI_RPT.
+' Sequences 0-9 use BIR_GLOBAL_SEQ.COPIES. Company sequences use BIR_USER_SEQ.COPIES.
+' BIR_ACTIVE_SEQ says which sequences are active. Both sequence tables are in the common database.
+' GetReportSequenceInfo returns Copies as the 6th field. Report 51 is packing list 000051.
+' Active sequences are added together. Each copy waits 5 seconds. There is no extra buffer.
+' A failed, blank, or zero read uses 2 copies and the pause says so.
+Function.Intrinsic.Control.Try
+V.Local.iSeq.Declare(Long)
+V.Local.iOne.Declare(Long)
+V.Local.iCopies.Declare(Long)
+V.Local.bActive.Declare(Boolean,False)
+V.Local.bNum.Declare(Boolean,False)
+V.Local.sInfo.Declare(String,"")
+V.Local.sOne.Declare(String,"")
+V.Local.sParts.Declare(String,"")
+V.Local.iCopies.Set(0)
+F.Intrinsic.Control.For(V.Local.iSeq,0,40)
+	F.Global.BI.IsReportSequenceActive(51,V.Local.iSeq,V.Caller.CompanyCode,V.Local.bActive)
+	F.Intrinsic.Control.If(V.Local.bActive,=,True)
+		F.Global.BI.GetReportSequenceInfo(51,V.Local.iSeq,V.Caller.CompanyCode,V.Local.sInfo)
+		V.Local.sInfo.Set(V.Local.sInfo.Trim)
+		F.Intrinsic.Control.If(V.Local.sInfo,<>,"")
+			F.Intrinsic.Control.If(V.Local.sInfo.UCase,<>,"NORETURN")
+				F.Intrinsic.Control.If(V.Local.sInfo.UCase,<>,"***NORETURN***")
+					F.Intrinsic.String.Split(V.Local.sInfo,"*!*",V.Local.sParts)
+					F.Intrinsic.Control.If(V.Local.sParts.UBound,>=,5)
+						V.Local.sOne.Set(V.Local.sParts(5).Trim)
+						F.Intrinsic.Math.IsNumeric(V.Local.sOne,V.Local.bNum)
+						F.Intrinsic.Control.If(V.Local.bNum,=,True)
+							V.Local.iOne.Set(V.Local.sOne.Long)
+							F.Intrinsic.Control.If(V.Local.iOne,>,0)
+								F.Intrinsic.Math.Add(V.Local.iCopies,V.Local.iOne,V.Local.iCopies)
+							F.Intrinsic.Control.EndIf
+						F.Intrinsic.Control.EndIf
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.Next(V.Local.iSeq)
+F.Intrinsic.Control.If(V.Local.iCopies,>,0)
+	V.Global.iPlCopies.Set(V.Local.iCopies)
+	F.Intrinsic.Math.Mult(V.Local.iCopies,5,V.Global.iPlPause)
+	F.Intrinsic.Control.If(V.Local.iCopies,=,1)
+		V.Global.sPlCopyNote.Set("1 copy")
+	F.Intrinsic.Control.Else
+		F.Intrinsic.String.Build("{0} copies",V.Local.iCopies,V.Global.sPlCopyNote)
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.Else
+	V.Global.iPlCopies.Set(2)
+	V.Global.iPlPause.Set(10)
+	V.Global.sPlCopyNote.Set("2 copies assumed")
+F.Intrinsic.Control.EndIf
+Function.Intrinsic.Control.Catch
+	V.Global.iPlCopies.Set(2)
+	V.Global.iPlPause.Set(10)
+	V.Global.sPlCopyNote.Set("2 copies assumed")
+	F.Intrinsic.Control.ClearErrors
+Function.Intrinsic.Control.EndTry
+Program.Sub.ReadPackingListCopies.End
+
 Program.Sub.Click_Print_PL.Start
 Function.Intrinsic.Control.Try
 v.Local.sFilterString.Declare
@@ -10903,6 +11393,7 @@ v.Local.sQuery.Declare(String)
 v.Local.iCnt.Declare(Long)
 v.Local.iWait.Declare(Long)
 v.Local.iLeft.Declare(Long)
+V.Local.iPause.Declare(Long)
 v.Local.iTotal.Declare(Long)
 v.Local.iShow.Declare(Long)
 v.Local.sParam.Declare
@@ -10935,11 +11426,13 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 		V.Local.iCnt.Set(V.Local.sSel.UBound)
 		F.Intrinsic.Math.Add(V.Local.iCnt,1,V.Local.iTotal)
 		V.Local.sSent.Set("")
+		F.Intrinsic.Control.CallSub(ReadPackingListCopies)
+		F.Intrinsic.Math.Add(V.Global.iPlPause,1,V.Local.iPause)
 		F.Intrinsic.Control.For(v.Local.i,0,V.Local.iCnt)
 			' [7546] - Custom Bugs - 11/11/2026 - Name each packing list and stop the batch when the print is rejected.
 			V.Local.sThis.Set(v.DataTable.dtLoadPL(v.Local.sSel(v.Local.i)).PACKING LIST!FieldValTrim)
 			F.Intrinsic.Math.Add(V.Local.i,1,V.Local.iShow)
-			F.Intrinsic.String.Build("Printing packing list {0} ({1} of {2})...",V.Local.sThis,V.Local.iShow,V.Local.iTotal,V.Local.sRet)
+			F.Intrinsic.String.Build("Printing packing list {0} ({1} of {2}, {3})...",V.Local.sThis,V.Local.iShow,V.Local.iTotal,V.Global.sPlCopyNote,V.Local.sRet)
 			'-- Open the pause once. A second Invoke after Close does not show, so later lists only change the text.
 			F.Intrinsic.Control.If(V.Local.i,=,0)
 				F.Intrinsic.UI.InvokeWaitDialog(V.Local.sRet)
@@ -10972,12 +11465,12 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 			F.Intrinsic.Control.Else
 				F.Intrinsic.String.Build("{0}, {1}",V.Local.sSent,V.Local.sThis,V.Local.sSent)
 			F.Intrinsic.Control.EndIf
-			'-- 5 seconds between lists so the next print does not step on this one. Sleep pumps the print; do not use SleepMS.
+			'-- 5 seconds per copy so the next list does not step on a copy that is still printing. Sleep pumps the print; do not use SleepMS.
 			F.Intrinsic.Control.If(V.Local.i,<,V.Local.iCnt)
 				V.Local.sNext.Set(v.DataTable.dtLoadPL(v.Local.sSel(V.Local.iShow)).PACKING LIST!FieldValTrim)
-				F.Intrinsic.Control.For(V.Local.iWait,1,5)
-					F.Intrinsic.Math.Sub(6,V.Local.iWait,V.Local.iLeft)
-					F.Intrinsic.String.Build("Sent {0} ({1} of {2}). Waiting {3} seconds before {4}.",V.Local.sThis,V.Local.iShow,V.Local.iTotal,V.Local.iLeft,V.Local.sNext,V.Local.sRet)
+				F.Intrinsic.Control.For(V.Local.iWait,1,V.Global.iPlPause)
+					F.Intrinsic.Math.Sub(V.Local.iPause,V.Local.iWait,V.Local.iLeft)
+					F.Intrinsic.String.Build("Sent {0} ({1} of {2}, {3}). Waiting {4} seconds before {5}.",V.Local.sThis,V.Local.iShow,V.Local.iTotal,V.Global.sPlCopyNote,V.Local.iLeft,V.Local.sNext,V.Local.sRet)
 					F.Intrinsic.UI.ChangeWaitStatus(V.Local.sRet)
 					F.Intrinsic.UI.Sleep(1)
 					F.Intrinsic.UI.DoEvents
@@ -11036,6 +11529,7 @@ V.Local.iRet.Declare
 V.Local.iCnt.Declare(Long)
 V.Local.iWait.Declare(Long)
 V.Local.iLeft.Declare(Long)
+V.Local.iPause.Declare(Long)
 V.Local.iTotal.Declare(Long)
 V.Local.iShow.Declare(Long)
 V.Local.sRet.Declare(String)
@@ -11086,6 +11580,8 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 		V.Local.iCnt.Set(V.Local.sSel.UBound)
 		F.Intrinsic.Math.Add(V.Local.iCnt,1,V.Local.iTotal)
 		V.Local.sSent.Set("")
+		F.Intrinsic.Control.CallSub(ReadPackingListCopies)
+		F.Intrinsic.Math.Add(V.Global.iPlPause,1,V.Local.iPause)
 		
 		F.ODBC.Connection!ConP.OpenCompanyConnection
 		
@@ -11094,7 +11590,7 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 		F.Intrinsic.Control.For(v.Local.i,0,V.Local.iCnt,1)
 			V.Local.sThis.Set(v.DataTable.dtLoadPL(v.Local.sSel(v.Local.i)).PACKING LIST!FieldValTrim)
 			F.Intrinsic.Math.Add(V.Local.i,1,V.Local.iShow)
-			F.Intrinsic.String.Build("Printing packing list {0} ({1} of {2})...",V.Local.sThis,V.Local.iShow,V.Local.iTotal,V.Local.sRet)
+			F.Intrinsic.String.Build("Printing packing list {0} ({1} of {2}, {3})...",V.Local.sThis,V.Local.iShow,V.Local.iTotal,V.Global.sPlCopyNote,V.Local.sRet)
 			F.Intrinsic.Control.If(V.Local.i,=,0)
 				F.Intrinsic.UI.InvokeWaitDialog(V.Local.sRet)
 			F.Intrinsic.Control.Else
@@ -11232,9 +11728,9 @@ Function.Intrinsic.Control.If(v.Local.sSel,<>,"***NORETURN***")
 			F.Intrinsic.Control.EndIf
 			F.Intrinsic.Control.If(V.Local.i,<,V.Local.iCnt)
 				V.Local.sNext.Set(v.DataTable.dtLoadPL(v.Local.sSel(V.Local.iShow)).PACKING LIST!FieldValTrim)
-				F.Intrinsic.Control.For(V.Local.iWait,1,5)
-					F.Intrinsic.Math.Sub(6,V.Local.iWait,V.Local.iLeft)
-					F.Intrinsic.String.Build("Sent {0} ({1} of {2}). Waiting {3} seconds before {4}.",V.Local.sThis,V.Local.iShow,V.Local.iTotal,V.Local.iLeft,V.Local.sNext,V.Local.sRet)
+				F.Intrinsic.Control.For(V.Local.iWait,1,V.Global.iPlPause)
+					F.Intrinsic.Math.Sub(V.Local.iPause,V.Local.iWait,V.Local.iLeft)
+					F.Intrinsic.String.Build("Sent {0} ({1} of {2}, {3}). Waiting {4} seconds before {5}.",V.Local.sThis,V.Local.iShow,V.Local.iTotal,V.Global.sPlCopyNote,V.Local.iLeft,V.Local.sNext,V.Local.sRet)
 					F.Intrinsic.UI.ChangeWaitStatus(V.Local.sRet)
 					F.Intrinsic.UI.Sleep(1)
 					F.Intrinsic.UI.DoEvents
@@ -13466,9 +13962,1775 @@ F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
 F.Intrinsic.Control.EndIf
 Program.Sub.SyncCarrierFromLoad.End
 
+'7546 11/11/2026: Control Tower send and sync for PLA and UDF.
+'Webhooks, cancel, and printing the Control Tower ID on the pallet tag are not in this pass.
+Program.Sub.Ct_CompanyOk.Start
+	V.Local.sCo.Declare(String)
+	V.Global.bCtCompany.Set(False)
+	V.Local.sCo.Set(V.Caller.CompanyCode.UCase)
+	F.Intrinsic.Control.If(V.Local.sCo,=,"PLA")
+		V.Global.bCtCompany.Set(True)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sCo,=,"UDF")
+		V.Global.bCtCompany.Set(True)
+	F.Intrinsic.Control.EndIf
+Program.Sub.Ct_CompanyOk.End
+
+Program.Sub.Ct_Clean.Start
+	V.Local.sIn.Declare(String)
+	V.Local.sOut.Declare(String)
+	V.Local.sIn.Set(V.Args.sIn)
+	F.Intrinsic.String.Replace(V.Local.sIn,V.Ambient.DblQuote," ",V.Local.sOut)
+	F.Intrinsic.String.Replace(V.Local.sOut,V.Ambient.Newline," ",V.Local.sOut)
+	F.Intrinsic.String.Trim(V.Local.sOut,V.Global.sCtClean)
+Program.Sub.Ct_Clean.End
+
+Program.Sub.Ct_Alpha.Start
+	V.Local.sSrc.Declare(String)
+	V.Local.sAllow.Declare(String)
+	V.Local.sCh.Declare(String)
+	V.Local.sOut.Declare(String)
+	V.Local.sNext.Declare(String)
+	V.Local.i.Declare(Long)
+	V.Local.iLen.Declare(Long)
+	V.Local.bOk.Declare(Boolean,False)
+	V.Local.sSrc.Set(V.Args.sIn.UCase)
+	V.Local.sAllow.Set("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	V.Local.sOut.Set("")
+	F.Intrinsic.String.Len(V.Local.sSrc,V.Local.iLen)
+	F.Intrinsic.Control.If(V.Local.iLen,>,0)
+		F.Intrinsic.Control.For(V.Local.i,1,V.Local.iLen)
+			F.Intrinsic.String.Mid(V.Local.sSrc,V.Local.i,1,V.Local.sCh)
+			F.Intrinsic.String.IsInString(V.Local.sAllow,V.Local.sCh,False,V.Local.bOk)
+			F.Intrinsic.Control.If(V.Local.bOk,=,True)
+				F.Intrinsic.String.Concat(V.Local.sOut,V.Local.sCh,V.Local.sNext)
+				V.Local.sOut.Set(V.Local.sNext)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.Next(V.Local.i)
+	F.Intrinsic.Control.EndIf
+	V.Global.sCtAlpha.Set(V.Local.sOut)
+Program.Sub.Ct_Alpha.End
+
+Program.Sub.Ct_FindContact.Start
+	F.Intrinsic.Control.SetErrorHandler("Ct_FindContact_Err")
+	F.Intrinsic.Control.ClearErrors
+	V.Local.sError.Declare(String)
+	V.Local.sPath.Declare(String)
+	V.Local.sFile.Declare(String)
+	V.Local.sCode.Declare(String)
+	V.Local.sLine.Declare(String)
+	V.Local.sLines.Declare(String)
+	V.Local.sParts.Declare(String)
+	V.Local.sOne.Declare(String)
+	V.Local.sMark.Declare(String)
+	V.Local.i.Declare(Long)
+	V.Local.bExists.Declare(Boolean,False)
+	V.Local.bFound.Declare(Boolean,False)
+	V.Global.bCtContact.Set(False)
+	V.Global.sCtFirst.Set("")
+	V.Global.sCtLast.Set("")
+	V.Global.sCtPhone.Set("")
+	V.Global.sCtEmail.Set("")
+	V.Local.sCode.Set(V.Args.sCode.UCase)
+	F.Intrinsic.String.Trim(V.Local.sCode,V.Local.sCode)
+	F.Intrinsic.String.Build("{0}ControlTower.locations.txt",V.Ambient.ScriptPath,V.Local.sPath)
+	F.Intrinsic.File.Exists(V.Local.sPath,V.Local.bExists)
+	F.Intrinsic.Control.If(V.Local.bExists,=,False)
+		V.Global.sCtMessage.Set("Save ControlTower.locations.txt next to this script. Each line is the location code, first name, last name, phone, and email, separated by |. Origin codes are L, D, and E. The destination code is the Walmart ship-to. A sample file with that layout is ControlTower.locations.sample.txt.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.File.File2String(V.Local.sPath,V.Local.sFile)
+	F.Intrinsic.String.Trim(V.Local.sFile,V.Local.sFile)
+	F.Intrinsic.Control.If(V.Local.sFile,=,"")
+		V.Global.sCtMessage.Set("ControlTower.locations.txt is empty. Add one line per location: code, first name, last name, phone, and email, separated by |.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Split(V.Local.sFile,V.Ambient.Newline,V.Local.sLines)
+	F.Intrinsic.Control.For(V.Local.i,0,V.Local.sLines.UBound)
+		F.Intrinsic.Control.If(V.Local.bFound,=,False)
+			V.Local.sLine.Set(V.Local.sLines(V.Local.i).Trim)
+			F.Intrinsic.Control.If(V.Local.sLine,<>,"")
+				F.Intrinsic.String.Left(V.Local.sLine,1,V.Local.sMark)
+				F.Intrinsic.Control.If(V.Local.sMark,<>,"#")
+					F.Intrinsic.String.Split(V.Local.sLine,"|",V.Local.sParts)
+					F.Intrinsic.Control.If(V.Local.sParts.UBound,>=,3)
+						V.Local.sOne.Set(V.Local.sParts(0).Trim.UCase)
+						F.Intrinsic.Control.If(V.Local.sOne,=,V.Local.sCode)
+							V.Global.sCtFirst.Set(V.Local.sParts(1).Trim)
+							V.Global.sCtLast.Set(V.Local.sParts(2).Trim)
+							V.Global.sCtPhone.Set(V.Local.sParts(3).Trim)
+							V.Global.sCtEmail.Set("")
+							F.Intrinsic.Control.If(V.Local.sParts.UBound,>=,4)
+								V.Global.sCtEmail.Set(V.Local.sParts(4).Trim)
+							F.Intrinsic.Control.EndIf
+							V.Local.bFound.Set(True)
+							V.Global.bCtContact.Set(True)
+						F.Intrinsic.Control.EndIf
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.i)
+	F.Intrinsic.Control.If(V.Global.bCtContact,=,False)
+		F.Intrinsic.String.Build("Add a line to ControlTower.locations.txt for location {0}. The line is code, first name, last name, phone, and email, separated by |.",V.Local.sCode,V.Global.sCtMessage)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.Label("Ct_FindContact_Err")
+	V.Global.bCtContact.Set(False)
+	F.Intrinsic.String.Build("The contact list could not be read. {0}",V.Ambient.ErrorDescription,V.Global.sCtMessage)
+Program.Sub.Ct_FindContact.End
+
+Program.Sub.Ct_JsonGet.Start
+	F.Intrinsic.Control.SetErrorHandler("Ct_JsonGet_Err")
+	F.Intrinsic.Control.ClearErrors
+	V.Local.sPath.Declare(String)
+	V.Local.bHas.Declare(Boolean,False)
+	V.Global.sCtJson.Set("")
+	V.Local.sPath.Set(V.Args.sPath)
+	F.Intrinsic.Control.If(V.Global.sCtBody.Trim,<>,"")
+		F.Communication.JSON.Reset
+		F.Communication.JSON.Input(V.Global.sCtBody)
+		F.Communication.JSON.HasXPath(V.Local.sPath,V.Local.bHas)
+		F.Intrinsic.Control.If(V.Local.bHas,=,True)
+			F.Communication.JSON.SetProperty("XPath",V.Local.sPath)
+			F.Communication.JSON.ReadProperty("XText",V.Global.sCtJson)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.Label("Ct_JsonGet_Err")
+	V.Global.sCtJson.Set("")
+	F.Intrinsic.Control.ClearErrors
+Program.Sub.Ct_JsonGet.End
+
+Program.Sub.Ct_ShortBody.Start
+	V.Local.sBody.Declare(String)
+	V.Local.bSecret.Declare(Boolean,False)
+	V.Local.iLen.Declare(Long)
+	V.Local.sBody.Set(V.Global.sCtBody)
+	F.Intrinsic.String.IsInString(V.Local.sBody,"access_token",True,V.Local.bSecret)
+	F.Intrinsic.Control.If(V.Local.bSecret,=,False)
+		F.Intrinsic.String.IsInString(V.Local.sBody,"client_secret",True,V.Local.bSecret)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.bSecret,=,True)
+		V.Global.sCtShort.Set("The answer was not shown because it included sign-in details.")
+	F.Intrinsic.Control.Else
+		F.Intrinsic.String.Len(V.Local.sBody,V.Local.iLen)
+		F.Intrinsic.Control.If(V.Local.iLen,>,180)
+			F.Intrinsic.String.Left(V.Local.sBody,180,V.Global.sCtShort)
+		F.Intrinsic.Control.Else
+			V.Global.sCtShort.Set(V.Local.sBody)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+Program.Sub.Ct_ShortBody.End
+
+Program.Sub.Ct_Rest.Start
+	F.Intrinsic.Control.SetErrorHandler("Ct_Rest_Err")
+	F.Intrinsic.Control.ClearErrors
+	V.Local.sError.Declare(String)
+	V.Local.sUrl.Declare(String)
+	V.Local.sMethod.Declare(String)
+	V.Local.sBody.Declare(String)
+	V.Local.sToken.Declare(String)
+	V.Local.sExtra.Declare(String)
+	V.Local.sHeaders.Declare(String)
+	V.Local.sNext.Declare(String)
+	V.Local.sFile.Declare(String)
+	V.Local.sSsl.Declare(String)
+	V.Local.sStatus.Declare(String)
+	V.Local.bExists.Declare(Boolean,False)
+	V.Local.bHit.Declare(Boolean,False)
+	V.Local.sUrl.Set(V.Args.sUrl)
+	V.Local.sMethod.Set(V.Args.sMethod.UCase)
+	V.Local.sBody.Set(V.Args.sBody)
+	V.Local.sToken.Set(V.Args.sToken)
+	V.Local.sExtra.Set(V.Args.sExtra)
+	V.Global.sCtCode.Set("0")
+	V.Global.sCtBody.Set("")
+	F.Intrinsic.String.Build("{0}\ct7546.json",V.Caller.TempDir,V.Local.sFile)
+	F.Intrinsic.File.Exists(V.Local.sFile,V.Local.bExists)
+	F.Intrinsic.Control.If(V.Local.bExists,=,True)
+		F.Intrinsic.File.DeleteFile(V.Local.sFile)
+	F.Intrinsic.Control.EndIf
+	F.Communication.HTTP.Config("SSLEnabledProtocols=4032",V.Local.sSsl)
+	F.Intrinsic.String.Build("Content-Type: application/json{0}Accept: application/json",V.Ambient.Newline,V.Local.sHeaders)
+	F.Intrinsic.Control.If(V.Local.sToken.Trim,<>,"")
+		F.Intrinsic.String.Build("{0}{1}Authorization: Bearer {2}",V.Local.sHeaders,V.Ambient.Newline,V.Local.sToken,V.Local.sNext)
+		V.Local.sHeaders.Set(V.Local.sNext)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sExtra.Trim,<>,"")
+		F.Intrinsic.String.Build("{0}{1}{2}",V.Local.sHeaders,V.Ambient.Newline,V.Local.sExtra,V.Local.sNext)
+		V.Local.sHeaders.Set(V.Local.sNext)
+	F.Intrinsic.Control.EndIf
+	F.Communication.REST.Reset
+	F.Communication.REST.SetProperty("OtherHeaders",V.Local.sHeaders)
+	F.Communication.REST.SetProperty("LocalFile",V.Local.sFile)
+	F.Intrinsic.Control.If(V.Local.sMethod,=,"GET")
+		F.Communication.REST.Get(V.Local.sUrl)
+	F.Intrinsic.Control.Else
+		F.Communication.REST.SetProperty("PostData",V.Local.sBody)
+		F.Communication.REST.Post(V.Local.sUrl)
+	F.Intrinsic.Control.EndIf
+	F.Communication.REST.ReadProperty("StatusLine",V.Local.sStatus)
+	F.Communication.REST.ReadProperty("TransferredData",V.Global.sCtBody)
+	F.Intrinsic.Control.If(V.Global.sCtBody.Trim,=,"")
+		F.Intrinsic.File.Exists(V.Local.sFile,V.Local.bExists)
+		F.Intrinsic.Control.If(V.Local.bExists,=,True)
+			F.Intrinsic.File.File2String(V.Local.sFile,V.Global.sCtBody)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.File.Exists(V.Local.sFile,V.Local.bExists)
+	F.Intrinsic.Control.If(V.Local.bExists,=,True)
+		F.Intrinsic.File.DeleteFile(V.Local.sFile)
+	F.Intrinsic.Control.EndIf
+	V.Global.sCtCode.Set(V.Local.sStatus)
+	F.Intrinsic.String.IsInString(V.Local.sStatus," 409",False,V.Local.bHit)
+	F.Intrinsic.Control.If(V.Local.bHit,=,True)
+		V.Global.sCtCode.Set("409")
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Global.sCtCode,<>,"409")
+		F.Intrinsic.String.IsInString(V.Local.sStatus," 404",False,V.Local.bHit)
+		F.Intrinsic.Control.If(V.Local.bHit,=,True)
+			V.Global.sCtCode.Set("404")
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Global.sCtCode,<>,"409")
+		F.Intrinsic.Control.If(V.Global.sCtCode,<>,"404")
+			F.Intrinsic.String.IsInString(V.Local.sStatus," 401",False,V.Local.bHit)
+			F.Intrinsic.Control.If(V.Local.bHit,=,True)
+				V.Global.sCtCode.Set("401")
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Global.sCtCode,<>,"409")
+		F.Intrinsic.Control.If(V.Global.sCtCode,<>,"404")
+			F.Intrinsic.Control.If(V.Global.sCtCode,<>,"401")
+				F.Intrinsic.String.IsInString(V.Local.sStatus," 400",False,V.Local.bHit)
+				F.Intrinsic.Control.If(V.Local.bHit,=,True)
+					V.Global.sCtCode.Set("400")
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Global.sCtCode,<>,"409")
+		F.Intrinsic.Control.If(V.Global.sCtCode,<>,"404")
+			F.Intrinsic.Control.If(V.Global.sCtCode,<>,"401")
+				F.Intrinsic.Control.If(V.Global.sCtCode,<>,"400")
+					F.Intrinsic.String.IsInString(V.Local.sStatus," 202",False,V.Local.bHit)
+					F.Intrinsic.Control.If(V.Local.bHit,=,True)
+						V.Global.sCtCode.Set("202")
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Global.sCtCode,<>,"409")
+		F.Intrinsic.Control.If(V.Global.sCtCode,<>,"404")
+			F.Intrinsic.Control.If(V.Global.sCtCode,<>,"401")
+				F.Intrinsic.Control.If(V.Global.sCtCode,<>,"400")
+					F.Intrinsic.Control.If(V.Global.sCtCode,<>,"202")
+						F.Intrinsic.String.IsInString(V.Local.sStatus," 201",False,V.Local.bHit)
+						F.Intrinsic.Control.If(V.Local.bHit,=,True)
+							V.Global.sCtCode.Set("201")
+						F.Intrinsic.Control.EndIf
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Global.sCtCode,<>,"409")
+		F.Intrinsic.Control.If(V.Global.sCtCode,<>,"404")
+			F.Intrinsic.Control.If(V.Global.sCtCode,<>,"401")
+				F.Intrinsic.Control.If(V.Global.sCtCode,<>,"400")
+					F.Intrinsic.Control.If(V.Global.sCtCode,<>,"202")
+						F.Intrinsic.Control.If(V.Global.sCtCode,<>,"201")
+							F.Intrinsic.String.IsInString(V.Local.sStatus," 200",False,V.Local.bHit)
+							F.Intrinsic.Control.If(V.Local.bHit,=,True)
+								V.Global.sCtCode.Set("200")
+							F.Intrinsic.Control.EndIf
+						F.Intrinsic.Control.EndIf
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	V.Local.sToken.Set("")
+	F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.Label("Ct_Rest_Err")
+	V.Local.sToken.Set("")
+	V.Global.sCtCode.Set("0")
+	V.Global.bCtOk.Set(False)
+	F.Intrinsic.String.Build("Control Tower could not be reached. {0}",V.Ambient.ErrorDescription,V.Global.sCtMessage)
+	F.Intrinsic.Control.ClearErrors
+Program.Sub.Ct_Rest.End
+
+Program.Sub.Ct_DropToken.Start
+	V.Global.sCtToken.Set("")
+	F.Intrinsic.Date.DateSerial(1900,1,1,V.Global.dCtExpire)
+Program.Sub.Ct_DropToken.End
+
+Program.Sub.Ct_ReadToken.Start
+	V.Local.sLife.Declare(String)
+	V.Local.iLife.Declare(Long)
+	V.Local.bNum.Declare(Boolean,False)
+	V.Local.dNow.Declare(Date)
+	V.Global.sCtToken.Set("")
+	F.Intrinsic.Date.DateSerial(1900,1,1,V.Global.dCtExpire)
+	F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/JSON/access_token")
+	F.Intrinsic.Control.If(V.Global.sCtJson.Trim,=,"")
+		F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/access_token")
+	F.Intrinsic.Control.EndIf
+	V.Global.sCtToken.Set(V.Global.sCtJson.Trim)
+	F.Intrinsic.Control.If(V.Global.sCtToken.Trim,<>,"")
+		F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/JSON/expires_in")
+		F.Intrinsic.Control.If(V.Global.sCtJson.Trim,=,"")
+			F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/expires_in")
+		F.Intrinsic.Control.EndIf
+		V.Local.sLife.Set(V.Global.sCtJson.Trim)
+		F.Intrinsic.Math.IsNumeric(V.Local.sLife,V.Local.bNum)
+		F.Intrinsic.Control.If(V.Local.bNum,=,True)
+			F.Intrinsic.Math.ConvertToLong(V.Local.sLife,V.Local.iLife)
+			F.Intrinsic.Control.If(V.Local.iLife,>,120)
+				F.Intrinsic.Math.Sub(V.Local.iLife,60,V.Local.iLife)
+				V.Local.dNow.Set(V.Ambient.Now)
+				F.Intrinsic.Date.DateAdd("S",V.Local.iLife,V.Local.dNow,V.Global.dCtExpire)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+Program.Sub.Ct_ReadToken.End
+
+Program.Sub.Ct_Token.Start
+	F.Intrinsic.Control.SetErrorHandler("Ct_Token_Err")
+	F.Intrinsic.Control.ClearErrors
+	V.Local.sError.Declare(String)
+	V.Local.sPath.Declare(String)
+	V.Local.sFile.Declare(String)
+	V.Local.sLine.Declare(String)
+	V.Local.sLines.Declare(String)
+	V.Local.sId.Declare(String)
+	V.Local.sSecret.Declare(String)
+	V.Local.sAuth.Declare(String)
+	V.Local.sHost.Declare(String)
+	V.Local.sAudience.Declare(String)
+	V.Local.sFileAud.Declare(String)
+	V.Local.sBody.Declare(String)
+	V.Local.sNext.Declare(String)
+	V.Local.sUrl.Declare(String)
+	V.Local.sMark.Declare(String)
+	V.Local.sLabel.Declare(String)
+	V.Local.sOb.Declare(String)
+	V.Local.sCb.Declare(String)
+	V.Local.q.Declare(String)
+	V.Local.i.Declare(Long)
+	V.Local.iPos.Declare(Long)
+	V.Local.iStart.Declare(Long)
+	V.Local.iLab.Declare(Long)
+	V.Local.bExists.Declare(Boolean,False)
+	V.Local.bStep.Declare(Boolean,False)
+	V.Local.bQa.Declare(Boolean,False)
+	V.Local.bGuess.Declare(Boolean,False)
+	V.Local.bPong.Declare(Boolean,False)
+	V.Local.dNow.Declare(Date)
+	V.Local.iLeft.Declare(Long)
+	V.Global.bCtOk.Set(False)
+	V.Global.sCtMessage.Set("")
+	V.Global.sCtAudNote.Set("")
+	F.Intrinsic.Control.If(V.Global.sCtToken.Trim,<>,"")
+		F.Intrinsic.Control.If(V.Global.sCtHost.Trim,<>,"")
+			V.Local.dNow.Set(V.Ambient.Now)
+			F.Intrinsic.Date.DateDiff("S",V.Local.dNow,V.Global.dCtExpire,V.Local.iLeft)
+			F.Intrinsic.Control.If(V.Local.iLeft,>,0)
+				V.Global.bCtOk.Set(True)
+				F.Intrinsic.Control.ExitSub
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	V.Global.sCtToken.Set("")
+	V.Local.sId.Set("")
+	V.Local.sSecret.Set("")
+	V.Local.sAudience.Set("")
+	V.Local.sFileAud.Set("")
+	V.Local.bStep.Set(True)
+	V.Local.bGuess.Set(False)
+	V.Local.sOb.Set("{")
+	V.Local.sCb.Set("}")
+	V.Local.q.Set(V.Ambient.DblQuote)
+	F.Intrinsic.String.Build("{0}ControlTower.qa.txt",V.Ambient.ScriptPath,V.Local.sPath)
+	F.Intrinsic.File.Exists(V.Local.sPath,V.Local.bExists)
+	F.Intrinsic.Control.If(V.Local.bExists,=,False)
+		V.Global.sCtMessage.Set("Save the Control Tower QA credential file next to this script and name it ControlTower.qa.txt.")
+		V.Local.bStep.Set(False)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.bStep,=,True)
+		F.Intrinsic.File.File2String(V.Local.sPath,V.Local.sFile)
+		F.Intrinsic.String.Split(V.Local.sFile,V.Ambient.Newline,V.Local.sLines)
+		F.Intrinsic.Control.For(V.Local.i,0,V.Local.sLines.UBound)
+			V.Local.sLine.Set(V.Local.sLines(V.Local.i).Trim)
+			V.Local.iPos.Set(0)
+			V.Local.sLabel.Set("Client ID:")
+			F.Intrinsic.String.Len(V.Local.sLabel,V.Local.iLab)
+			F.Intrinsic.String.InStr(V.Local.sLine,V.Local.sLabel,V.Local.iPos)
+			F.Intrinsic.Control.If(V.Local.iPos,>,0)
+				F.Intrinsic.Math.Add(V.Local.iPos,V.Local.iLab,V.Local.iStart)
+				F.Intrinsic.String.Mid(V.Local.sLine,V.Local.iStart,300,V.Local.sId)
+				F.Intrinsic.String.Trim(V.Local.sId,V.Local.sId)
+			F.Intrinsic.Control.EndIf
+			V.Local.iPos.Set(0)
+			V.Local.sLabel.Set("Client Secret:")
+			F.Intrinsic.String.Len(V.Local.sLabel,V.Local.iLab)
+			F.Intrinsic.String.InStr(V.Local.sLine,V.Local.sLabel,V.Local.iPos)
+			F.Intrinsic.Control.If(V.Local.iPos,>,0)
+				F.Intrinsic.Math.Add(V.Local.iPos,V.Local.iLab,V.Local.iStart)
+				F.Intrinsic.String.Mid(V.Local.sLine,V.Local.iStart,300,V.Local.sSecret)
+				F.Intrinsic.String.Trim(V.Local.sSecret,V.Local.sSecret)
+			F.Intrinsic.Control.EndIf
+			V.Local.iPos.Set(0)
+			V.Local.sLabel.Set("Auth0 Tenant URL:")
+			F.Intrinsic.String.Len(V.Local.sLabel,V.Local.iLab)
+			F.Intrinsic.String.InStr(V.Local.sLine,V.Local.sLabel,V.Local.iPos)
+			F.Intrinsic.Control.If(V.Local.iPos,>,0)
+				F.Intrinsic.Math.Add(V.Local.iPos,V.Local.iLab,V.Local.iStart)
+				F.Intrinsic.String.Mid(V.Local.sLine,V.Local.iStart,300,V.Local.sAuth)
+				F.Intrinsic.String.Trim(V.Local.sAuth,V.Local.sAuth)
+			F.Intrinsic.Control.EndIf
+			V.Local.iPos.Set(0)
+			V.Local.sLabel.Set("API Host:")
+			F.Intrinsic.String.Len(V.Local.sLabel,V.Local.iLab)
+			F.Intrinsic.String.InStr(V.Local.sLine,V.Local.sLabel,V.Local.iPos)
+			F.Intrinsic.Control.If(V.Local.iPos,>,0)
+				F.Intrinsic.Math.Add(V.Local.iPos,V.Local.iLab,V.Local.iStart)
+				F.Intrinsic.String.Mid(V.Local.sLine,V.Local.iStart,300,V.Local.sHost)
+				F.Intrinsic.String.Trim(V.Local.sHost,V.Local.sHost)
+			F.Intrinsic.Control.EndIf
+			V.Local.iPos.Set(0)
+			V.Local.sLabel.Set("Audience:")
+			F.Intrinsic.String.Len(V.Local.sLabel,V.Local.iLab)
+			F.Intrinsic.String.InStr(V.Local.sLine,V.Local.sLabel,V.Local.iPos)
+			F.Intrinsic.Control.If(V.Local.iPos,=,0)
+				V.Local.sLabel.Set("audience:")
+				F.Intrinsic.String.Len(V.Local.sLabel,V.Local.iLab)
+				F.Intrinsic.String.InStr(V.Local.sLine,V.Local.sLabel,V.Local.iPos)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.If(V.Local.iPos,>,0)
+				F.Intrinsic.Math.Add(V.Local.iPos,V.Local.iLab,V.Local.iStart)
+				F.Intrinsic.String.Mid(V.Local.sLine,V.Local.iStart,300,V.Local.sAudience)
+				F.Intrinsic.String.Trim(V.Local.sAudience,V.Local.sAudience)
+				V.Local.sFileAud.Set(V.Local.sAudience)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.Next(V.Local.i)
+		F.Intrinsic.Control.If(V.Local.sId.Trim,=,"")
+			V.Global.sCtMessage.Set("The credential file is missing the client id or the client secret.")
+			V.Local.bStep.Set(False)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Local.bStep,=,True)
+			F.Intrinsic.Control.If(V.Local.sSecret.Trim,=,"")
+				V.Global.sCtMessage.Set("The credential file is missing the client id or the client secret.")
+				V.Local.bStep.Set(False)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Local.bStep,=,True)
+			F.Intrinsic.Control.If(V.Local.sHost.Trim,=,"")
+				V.Global.sCtMessage.Set("The credential file is missing the QA site address.")
+				V.Local.bStep.Set(False)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Local.bStep,=,True)
+			F.Intrinsic.Control.If(V.Local.sAuth.Trim,=,"")
+				V.Global.sCtMessage.Set("The credential file is missing the QA sign-in address.")
+				V.Local.bStep.Set(False)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.bStep,=,True)
+		F.Intrinsic.String.Right(V.Local.sHost,1,V.Local.sMark)
+		F.Intrinsic.Control.If(V.Local.sMark,=,"/")
+			F.Intrinsic.String.Len(V.Local.sHost,V.Local.iLab)
+			F.Intrinsic.Math.Sub(V.Local.iLab,1,V.Local.iLab)
+			F.Intrinsic.String.Left(V.Local.sHost,V.Local.iLab,V.Local.sHost)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.String.IsInString(V.Local.sHost,"qa.controltower.tech",True,V.Local.bQa)
+		F.Intrinsic.Control.If(V.Local.bQa,=,False)
+			V.Global.sCtMessage.Set("This pass only talks to the Control Tower QA site.")
+			V.Local.bStep.Set(False)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Local.bStep,=,True)
+			F.Intrinsic.String.IsInString(V.Local.sAuth,"controltower-qa.auth0.com",True,V.Local.bQa)
+			F.Intrinsic.Control.If(V.Local.bQa,=,False)
+				V.Global.sCtMessage.Set("The credential file is not the QA sign-in. This pass does not use the live Control Tower site.")
+				V.Local.bStep.Set(False)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Local.bStep,=,True)
+			F.Intrinsic.String.IsInString(V.Local.sAuth,"oauth/token",True,V.Local.bQa)
+			F.Intrinsic.Control.If(V.Local.bQa,=,False)
+				F.Intrinsic.String.Right(V.Local.sAuth,1,V.Local.sMark)
+				F.Intrinsic.Control.If(V.Local.sMark,=,"/")
+					F.Intrinsic.String.Build("{0}oauth/token",V.Local.sAuth,V.Local.sNext)
+				F.Intrinsic.Control.Else
+					F.Intrinsic.String.Build("{0}/oauth/token",V.Local.sAuth,V.Local.sNext)
+				F.Intrinsic.Control.EndIf
+				V.Local.sAuth.Set(V.Local.sNext)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.bStep,=,True)
+		F.Intrinsic.String.Build("{0}{1}grant_type{1}:{1}client_credentials{1},{1}client_id{1}:{1}{2}{1},{1}client_secret{1}:{1}{3}{1}",V.Local.sOb,V.Local.q,V.Local.sId,V.Local.sSecret,V.Local.sBody)
+		F.Intrinsic.Control.If(V.Local.sAudience.Trim,<>,"")
+			F.Intrinsic.String.Build("{0},{1}audience{1}:{1}{2}{1}",V.Local.sBody,V.Local.q,V.Local.sAudience,V.Local.sNext)
+			V.Local.sBody.Set(V.Local.sNext)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.String.Concat(V.Local.sBody,V.Local.sCb,V.Local.sNext)
+		V.Local.sBody.Set(V.Local.sNext)
+		F.Intrinsic.Control.CallSub(Ct_Rest,"sUrl",V.Local.sAuth,"sMethod","POST","sBody",V.Local.sBody,"sToken","","sExtra","")
+		F.Intrinsic.Control.CallSub(Ct_ReadToken)
+		F.Intrinsic.Control.If(V.Global.sCtToken.Trim,=,"")
+			F.Intrinsic.Control.If(V.Local.sFileAud.Trim,=,"")
+				F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/JSON/error_description")
+				F.Intrinsic.Control.If(V.Global.sCtJson.Trim,=,"")
+					F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/error_description")
+				F.Intrinsic.Control.EndIf
+				V.Local.sMark.Set(V.Global.sCtJson)
+				V.Local.sAudience.Set("https://supplier-gateway.controltower.tech")
+				V.Local.bGuess.Set(True)
+				F.Intrinsic.String.Build("{0}{1}grant_type{1}:{1}client_credentials{1},{1}client_id{1}:{1}{2}{1},{1}client_secret{1}:{1}{3}{1}",V.Local.sOb,V.Local.q,V.Local.sId,V.Local.sSecret,V.Local.sBody)
+				F.Intrinsic.String.Build("{0},{1}audience{1}:{1}{2}{1}",V.Local.sBody,V.Local.q,V.Local.sAudience,V.Local.sNext)
+				V.Local.sBody.Set(V.Local.sNext)
+				F.Intrinsic.String.Concat(V.Local.sBody,V.Local.sCb,V.Local.sNext)
+				V.Local.sBody.Set(V.Local.sNext)
+				F.Intrinsic.Control.CallSub(Ct_Rest,"sUrl",V.Local.sAuth,"sMethod","POST","sBody",V.Local.sBody,"sToken","","sExtra","")
+				F.Intrinsic.Control.CallSub(Ct_ReadToken)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Global.sCtToken.Trim,=,"")
+			F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/JSON/error_description")
+			F.Intrinsic.Control.If(V.Global.sCtJson.Trim,=,"")
+				F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/error_description")
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.If(V.Global.sCtJson.Trim,=,"")
+				F.Intrinsic.Control.CallSub(Ct_ShortBody)
+				V.Global.sCtJson.Set(V.Global.sCtShort)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.If(V.Local.bGuess,=,True)
+				F.Intrinsic.String.Build("Control Tower refused the sign-in. The credential file has no audience. Auth0 said: {0}. The supplier gateway was also refused: {1}. Add an audience line for https://supplier-gateway.controltower.tech to ControlTower.qa.txt.",V.Local.sMark,V.Global.sCtJson,V.Global.sCtMessage)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.String.Build("Control Tower refused the sign-in. {0}",V.Global.sCtJson,V.Global.sCtMessage)
+			F.Intrinsic.Control.EndIf
+			V.Local.bStep.Set(False)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.bStep,=,True)
+		F.Intrinsic.String.Build("{0}/api/integration/v1/supplier/ping",V.Local.sHost,V.Local.sUrl)
+		F.Intrinsic.Control.CallSub(Ct_Rest,"sUrl",V.Local.sUrl,"sMethod","GET","sBody","","sToken",V.Global.sCtToken,"sExtra","")
+		F.Intrinsic.Control.If(V.Global.sCtCode,=,"401")
+			F.Intrinsic.Control.If(V.Local.sFileAud.Trim,=,"")
+				F.Intrinsic.Control.If(V.Local.bGuess,=,False)
+					V.Local.sAudience.Set("https://supplier-gateway.controltower.tech")
+					V.Local.bGuess.Set(True)
+					F.Intrinsic.String.Build("{0}{1}grant_type{1}:{1}client_credentials{1},{1}client_id{1}:{1}{2}{1},{1}client_secret{1}:{1}{3}{1}",V.Local.sOb,V.Local.q,V.Local.sId,V.Local.sSecret,V.Local.sBody)
+					F.Intrinsic.String.Build("{0},{1}audience{1}:{1}{2}{1}",V.Local.sBody,V.Local.q,V.Local.sAudience,V.Local.sNext)
+					V.Local.sBody.Set(V.Local.sNext)
+					F.Intrinsic.String.Concat(V.Local.sBody,V.Local.sCb,V.Local.sNext)
+					V.Local.sBody.Set(V.Local.sNext)
+					F.Intrinsic.Control.CallSub(Ct_Rest,"sUrl",V.Local.sAuth,"sMethod","POST","sBody",V.Local.sBody,"sToken","","sExtra","")
+					F.Intrinsic.Control.CallSub(Ct_ReadToken)
+					F.Intrinsic.Control.If(V.Global.sCtToken.Trim,<>,"")
+						F.Intrinsic.Control.CallSub(Ct_Rest,"sUrl",V.Local.sUrl,"sMethod","GET","sBody","","sToken",V.Global.sCtToken,"sExtra","")
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Global.sCtCode,=,"200")
+			F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/JSON/Text")
+			F.Intrinsic.Control.If(V.Global.sCtJson.Trim,=,"")
+				F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/Text")
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.String.IsInString(V.Global.sCtJson,"Pong",True,V.Local.bPong)
+			F.Intrinsic.Control.If(V.Local.bPong,=,False)
+				F.Intrinsic.String.IsInString(V.Global.sCtBody,"Pong",True,V.Local.bPong)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.If(V.Local.bPong,=,True)
+				V.Global.bCtOk.Set(True)
+				V.Global.sCtHost.Set(V.Local.sHost)
+				F.Intrinsic.Control.If(V.Local.bGuess,=,True)
+					V.Global.sCtAudNote.Set("Add an audience line for https://supplier-gateway.controltower.tech to the credential file. Control Tower accepted that address.")
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.Else
+				F.Intrinsic.Control.CallSub(Ct_ShortBody)
+				F.Intrinsic.String.Build("Control Tower answered the connection check without a pong. {0}",V.Global.sCtShort,V.Global.sCtMessage)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.Else
+			F.Intrinsic.Control.CallSub(Ct_ShortBody)
+			F.Intrinsic.String.Build("Control Tower did not answer the connection check. {0} {1}",V.Global.sCtCode,V.Global.sCtShort,V.Global.sCtMessage)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	V.Local.sSecret.Set("")
+	V.Local.sId.Set("")
+	V.Local.sBody.Set("")
+	V.Local.sFile.Set("")
+	F.Intrinsic.Control.If(V.Global.bCtOk,=,False)
+		F.Intrinsic.Control.CallSub(Ct_DropToken)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.Label("Ct_Token_Err")
+	V.Local.sSecret.Set("")
+	V.Local.sId.Set("")
+	V.Local.sBody.Set("")
+	V.Local.sFile.Set("")
+	F.Intrinsic.Control.CallSub(Ct_DropToken)
+	V.Global.bCtOk.Set(False)
+	F.Intrinsic.String.IsInString(V.Ambient.ErrorDescription,"client_secret",True,V.Local.bQa)
+	F.Intrinsic.Control.If(V.Local.bQa,=,False)
+		F.Intrinsic.String.IsInString(V.Ambient.ErrorDescription,"access_token",True,V.Local.bQa)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.bQa,=,True)
+		V.Global.sCtMessage.Set("Control Tower sign-in failed.")
+	F.Intrinsic.Control.Else
+		F.Intrinsic.String.Build("Control Tower sign-in failed. {0}",V.Ambient.ErrorDescription,V.Global.sCtMessage)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.ClearErrors
+Program.Sub.Ct_Token.End
+
+Program.Sub.Ct_PaintLoad.Start
+	V.Local.sLoad.Declare(String)
+	V.Local.sFilter.Declare(String)
+	V.Local.sSel.Declare(String)
+	V.Local.sNote.Declare(String)
+	V.Local.sExtra.Declare(String)
+	V.Local.sNext.Declare(String)
+	V.Local.i.Declare(Long)
+	V.Local.bHas.Declare(Boolean,False)
+	V.Local.sLoad.Set(V.Args.sLoadNo)
+	F.Intrinsic.String.Build("[LOAD NUMBER] = {0} and [LOAD NUMBER] <> 0 and [LOAD NUMBER] <> 9999",V.Local.sLoad,V.Local.sFilter)
+	F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
+	F.Intrinsic.Control.If(V.Local.sSel,<>,"***NORETURN***")
+		F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+		F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
+			F.Intrinsic.Control.If(V.Args.sId.Trim,<>,"")
+				F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARRIER LOAD NUMBER",V.Args.sId)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.If(V.Args.sStatus.Trim,<>,"")
+				F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARRIER TRAILER",V.Args.sStatus)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.If(V.Args.sPro.Trim,<>,"")
+				F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"PRO_NO",V.Args.sPro)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.If(V.Args.sPickup.Trim,<>,"")
+				F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"Pickup Time",V.Args.sPickup)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.If(V.Args.sNoteExtra.Trim,<>,"")
+				V.Local.sNote.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).Load Notes!FieldValTrim)
+				V.Local.sExtra.Set(V.Args.sNoteExtra)
+				F.Intrinsic.String.IsInString(V.Local.sNote,V.Local.sExtra,False,V.Local.bHas)
+				F.Intrinsic.Control.If(V.Local.bHas,=,False)
+					F.Intrinsic.Control.If(V.Local.sNote.Trim,=,"")
+						V.Local.sNext.Set(V.Local.sExtra)
+					F.Intrinsic.Control.Else
+						F.Intrinsic.String.Build("{0} | {1}",V.Local.sNote,V.Local.sExtra,V.Local.sNext)
+					F.Intrinsic.Control.EndIf
+					F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"Load Notes",V.Local.sNext)
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.Next(V.Local.i)
+		F.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.EndIf
+Program.Sub.Ct_PaintLoad.End
+
+Program.Sub.Ct_ApplyCarrier.Start
+	F.Intrinsic.Control.SetErrorHandler("Ct_ApplyCarrier_Err")
+	F.Intrinsic.Control.ClearErrors
+	V.Local.sError.Declare(String)
+	V.Local.sLoad.Declare(String)
+	V.Local.sScac.Declare(String)
+	V.Local.sName.Declare(String)
+	V.Local.sSQL.Declare(String)
+	V.Local.sCarrier.Declare(String)
+	V.Local.sSrvc.Declare(String)
+	V.Local.sPay.Declare(String)
+	V.Local.sVia.Declare(String)
+	V.Local.sShort.Declare(String)
+	V.Local.sLong.Declare(String)
+	V.Local.sViaDesc.Declare(String)
+	V.Local.sFilter.Declare(String)
+	V.Local.sSel.Declare(String)
+	V.Local.sNext.Declare(String)
+	V.Local.i.Declare(Long)
+	V.Local.bMatch.Declare(Boolean,False)
+	V.Local.sLoad.Set(V.Args.sLoadNo)
+	V.Local.sScac.Set(V.Args.sScac.Trim)
+	V.Local.sName.Set(V.Args.sName.Trim)
+	V.Local.bMatch.Set(False)
+	F.Intrinsic.Control.If(V.Local.sScac,=,"")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	V.Local.sScac.Set(V.Local.sScac.PSQLFriendly)
+	F.Intrinsic.Control.If(V.DataTable.dtCtCarrier.Exists,=,True)
+		F.Data.DataTable.Close("dtCtCarrier")
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Build("SELECT RTRIM(CARRIER_CD) AS CARRIER_CD, SRVC_TYPE, RTRIM(SHORT_DESC) AS SHORT_DESC, RTRIM(LONG_DESC) AS LONG_DESC, RTRIM(PAYMENT_OPTION) AS PAYMENT_OPTION, RTRIM(VIA) AS VIA FROM V_OE_CARRIER WHERE RTRIM(SCAC) = '{0}' AND CARRIER_CD LIKE 'WM%' ORDER BY CARRIER_CD, SRVC_TYPE",V.Local.sScac,V.Local.sSQL)
+	F.Data.DataTable.CreateFromSQL("dtCtCarrier","con",V.Local.sSQL,True)
+	F.Intrinsic.Control.If(V.DataTable.dtCtCarrier.RowCount,>,0)
+		V.Local.sCarrier.Set(V.DataTable.dtCtCarrier(0).CARRIER_CD!FieldValTrim)
+		V.Local.sSrvc.Set(V.DataTable.dtCtCarrier(0).SRVC_TYPE!FieldValTrim)
+		V.Local.sPay.Set(V.DataTable.dtCtCarrier(0).PAYMENT_OPTION!FieldValTrim)
+		V.Local.sVia.Set(V.DataTable.dtCtCarrier(0).VIA!FieldValTrim)
+		V.Local.sShort.Set(V.DataTable.dtCtCarrier(0).SHORT_DESC!FieldValTrim)
+		V.Local.sLong.Set(V.DataTable.dtCtCarrier(0).LONG_DESC!FieldValTrim)
+		V.Local.bMatch.Set(True)
+	F.Intrinsic.Control.EndIf
+	F.Data.DataTable.Close("dtCtCarrier")
+	F.Intrinsic.Control.If(V.Local.bMatch,=,False)
+		F.Intrinsic.String.Build("{0} Control Tower assigned {1} ({2}). No Walmart carrier starting with WM uses that SCAC, so the carrier on the load was left as it is.",V.Global.sCtMessage,V.Local.sName,V.Args.sScac,V.Local.sNext)
+		V.Global.sCtMessage.Set(V.Local.sNext)
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	V.Local.sViaDesc.Set("")
+	F.Intrinsic.Control.If(V.Local.sVia.Trim,<>,"")
+		V.Local.sNext.Set(V.Local.sVia.PSQLFriendly)
+		F.Intrinsic.String.Build("SELECT RTRIM(MESSAGE) FROM SHIP_VIA WHERE ID = '{0}'",V.Local.sNext,V.Local.sSQL)
+		F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sViaDesc)
+		F.Intrinsic.Control.If(V.Ambient.ExecuteAndReturnEOF,=,True)
+			V.Local.sViaDesc.Set("")
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Build("[LOAD NUMBER] = {0} and [LOAD NUMBER] <> 0 and [LOAD NUMBER] <> 9999",V.Local.sLoad,V.Local.sFilter)
+	F.Data.Datatable.Select("dtLoad",V.Local.sFilter,V.Local.sSel)
+	F.Intrinsic.Control.If(V.Local.sSel,<>,"***NORETURN***")
+		F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+		F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
+			F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARRIER_CD",V.Local.sCarrier)
+			F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"Carrier Number",V.Local.sCarrier)
+			F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARR_SHORT_DESC",V.Local.sShort)
+			F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"CARR_LONG_DESC",V.Local.sLong)
+			F.Data.Datatable.SetValue("dtLoad",V.Local.sSel(V.Local.i),"SHIP_VIA_SHIP",V.Local.sViaDesc)
+		F.Intrinsic.Control.Next(V.Local.i)
+		F.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.EndIf
+	V.Local.sNext.Set(V.Local.sCarrier.PSQLFriendly)
+	F.Intrinsic.String.Build("UPDATE LOAD_PLAN SET CARRIER = '{0}' WHERE LOAD_NO = {1}",V.Local.sNext,V.Local.sLoad,V.Local.sSQL)
+	F.ODBC.Connection!con.Execute(V.Local.sSQL)
+	F.Intrinsic.Control.CallSub(SyncCarrierFromLoad,"sLoadNo",V.Local.sLoad,"sCarrierCD",V.Local.sCarrier,"iSrvcType",V.Local.sSrvc,"sPaymentOption",V.Local.sPay,"sVIA",V.Local.sVia)
+	Gui.frmShip.lblRunMRP.Visible(True)
+	F.Intrinsic.String.Build("{0} Carrier on the load is now {1}.",V.Global.sCtMessage,V.Local.sCarrier,V.Local.sNext)
+	V.Global.sCtMessage.Set(V.Local.sNext)
+	F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.Label("Ct_ApplyCarrier_Err")
+	F.Intrinsic.String.Build("{0} The carrier was not updated. {1}",V.Global.sCtMessage,V.Ambient.ErrorDescription,V.Local.sNext)
+	V.Global.sCtMessage.Set(V.Local.sNext)
+	V.Global.bCtOk.Set(False)
+	F.Intrinsic.Control.ClearErrors
+Program.Sub.Ct_ApplyCarrier.End
+
+Program.Sub.Ct_JoinNote.Start
+	V.Local.sNote.Declare(String)
+	V.Local.sExtra.Declare(String)
+	V.Local.sNext.Declare(String)
+	V.Local.bHas.Declare(Boolean,False)
+	V.Local.sNote.Set(V.Args.sNote.Trim)
+	V.Local.sExtra.Set(V.Args.sExtra.Trim)
+	V.Global.sCtJoined.Set(V.Local.sNote)
+	F.Intrinsic.Control.If(V.Local.sExtra,<>,"")
+		F.Intrinsic.String.IsInString(V.Local.sNote,V.Local.sExtra,False,V.Local.bHas)
+		F.Intrinsic.Control.If(V.Local.bHas,=,False)
+			F.Intrinsic.Control.If(V.Local.sNote,=,"")
+				V.Global.sCtJoined.Set(V.Local.sExtra)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.String.Build("{0} | {1}",V.Local.sNote,V.Local.sExtra,V.Local.sNext)
+				V.Global.sCtJoined.Set(V.Local.sNext)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+Program.Sub.Ct_JoinNote.End
+
+Program.Sub.Ct_SaveLoad.Start
+	F.Intrinsic.Control.SetErrorHandler("Ct_SaveLoad_Err")
+	F.Intrinsic.Control.ClearErrors
+	V.Local.sError.Declare(String)
+	V.Local.sLoad.Declare(String)
+	V.Local.sId.Declare(String)
+	V.Local.sStatus.Declare(String)
+	V.Local.sStatusFull.Declare(String)
+	V.Local.sPro.Declare(String)
+	V.Local.sProFull.Declare(String)
+	V.Local.sPickup.Declare(String)
+	V.Local.sPickRaw.Declare(String)
+	V.Local.sPickSql.Declare(String)
+	V.Local.sFixture.Declare(String)
+	V.Local.sScac.Declare(String)
+	V.Local.sName.Declare(String)
+	V.Local.sExtra.Declare(String)
+	V.Local.sNext.Declare(String)
+	V.Local.sSQL.Declare(String)
+	V.Local.sNote.Declare(String)
+	V.Local.sOrder.Declare(String)
+	V.Local.sLine.Declare(String)
+	V.Local.sSfx.Declare(String)
+	V.Local.sPack.Declare(String)
+	V.Local.sMark.Declare(String)
+	V.Local.i.Declare(Long)
+	V.Local.iMax.Declare(Long)
+	V.Local.iLen.Declare(Long)
+	V.Local.iWrote.Declare(Long)
+	V.Local.bSlash.Declare(Boolean,False)
+	V.Local.bTee.Declare(Boolean,False)
+	V.Global.bCtOk.Set(True)
+	V.Local.sLoad.Set(V.Args.sLoadNo)
+	V.Local.sId.Set(V.Args.sId.Trim)
+	V.Local.sStatusFull.Set(V.Args.sStatus.Trim)
+	V.Local.sStatus.Set(V.Local.sStatusFull)
+	V.Local.sProFull.Set(V.Args.sPro.Trim)
+	V.Local.sPro.Set(V.Local.sProFull)
+	V.Local.sPickRaw.Set(V.Args.sPickup.Trim)
+	V.Local.sPickSql.Set("")
+	V.Local.sFixture.Set(V.Args.sFixture.Trim)
+	V.Local.sScac.Set(V.Args.sScac.Trim)
+	V.Local.sName.Set(V.Args.sName.Trim)
+	V.Local.sExtra.Set("")
+	V.Local.iWrote.Set(0)
+	F.Intrinsic.String.Len(V.Local.sStatus,V.Local.iLen)
+	F.Intrinsic.Control.If(V.Local.iLen,>,20)
+		F.Intrinsic.String.Left(V.Local.sStatus,20,V.Local.sStatus)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Len(V.Local.sPro,V.Local.iLen)
+	F.Intrinsic.Control.If(V.Local.iLen,>,20)
+		F.Intrinsic.String.Left(V.Local.sPro,20,V.Local.sPro)
+		F.Intrinsic.String.Build("{0} The PRO was shortened to 20 characters.",V.Global.sCtMessage,V.Local.sNext)
+		V.Global.sCtMessage.Set(V.Local.sNext)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sId.Trim,<>,"")
+		V.Local.sNext.Set(V.Local.sId.PSQLFriendly)
+		F.Intrinsic.Control.If(V.Local.sStatus.Trim,<>,"")
+			V.Local.sMark.Set(V.Local.sStatus.PSQLFriendly)
+			F.Intrinsic.String.Build("UPDATE LOAD_PLAN SET CARRIER_LOAD_NUM = '{0}', CARRIER_TRAILER = '{1}' WHERE LOAD_NO = {2}",V.Local.sNext,V.Local.sMark,V.Local.sLoad,V.Local.sSQL)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.String.Build("UPDATE LOAD_PLAN SET CARRIER_LOAD_NUM = '{0}' WHERE LOAD_NO = {1}",V.Local.sNext,V.Local.sLoad,V.Local.sSQL)
+		F.Intrinsic.Control.EndIf
+		F.ODBC.Connection!con.Execute(V.Local.sSQL)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Control.If(V.Local.sStatus.Trim,<>,"")
+			V.Local.sMark.Set(V.Local.sStatus.PSQLFriendly)
+			F.Intrinsic.String.Build("UPDATE LOAD_PLAN SET CARRIER_TRAILER = '{0}' WHERE LOAD_NO = {1}",V.Local.sMark,V.Local.sLoad,V.Local.sSQL)
+			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sPickRaw,<>,"")
+		F.Intrinsic.String.IsInString(V.Local.sPickRaw,"/",False,V.Local.bSlash)
+		F.Intrinsic.Control.If(V.Local.bSlash,=,True)
+			F.Intrinsic.String.Build("{0} Pickup time came back as {1} and was left off the load.",V.Global.sCtMessage,V.Local.sPickRaw,V.Local.sNext)
+			V.Global.sCtMessage.Set(V.Local.sNext)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.String.IsInString(V.Local.sPickRaw,"T",False,V.Local.bTee)
+			F.Intrinsic.Control.If(V.Local.bTee,=,True)
+				F.Intrinsic.String.Replace(V.Local.sPickRaw,"T"," ",V.Local.sPickSql)
+			F.Intrinsic.Control.Else
+				V.Local.sPickSql.Set(V.Local.sPickRaw)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.String.Left(V.Local.sPickSql,19,V.Local.sPickSql)
+			F.Intrinsic.String.Left(V.Local.sPickSql,2,V.Local.sMark)
+			F.Intrinsic.Control.If(V.Local.sMark,=,"20")
+				F.Intrinsic.String.Build("UPDATE LOAD_PLAN SET PICKUP_TIME = '{0}' WHERE LOAD_NO = {1}",V.Local.sPickSql,V.Local.sLoad,V.Local.sSQL)
+				F.ODBC.Connection!con.Execute(V.Local.sSQL)
+				F.Intrinsic.String.Build("{0} Pickup time is {1}.",V.Global.sCtMessage,V.Local.sPickSql,V.Local.sNext)
+				V.Global.sCtMessage.Set(V.Local.sNext)
+			F.Intrinsic.Control.Else
+				V.Local.sPickSql.Set("")
+				F.Intrinsic.String.Build("{0} Pickup time came back as {1} and was left off the load.",V.Global.sCtMessage,V.Local.sPickRaw,V.Local.sNext)
+				V.Global.sCtMessage.Set(V.Local.sNext)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sPro,<>,"")
+		F.Intrinsic.Control.If(V.DataTable.dtCtPack.Exists,=,True)
+			F.Data.DataTable.Close("dtCtPack")
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.String.Build("SELECT RTRIM(H.PCK_NO) AS PCK_NO FROM LOAD_PLAN G, STAGING_QUANTITY H WHERE G.ORDER_NO = H.ORDER_NO AND G.ORDER_LINE = H.LINE AND G.LOAD_NO = {0} AND G.ORDER_SUFFIX <> 'P' AND H.PCK_NO <> '' GROUP BY H.PCK_NO",V.Local.sLoad,V.Local.sSQL)
+		F.Data.DataTable.CreateFromSQL("dtCtPack","con",V.Local.sSQL,True)
+		F.Intrinsic.Control.If(V.DataTable.dtCtPack.RowCount,>,0)
+			F.Intrinsic.Math.Sub(V.DataTable.dtCtPack.RowCount,1,V.Local.iMax)
+			V.Local.sMark.Set(V.Local.sPro.PSQLFriendly)
+			F.Intrinsic.Control.For(V.Local.i,0,V.Local.iMax)
+				V.Local.sPack.Set(V.DataTable.dtCtPack(V.Local.i).PCK_NO!FieldValTrim)
+				V.Local.sPack.Set(V.Local.sPack.PSQLFriendly)
+				F.Intrinsic.String.Build("UPDATE SHIPMENT_HEADER SET PRO_NO = '{0}' WHERE PCK_NO = '{1}'",V.Local.sMark,V.Local.sPack,V.Local.sSQL)
+				'-- gab-lint-ignore: W21
+				F.ODBC.Connection!con.Execute(V.Local.sSQL)
+				F.Intrinsic.Math.Add(V.Local.iWrote,1,V.Local.iWrote)
+			F.Intrinsic.Control.Next(V.Local.i)
+		F.Intrinsic.Control.EndIf
+		F.Data.DataTable.Close("dtCtPack")
+		F.Intrinsic.Control.If(V.Local.iWrote,>,0)
+			F.Intrinsic.String.Build("{0} Pro Number on the packing lists is {1}.",V.Global.sCtMessage,V.Local.sPro,V.Local.sNext)
+			V.Global.sCtMessage.Set(V.Local.sNext)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.String.Build("{0} PRO {1} was not written because this load has no packing list yet.",V.Global.sCtMessage,V.Local.sProFull,V.Local.sNext)
+			V.Global.sCtMessage.Set(V.Local.sNext)
+			F.Intrinsic.Control.If(V.Local.sExtra,=,"")
+				F.Intrinsic.String.Build("PRO {0}",V.Local.sProFull,V.Local.sExtra)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.String.Build("{0} | PRO {1}",V.Local.sExtra,V.Local.sProFull,V.Local.sNext)
+				V.Local.sExtra.Set(V.Local.sNext)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sFixture,<>,"")
+		F.Intrinsic.Control.If(V.Local.sExtra,=,"")
+			F.Intrinsic.String.Build("Fixture Traffic {0}",V.Local.sFixture,V.Local.sExtra)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.String.Build("{0} | Fixture Traffic {1}",V.Local.sExtra,V.Local.sFixture,V.Local.sNext)
+			V.Local.sExtra.Set(V.Local.sNext)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.String.Build("{0} Fixture Traffic {1} is in the load notes.",V.Global.sCtMessage,V.Local.sFixture,V.Local.sNext)
+		V.Global.sCtMessage.Set(V.Local.sNext)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sName,<>,"")
+		F.Intrinsic.Control.If(V.Local.sExtra,=,"")
+			F.Intrinsic.String.Build("{0} {1}",V.Local.sName,V.Local.sScac,V.Local.sExtra)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.String.Build("{0} | {1} {2}",V.Local.sExtra,V.Local.sName,V.Local.sScac,V.Local.sNext)
+			V.Local.sExtra.Set(V.Local.sNext)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sExtra.Trim,<>,"")
+		F.Intrinsic.Control.If(V.DataTable.dtCtNotes.Exists,=,True)
+			F.Data.DataTable.Close("dtCtNotes")
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.String.Build("SELECT ORDER_NO, ORDER_LINE, ORDER_SUFFIX, NOTES FROM LOAD_PLAN WHERE LOAD_NO = {0}",V.Local.sLoad,V.Local.sSQL)
+		F.Data.DataTable.CreateFromSQL("dtCtNotes","con",V.Local.sSQL,True)
+		F.Intrinsic.Control.If(V.DataTable.dtCtNotes.RowCount,>,0)
+			F.Intrinsic.Math.Sub(V.DataTable.dtCtNotes.RowCount,1,V.Local.iMax)
+			F.Intrinsic.Control.For(V.Local.i,0,V.Local.iMax)
+				V.Local.sNote.Set(V.DataTable.dtCtNotes(V.Local.i).NOTES!FieldValTrim)
+				V.Local.sMark.Set(V.Local.sNote)
+				F.Intrinsic.Control.CallSub(Ct_JoinNote,"sNote",V.Local.sNote,"sExtra",V.Local.sExtra)
+				F.Intrinsic.Control.If(V.Global.sCtJoined,<>,V.Local.sMark)
+					V.Local.sNote.Set(V.Global.sCtJoined.PSQLFriendly)
+					V.Local.sOrder.Set(V.DataTable.dtCtNotes(V.Local.i).ORDER_NO!FieldValTrim)
+					V.Local.sOrder.Set(V.Local.sOrder.PSQLFriendly)
+					V.Local.sLine.Set(V.DataTable.dtCtNotes(V.Local.i).ORDER_LINE!FieldValTrim)
+					V.Local.sLine.Set(V.Local.sLine.PSQLFriendly)
+					V.Local.sSfx.Set(V.DataTable.dtCtNotes(V.Local.i).ORDER_SUFFIX!FieldValTrim)
+					V.Local.sSfx.Set(V.Local.sSfx.PSQLFriendly)
+					F.Intrinsic.String.Build("UPDATE LOAD_PLAN SET NOTES = '{0}' WHERE LOAD_NO = {1} AND ORDER_NO = '{2}' AND ORDER_LINE = '{3}' AND ORDER_SUFFIX = '{4}'",V.Local.sNote,V.Local.sLoad,V.Local.sOrder,V.Local.sLine,V.Local.sSfx,V.Local.sSQL)
+					'-- gab-lint-ignore: W21
+					F.ODBC.Connection!con.Execute(V.Local.sSQL)
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.Next(V.Local.i)
+		F.Intrinsic.Control.EndIf
+		F.Data.DataTable.Close("dtCtNotes")
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.iWrote,=,0)
+		V.Local.sPro.Set("")
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.CallSub(Ct_PaintLoad,"sLoadNo",V.Local.sLoad,"sId",V.Local.sId,"sStatus",V.Local.sStatus,"sPro",V.Local.sPro,"sPickup",V.Local.sPickSql,"sNoteExtra",V.Local.sExtra)
+	F.Intrinsic.Control.If(V.Local.sScac,<>,"")
+		F.Intrinsic.Control.CallSub(Ct_ApplyCarrier,"sLoadNo",V.Local.sLoad,"sScac",V.Local.sScac,"sName",V.Local.sName)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.Label("Ct_SaveLoad_Err")
+	V.Global.bCtOk.Set(False)
+	F.Intrinsic.String.Build("{0} The load was not fully updated. {1}",V.Global.sCtMessage,V.Ambient.ErrorDescription,V.Local.sNext)
+	V.Global.sCtMessage.Set(V.Local.sNext)
+	F.Intrinsic.Control.ClearErrors
+Program.Sub.Ct_SaveLoad.End
+
+Program.Sub.Ct_Create.Start
+	F.Intrinsic.Control.SetErrorHandler("Ct_Create_Err")
+	F.Intrinsic.Control.ClearErrors
+	V.Local.sError.Declare(String)
+	V.Local.sBody.Declare(String)
+	V.Local.sNext.Declare(String)
+	V.Local.sUrl.Declare(String)
+	V.Local.sExtra.Declare(String)
+	V.Local.sOb.Declare(String)
+	V.Local.sCb.Declare(String)
+	V.Local.q.Declare(String)
+	V.Local.sMode.Declare(String)
+	V.Local.sOrigin.Declare(String)
+	V.Local.sDest.Declare(String)
+	V.Local.sWhen.Declare(String)
+	V.Local.sPo.Declare(String)
+	V.Local.sPallets.Declare(String)
+	V.Local.sWeight.Declare(String)
+	V.Local.sDesc.Declare(String)
+	V.Local.sOFirst.Declare(String)
+	V.Local.sOLast.Declare(String)
+	V.Local.sOPhone.Declare(String)
+	V.Local.sOEmail.Declare(String)
+	V.Local.sDFirst.Declare(String)
+	V.Local.sDLast.Declare(String)
+	V.Local.sDPhone.Declare(String)
+	V.Local.sDEmail.Declare(String)
+	V.Local.sId.Declare(String)
+	V.Local.sStatus.Declare(String)
+	V.Local.bStep.Declare(Boolean,False)
+	V.Local.sOb.Set("{")
+	V.Local.sCb.Set("}")
+	V.Local.q.Set(V.Ambient.DblQuote)
+	V.Local.bStep.Set(True)
+	V.Local.sMode.Set(V.Global.sCtMode)
+	V.Local.sPallets.Set(V.Global.sCtPallets)
+	V.Local.sWeight.Set(V.Global.sCtWeight.Trim)
+	V.Local.sOrigin.Set(V.Global.sCtOrigin)
+	V.Local.sDest.Set(V.Global.sCtDest)
+	V.Local.sWhen.Set(V.Global.sCtWhen)
+	V.Local.sPo.Set(V.Global.sCtPo.Trim)
+	F.Intrinsic.Control.CallSub(Ct_Clean,"sIn",V.Global.sCtDesc)
+	V.Local.sDesc.Set(V.Global.sCtClean)
+	F.Intrinsic.Control.CallSub(Ct_Clean,"sIn",V.Global.sCtOFirst)
+	V.Local.sOFirst.Set(V.Global.sCtClean)
+	F.Intrinsic.Control.CallSub(Ct_Clean,"sIn",V.Global.sCtOLast)
+	V.Local.sOLast.Set(V.Global.sCtClean)
+	F.Intrinsic.Control.CallSub(Ct_Clean,"sIn",V.Global.sCtOPhone)
+	V.Local.sOPhone.Set(V.Global.sCtClean)
+	F.Intrinsic.Control.CallSub(Ct_Clean,"sIn",V.Global.sCtOEmail)
+	V.Local.sOEmail.Set(V.Global.sCtClean)
+	F.Intrinsic.Control.CallSub(Ct_Clean,"sIn",V.Global.sCtDFirst)
+	V.Local.sDFirst.Set(V.Global.sCtClean)
+	F.Intrinsic.Control.CallSub(Ct_Clean,"sIn",V.Global.sCtDLast)
+	V.Local.sDLast.Set(V.Global.sCtClean)
+	F.Intrinsic.Control.CallSub(Ct_Clean,"sIn",V.Global.sCtDPhone)
+	V.Local.sDPhone.Set(V.Global.sCtClean)
+	F.Intrinsic.Control.CallSub(Ct_Clean,"sIn",V.Global.sCtDEmail)
+	V.Local.sDEmail.Set(V.Global.sCtClean)
+	F.Intrinsic.Control.CallSub(Ct_Clean,"sIn",V.Global.sCtPo)
+	V.Local.sPo.Set(V.Global.sCtClean)
+	F.Intrinsic.Control.If(V.Local.sMode,<>,"FTL")
+		F.Intrinsic.Control.If(V.Local.sMode,<>,"LTL")
+			V.Global.sCtMessage.Set("The mode has to be a full truck or LTL.")
+			V.Local.bStep.Set(False)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.bStep,=,True)
+		F.Intrinsic.Control.If(V.Local.sMode,=,"LTL")
+			F.Intrinsic.Control.If(V.Local.sWeight,=,"")
+				V.Global.sCtMessage.Set("An LTL load needs a weight.")
+				V.Local.bStep.Set(False)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.bStep,=,True)
+		F.Intrinsic.Control.If(V.Local.sMode,=,"FTL")
+			F.Intrinsic.Control.If(V.Local.sDesc,=,"")
+				V.Global.sCtMessage.Set("A full truck needs a short description.")
+				V.Local.bStep.Set(False)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.bStep,=,True)
+		F.Intrinsic.String.Build("{0}{1}Mode{1}:{1}{2}{1}",V.Local.sOb,V.Local.q,V.Local.sMode,V.Local.sBody)
+		F.Intrinsic.String.Build("{0},{1}Origin{1}:{2}{1}LocationXRefId{1}:{1}{3}{1}{4}",V.Local.sBody,V.Local.q,V.Local.sOb,V.Local.sOrigin,V.Local.sCb,V.Local.sNext)
+		V.Local.sBody.Set(V.Local.sNext)
+		F.Intrinsic.String.Build("{0},{1}OriginContact{1}:{2}{1}FirstName{1}:{1}{3}{1},{1}LastName{1}:{1}{4}{1},{1}Phone{1}:{1}{5}{1}",V.Local.sBody,V.Local.q,V.Local.sOb,V.Local.sOFirst,V.Local.sOLast,V.Local.sOPhone,V.Local.sNext)
+		V.Local.sBody.Set(V.Local.sNext)
+		F.Intrinsic.Control.If(V.Local.sOEmail,<>,"")
+			F.Intrinsic.String.Build("{0},{1}Email{1}:{1}{2}{1}{3}",V.Local.sBody,V.Local.q,V.Local.sOEmail,V.Local.sCb,V.Local.sNext)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.String.Build("{0}{1}",V.Local.sBody,V.Local.sCb,V.Local.sNext)
+		F.Intrinsic.Control.EndIf
+		V.Local.sBody.Set(V.Local.sNext)
+		F.Intrinsic.String.Build("{0},{1}Destination{1}:{2}{1}LocationXRefId{1}:{1}{3}{1}{4}",V.Local.sBody,V.Local.q,V.Local.sOb,V.Local.sDest,V.Local.sCb,V.Local.sNext)
+		V.Local.sBody.Set(V.Local.sNext)
+		F.Intrinsic.String.Build("{0},{1}DestinationContact{1}:{2}{1}FirstName{1}:{1}{3}{1},{1}LastName{1}:{1}{4}{1},{1}Phone{1}:{1}{5}{1}",V.Local.sBody,V.Local.q,V.Local.sOb,V.Local.sDFirst,V.Local.sDLast,V.Local.sDPhone,V.Local.sNext)
+		V.Local.sBody.Set(V.Local.sNext)
+		F.Intrinsic.Control.If(V.Local.sDEmail,<>,"")
+			F.Intrinsic.String.Build("{0},{1}Email{1}:{1}{2}{1}{3}",V.Local.sBody,V.Local.q,V.Local.sDEmail,V.Local.sCb,V.Local.sNext)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.String.Build("{0}{1}",V.Local.sBody,V.Local.sCb,V.Local.sNext)
+		F.Intrinsic.Control.EndIf
+		V.Local.sBody.Set(V.Local.sNext)
+		F.Intrinsic.String.Build("{0},{1}Pallets{1}:{2}",V.Local.sBody,V.Local.q,V.Local.sPallets,V.Local.sNext)
+		V.Local.sBody.Set(V.Local.sNext)
+		F.Intrinsic.Control.If(V.Local.sWeight,<>,"")
+			F.Intrinsic.String.Build("{0},{1}TotalWeight{1}:{2}",V.Local.sBody,V.Local.q,V.Local.sWeight,V.Local.sNext)
+			V.Local.sBody.Set(V.Local.sNext)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Local.sDesc,<>,"")
+			F.Intrinsic.String.Build("{0},{1}Description{1}:{1}{2}{1}",V.Local.sBody,V.Local.q,V.Local.sDesc,V.Local.sNext)
+			V.Local.sBody.Set(V.Local.sNext)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.String.Build("{0},{1}PickupRequestedDate{1}:{1}{2}{1}",V.Local.sBody,V.Local.q,V.Local.sWhen,V.Local.sNext)
+		V.Local.sBody.Set(V.Local.sNext)
+		F.Intrinsic.Control.If(V.Local.sPo,<>,"")
+			F.Intrinsic.String.Build("{0},{1}PoNumber{1}:{1}{2}{1}",V.Local.sBody,V.Local.q,V.Local.sPo,V.Local.sNext)
+			V.Local.sBody.Set(V.Local.sNext)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.String.Concat(V.Local.sBody,V.Local.sCb,V.Local.sNext)
+		V.Local.sBody.Set(V.Local.sNext)
+		F.Intrinsic.String.Build("{0}/api/integration/v1/supplier/loads",V.Global.sCtHost,V.Local.sUrl)
+		F.Intrinsic.String.Build("Idempotency-Key: {0}",V.Global.sCtLoad,V.Local.sExtra)
+		F.Intrinsic.Control.CallSub(Ct_Rest,"sUrl",V.Local.sUrl,"sMethod","POST","sBody",V.Local.sBody,"sToken",V.Global.sCtToken,"sExtra",V.Local.sExtra)
+		F.Intrinsic.Control.If(V.Global.sCtCode,=,"201")
+			V.Local.bStep.Set(True)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.Control.If(V.Global.sCtCode,=,"200")
+				V.Local.bStep.Set(True)
+			F.Intrinsic.Control.Else
+				V.Local.bStep.Set(False)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Local.bStep,=,True)
+			F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/JSON/LoadId")
+			F.Intrinsic.Control.If(V.Global.sCtJson.Trim,=,"")
+				F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/LoadId")
+			F.Intrinsic.Control.EndIf
+			V.Local.sId.Set(V.Global.sCtJson.Trim)
+			F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/JSON/Status")
+			F.Intrinsic.Control.If(V.Global.sCtJson.Trim,=,"")
+				F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/Status")
+			F.Intrinsic.Control.EndIf
+			V.Local.sStatus.Set(V.Global.sCtJson.Trim)
+			F.Intrinsic.Control.If(V.Local.sId,=,"")
+				F.Intrinsic.Control.CallSub(Ct_ShortBody)
+				F.Intrinsic.String.Build("Control Tower accepted the send but did not return an ID. {0}",V.Global.sCtShort,V.Global.sCtMessage)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.String.Build("Sent. Carrier Load Number is {0}. Carrier Trailer is {1}.",V.Local.sId,V.Local.sStatus,V.Global.sCtMessage)
+				F.Intrinsic.Control.CallSub(Ct_SaveLoad,"sLoadNo",V.Global.sCtLoad,"sId",V.Local.sId,"sStatus",V.Local.sStatus,"sPro","","sPickup","","sFixture","","sScac","","sName","")
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.Else
+			F.Intrinsic.Control.If(V.Global.sCtCode,=,"409")
+				V.Global.sCtMessage.Set("Control Tower already has this load number with different details, so it did not create a second load. Ask them for the Control Tower ID, type it into Carrier Load Number, and use Sync load status.")
+			F.Intrinsic.Control.Else
+				F.Intrinsic.Control.CallSub(Ct_ShortBody)
+				F.Intrinsic.String.Build("Control Tower did not accept the load. {0} {1}",V.Global.sCtCode,V.Global.sCtShort,V.Global.sCtMessage)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	V.Local.sBody.Set("")
+	F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.Label("Ct_Create_Err")
+	F.Intrinsic.Control.CallSub(Ct_DropToken)
+	V.Local.sBody.Set("")
+	V.Global.bCtOk.Set(False)
+	F.Intrinsic.String.Build("The send did not finish. {0}",V.Ambient.ErrorDescription,V.Global.sCtMessage)
+	F.Intrinsic.Control.ClearErrors
+Program.Sub.Ct_Create.End
+
+Program.Sub.Ct_SyncOne.Start
+	F.Intrinsic.Control.SetErrorHandler("Ct_SyncOne_Err")
+	F.Intrinsic.Control.ClearErrors
+	V.Local.sError.Declare(String)
+	V.Local.sUrl.Declare(String)
+	V.Local.sId.Declare(String)
+	V.Local.sStatus.Declare(String)
+	V.Local.sPro.Declare(String)
+	V.Local.sPickup.Declare(String)
+	V.Local.sFixture.Declare(String)
+	V.Local.sScac.Declare(String)
+	V.Local.sName.Declare(String)
+	V.Local.sId.Set(V.Global.sCtId.Trim)
+	F.Intrinsic.String.Build("{0}/api/integration/v1/supplier/loads/{1}",V.Global.sCtHost,V.Local.sId,V.Local.sUrl)
+	F.Intrinsic.Control.CallSub(Ct_Rest,"sUrl",V.Local.sUrl,"sMethod","GET","sBody","","sToken",V.Global.sCtToken,"sExtra","")
+	F.Intrinsic.Control.If(V.Global.sCtCode,=,"200")
+		F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/JSON/Status")
+		F.Intrinsic.Control.If(V.Global.sCtJson.Trim,=,"")
+			F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/Status")
+		F.Intrinsic.Control.EndIf
+		V.Local.sStatus.Set(V.Global.sCtJson.Trim)
+		F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/JSON/ProNumber")
+		F.Intrinsic.Control.If(V.Global.sCtJson.Trim,=,"")
+			F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/ProNumber")
+		F.Intrinsic.Control.EndIf
+		V.Local.sPro.Set(V.Global.sCtJson.Trim)
+		F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/JSON/ActualPickupTime")
+		F.Intrinsic.Control.If(V.Global.sCtJson.Trim,=,"")
+			F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/ActualPickupTime")
+		F.Intrinsic.Control.EndIf
+		V.Local.sPickup.Set(V.Global.sCtJson.Trim)
+		F.Intrinsic.Control.If(V.Local.sPickup,=,"")
+			F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/JSON/PickupTime")
+			F.Intrinsic.Control.If(V.Global.sCtJson.Trim,=,"")
+				F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/PickupTime")
+			F.Intrinsic.Control.EndIf
+			V.Local.sPickup.Set(V.Global.sCtJson.Trim)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/JSON/FixtureTrafficId")
+		F.Intrinsic.Control.If(V.Global.sCtJson.Trim,=,"")
+			F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/FixtureTrafficId")
+		F.Intrinsic.Control.EndIf
+		V.Local.sFixture.Set(V.Global.sCtJson.Trim)
+		F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/JSON/CarrierScac")
+		F.Intrinsic.Control.If(V.Global.sCtJson.Trim,=,"")
+			F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/CarrierScac")
+		F.Intrinsic.Control.EndIf
+		V.Local.sScac.Set(V.Global.sCtJson.Trim)
+		F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/JSON/CarrierName")
+		F.Intrinsic.Control.If(V.Global.sCtJson.Trim,=,"")
+			F.Intrinsic.Control.CallSub(Ct_JsonGet,"sPath","/CarrierName")
+		F.Intrinsic.Control.EndIf
+		V.Local.sName.Set(V.Global.sCtJson.Trim)
+		F.Intrinsic.Control.If(V.Local.sStatus,=,"")
+			V.Global.sCtMessage.Set("Control Tower did not send a status.")
+		F.Intrinsic.Control.Else
+			F.Intrinsic.String.Build("Carrier Trailer is {0}.",V.Local.sStatus,V.Global.sCtMessage)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.CallSub(Ct_SaveLoad,"sLoadNo",V.Global.sCtLoad,"sId",V.Local.sId,"sStatus",V.Local.sStatus,"sPro",V.Local.sPro,"sPickup",V.Local.sPickup,"sFixture",V.Local.sFixture,"sScac",V.Local.sScac,"sName",V.Local.sName)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Control.If(V.Global.sCtCode,=,"404")
+			V.Global.sCtMessage.Set("Control Tower does not have this ID for this supplier.")
+		F.Intrinsic.Control.Else
+			F.Intrinsic.Control.CallSub(Ct_ShortBody)
+			F.Intrinsic.String.Build("Control Tower did not return this load. {0} {1}",V.Global.sCtCode,V.Global.sCtShort,V.Global.sCtMessage)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.Label("Ct_SyncOne_Err")
+	F.Intrinsic.Control.CallSub(Ct_DropToken)
+	V.Global.bCtOk.Set(False)
+	F.Intrinsic.String.Build("The sync did not finish. {0}",V.Ambient.ErrorDescription,V.Global.sCtMessage)
+	F.Intrinsic.Control.ClearErrors
+Program.Sub.Ct_SyncOne.End
+
+Program.Sub.frmCt_UnLoad.Start
+	Gui.frmCt..Visible(False)
+Program.Sub.frmCt_UnLoad.End
+
+Program.Sub.Click_CtCancel.Start
+	V.Global.bCtSend.Set(False)
+	Gui.frmCt..Visible(False)
+Program.Sub.Click_CtCancel.End
+
+Program.Sub.Click_CtSend.Start
+	F.Intrinsic.Control.SetErrorHandler("Click_CtSend_Err")
+	F.Intrinsic.Control.ClearErrors
+	V.Local.sError.Declare(String)
+	V.Local.sPallets.Declare(String)
+	V.Local.sWeight.Declare(String)
+	V.Local.sDesc.Declare(String)
+	V.Local.sGrid.Declare(String)
+	V.Local.sMode.Declare(String)
+	V.Local.sFrac.Declare(String)
+	V.Local.sMark.Declare(String)
+	V.Local.nPallets.Declare(Float)
+	V.Local.nWeight.Declare(Float)
+	V.Local.iPos.Declare(Long)
+	V.Local.iStart.Declare(Long)
+	V.Local.iLen.Declare(Long)
+	V.Local.bNum.Declare(Boolean,False)
+	V.Global.bCtSend.Set(False)
+	Gui.frmCt..SetFocus
+	F.Data.DataTable.AcceptChanges("dtCtConfirm")
+	V.Local.sPallets.Set(V.DataTable.dtCtConfirm(0).Pallets!FieldValTrim)
+	V.Local.sWeight.Set(V.DataTable.dtCtConfirm(0).Weight!FieldValTrim)
+	V.Local.sDesc.Set(V.DataTable.dtCtConfirm(0).Description!FieldValTrim)
+	Gui.frmCt.GsGCCt.GetCellValueByColumnName("gvCt","Pallets",0,V.Local.sGrid)
+	F.Intrinsic.Control.If(V.Local.sGrid.Trim,<>,"")
+		V.Local.sPallets.Set(V.Local.sGrid.Trim)
+	F.Intrinsic.Control.EndIf
+	Gui.frmCt.GsGCCt.GetCellValueByColumnName("gvCt","Weight",0,V.Local.sGrid)
+	F.Intrinsic.Control.If(V.Local.sGrid.Trim,<>,"")
+		V.Local.sWeight.Set(V.Local.sGrid.Trim)
+	F.Intrinsic.Control.EndIf
+	Gui.frmCt.GsGCCt.GetCellValueByColumnName("gvCt","Description",0,V.Local.sGrid)
+	F.Intrinsic.Control.If(V.Local.sGrid.Trim,<>,"")
+		V.Local.sDesc.Set(V.Local.sGrid.Trim)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Replace(V.Local.sWeight,",","",V.Local.sWeight)
+	F.Intrinsic.String.Trim(V.Local.sPallets,V.Local.sPallets)
+	F.Intrinsic.String.Trim(V.Local.sWeight,V.Local.sWeight)
+	F.Intrinsic.String.Trim(V.Local.sDesc,V.Local.sDesc)
+	F.Intrinsic.Math.IsNumeric(V.Local.sPallets,V.Local.bNum)
+	F.Intrinsic.Control.If(V.Local.bNum,=,False)
+		F.Intrinsic.UI.Msgbox("Enter a whole number of pallets from 1 to 60.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	V.Local.iPos.Set(0)
+	F.Intrinsic.String.InStr(V.Local.sPallets,".",V.Local.iPos)
+	F.Intrinsic.Control.If(V.Local.iPos,>,0)
+		F.Intrinsic.Math.Add(V.Local.iPos,1,V.Local.iStart)
+		F.Intrinsic.String.Mid(V.Local.sPallets,V.Local.iStart,20,V.Local.sFrac)
+		F.Intrinsic.String.Replace(V.Local.sFrac,"0","",V.Local.sFrac)
+		F.Intrinsic.String.Trim(V.Local.sFrac,V.Local.sFrac)
+		F.Intrinsic.Control.If(V.Local.sFrac,<>,"")
+			F.Intrinsic.UI.Msgbox("Enter a whole number of pallets from 1 to 60.")
+			F.Intrinsic.Control.ExitSub
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Math.Sub(V.Local.iPos,1,V.Local.iLen)
+		F.Intrinsic.String.Left(V.Local.sPallets,V.Local.iLen,V.Local.sPallets)
+	F.Intrinsic.Control.EndIf
+	V.Local.nPallets.Set(V.Local.sPallets)
+	F.Intrinsic.Control.If(V.Local.nPallets,<,1)
+		F.Intrinsic.UI.Msgbox("Enter a whole number of pallets from 1 to 60.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.nPallets,>,60)
+		F.Intrinsic.UI.Msgbox("Enter a whole number of pallets from 1 to 60.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.nPallets,>,12)
+		V.Local.sMode.Set("FTL")
+	F.Intrinsic.Control.Else
+		V.Local.sMode.Set("LTL")
+	F.Intrinsic.Control.EndIf
+	F.Data.Datatable.SetValue("dtCtConfirm",0,"Mode",V.Local.sMode)
+	F.Data.DataTable.AcceptChanges("dtCtConfirm")
+	F.Intrinsic.Control.If(V.Local.sMode,=,"LTL")
+		F.Intrinsic.Control.If(V.Global.sCtStaged,<>,"Yes")
+			F.Intrinsic.UI.Msgbox("Stage this load before sending it as LTL. More than 12 pallets can be sent before it is picked.")
+			F.Intrinsic.Control.ExitSub
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sWeight,=,"")
+		F.Intrinsic.Control.If(V.Local.sMode,=,"LTL")
+			F.Intrinsic.UI.Msgbox("An LTL load needs a weight greater than 0 and no more than 10,000 lb.")
+			F.Intrinsic.Control.ExitSub
+		F.Intrinsic.Control.EndIf
+		V.Local.nWeight.Set(0)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Math.IsNumeric(V.Local.sWeight,V.Local.bNum)
+		F.Intrinsic.Control.If(V.Local.bNum,=,False)
+			F.Intrinsic.UI.Msgbox("Enter the weight as a number.")
+			F.Intrinsic.Control.ExitSub
+		F.Intrinsic.Control.EndIf
+		V.Local.nWeight.Set(V.Local.sWeight)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sMode,=,"LTL")
+		F.Intrinsic.Control.If(V.Local.nWeight,<=,0)
+			F.Intrinsic.UI.Msgbox("An LTL load needs a weight greater than 0 and no more than 10,000 lb.")
+			F.Intrinsic.Control.ExitSub
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Local.nWeight,>,10000)
+			F.Intrinsic.UI.Msgbox("An LTL load needs a weight greater than 0 and no more than 10,000 lb.")
+			F.Intrinsic.Control.ExitSub
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sMode,=,"FTL")
+		F.Intrinsic.Control.If(V.Local.nWeight,>,45000)
+			F.Intrinsic.UI.Msgbox("A full truck can be up to 45,000 lb. Leave the weight blank if you do not have it.")
+			F.Intrinsic.Control.ExitSub
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Local.nWeight,<,0)
+			F.Intrinsic.UI.Msgbox("Enter the weight as a number, or leave it blank for a full truck.")
+			F.Intrinsic.Control.ExitSub
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Local.sDesc,=,"")
+			F.Intrinsic.UI.Msgbox("A full truck needs a short description.")
+			F.Intrinsic.Control.ExitSub
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Len(V.Local.sDesc,V.Local.iLen)
+	F.Intrinsic.Control.If(V.Local.iLen,>,500)
+		F.Intrinsic.UI.Msgbox("Shorten the description to 500 characters.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sMode,=,"FTL")
+		F.Intrinsic.Control.If(V.Local.nWeight,=,0)
+			V.Local.sWeight.Set("")
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	V.Global.sCtPallets.Set(V.Local.sPallets)
+	V.Global.sCtWeight.Set(V.Local.sWeight)
+	V.Global.sCtMode.Set(V.Local.sMode)
+	V.Global.sCtDesc.Set(V.Local.sDesc)
+	V.Global.bCtSend.Set(True)
+	Gui.frmCt..Visible(False)
+	F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.Label("Click_CtSend_Err")
+	V.Global.bCtSend.Set(False)
+	F.Intrinsic.String.Build("The confirm grid could not be read. {0}",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.ClearErrors
+Program.Sub.Click_CtSend.End
+
+Program.Sub.Click_Send_ControlTower.Start
+	F.Intrinsic.Control.SetErrorHandler("Click_Send_Err")
+	F.Intrinsic.Control.ClearErrors
+	V.Local.sError.Declare(String)
+	V.Local.sSel.Declare(String)
+	V.Local.sLoad.Declare(String)
+	V.Local.sThis.Declare(String)
+	V.Local.sId.Declare(String)
+	V.Local.sBin.Declare(String)
+	V.Local.sLetter.Declare(String)
+	V.Local.sOrigin.Declare(String)
+	V.Local.sOriginName.Declare(String)
+	V.Local.sShip.Declare(String)
+	V.Local.sWhen.Declare(String)
+	V.Local.sPo.Declare(String)
+	V.Local.sOnePo.Declare(String)
+	V.Local.sSeen.Declare(String)
+	V.Local.sKey.Declare(String)
+	V.Local.sPack.Declare(String)
+	V.Local.sSeenPl.Declare(String)
+	V.Local.sPallets.Declare(String)
+	V.Local.sWeight.Declare(String)
+	V.Local.sMode.Declare(String)
+	V.Local.sDesc.Declare(String)
+	V.Local.sStaged.Declare(String)
+	V.Local.sNext.Declare(String)
+	V.Local.sRaw.Declare(String)
+	V.Local.dShip.Declare(Date)
+	V.Local.nSumP.Declare(Float)
+	V.Local.nSumW.Declare(Float)
+	V.Local.nOne.Declare(Float)
+	V.Local.i.Declare(Long)
+	V.Local.iLen.Declare(Long)
+	V.Local.bNum.Declare(Boolean,False)
+	V.Local.bSeen.Declare(Boolean,False)
+	F.Intrinsic.Control.CallSub(Ct_CompanyOk)
+	F.Intrinsic.Control.If(V.Global.bCtCompany,=,False)
+		F.Intrinsic.UI.Msgbox("Control Tower is not used for this company.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
+	F.Data.Datatable.Select("dtLoad","[VISROW] = 1 AND [SELECT] = 1 AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999",V.Local.sSel)
+	F.Intrinsic.Control.If(V.Local.sSel,=,"***NORETURN***")
+		F.Intrinsic.UI.Msgbox("Check one load on this tab, then try again.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+	V.Local.sLoad.Set("")
+	V.Local.sOrigin.Set("")
+	V.Local.sShip.Set("")
+	V.Local.sWhen.Set("")
+	V.Local.sPo.Set("")
+	V.Local.sSeen.Set(",")
+	V.Local.sSeenPl.Set(",")
+	V.Local.sStaged.Set("No")
+	V.Local.nSumP.Set(0)
+	V.Local.nSumW.Set(0)
+	F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
+		V.Local.sThis.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).LOAD NUMBER!FieldValTrim)
+		F.Intrinsic.Control.If(V.Local.sLoad,=,"")
+			V.Local.sLoad.Set(V.Local.sThis)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.Control.If(V.Local.sThis,<>,V.Local.sLoad)
+				F.Intrinsic.UI.Msgbox("Check one load at a time.")
+				F.Intrinsic.Control.ExitSub
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		V.Local.sId.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).Carrier Load Number!FieldValTrim)
+		F.Intrinsic.Control.If(V.Local.sId,<>,"")
+			F.Intrinsic.UI.Msgbox("This load already has a Control Tower ID in Carrier Load Number. Sync load status reads that ID. Clear Carrier Load Number only when you mean to send it again.")
+			F.Intrinsic.Control.ExitSub
+		F.Intrinsic.Control.EndIf
+		V.Local.sRaw.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).SHIP DATE!FieldValTrim)
+		F.Intrinsic.Control.If(V.Local.sRaw,<>,"")
+			V.Local.dShip.Set(V.Local.sRaw)
+			V.Local.sRaw.Set(V.Local.dShip.FormatYYYY-MM-DD)
+			F.Intrinsic.Control.If(V.Local.sRaw,<>,"1900-01-01")
+				F.Intrinsic.Control.If(V.Local.sWhen,=,"")
+					V.Local.sWhen.Set(V.Local.sRaw)
+				F.Intrinsic.Control.Else
+					F.Intrinsic.Control.If(V.Local.sRaw,<>,V.Local.sWhen)
+						F.Intrinsic.UI.Msgbox("The checked lines do not share one ship date.")
+						F.Intrinsic.Control.ExitSub
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		V.Local.sBin.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).FIRST_BIN!FieldValTrim)
+		F.Intrinsic.Control.If(V.Local.sBin,=,"")
+			V.Local.sBin.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).Staging Bin!FieldValTrim)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Local.sBin,<>,"")
+			F.Intrinsic.String.Left(V.Local.sBin,1,V.Local.sLetter)
+			V.Local.sLetter.Set(V.Local.sLetter.UCase)
+			F.Intrinsic.Control.If(V.Local.sLetter,=,"L")
+				V.Local.bSeen.Set(True)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.Control.If(V.Local.sLetter,=,"D")
+					V.Local.bSeen.Set(True)
+				F.Intrinsic.Control.Else
+					F.Intrinsic.Control.If(V.Local.sLetter,=,"E")
+						V.Local.bSeen.Set(True)
+					F.Intrinsic.Control.Else
+						F.Intrinsic.UI.Msgbox("The first bin on this load does not start with L, D, or E, so the ship-from building is not Lewisville, Denton, or Denton 2.")
+						F.Intrinsic.Control.ExitSub
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.If(V.Local.bSeen,=,True)
+				F.Intrinsic.Control.If(V.Local.sOrigin,=,"")
+					V.Local.sOrigin.Set(V.Local.sLetter)
+				F.Intrinsic.Control.Else
+					F.Intrinsic.Control.If(V.Local.sLetter,<>,V.Local.sOrigin)
+						F.Intrinsic.UI.Msgbox("The checked lines start in more than one building. Send one building at a time.")
+						F.Intrinsic.Control.ExitSub
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		V.Local.sThis.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).SHIP_ID!FieldValTrim)
+		F.Intrinsic.Control.If(V.Local.sThis,<>,"")
+			F.Intrinsic.Control.If(V.Local.sShip,=,"")
+				V.Local.sShip.Set(V.Local.sThis)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.Control.If(V.Local.sThis,<>,V.Local.sShip)
+					F.Intrinsic.UI.Msgbox("The checked lines do not share one ship-to.")
+					F.Intrinsic.Control.ExitSub
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		V.Local.sPack.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).PACKING LIST!FieldValTrim)
+		F.Intrinsic.Control.If(V.Local.sPack,<>,"")
+			V.Local.sStaged.Set("Yes")
+			F.Intrinsic.String.Build(",{0},",V.Local.sPack,V.Local.sKey)
+			F.Intrinsic.String.IsInString(V.Local.sSeenPl,V.Local.sKey,False,V.Local.bSeen)
+			F.Intrinsic.Control.If(V.Local.bSeen,=,False)
+				F.Intrinsic.String.Concat(V.Local.sSeenPl,V.Local.sKey,V.Local.sNext)
+				V.Local.sSeenPl.Set(V.Local.sNext)
+				V.Local.sPallets.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).Staged PL Pallets!FieldValTrim)
+				F.Intrinsic.Math.IsNumeric(V.Local.sPallets,V.Local.bNum)
+				F.Intrinsic.Control.If(V.Local.bNum,=,True)
+					V.Local.nOne.Set(V.Local.sPallets)
+					F.Intrinsic.Math.Add(V.Local.nSumP,V.Local.nOne,V.Local.nSumP)
+				F.Intrinsic.Control.EndIf
+				V.Local.sWeight.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).Staged PL Weight!FieldValTrim)
+				F.Intrinsic.Math.IsNumeric(V.Local.sWeight,V.Local.bNum)
+				F.Intrinsic.Control.If(V.Local.bNum,=,True)
+					V.Local.nOne.Set(V.Local.sWeight)
+					F.Intrinsic.Math.Add(V.Local.nSumW,V.Local.nOne,V.Local.nSumW)
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.CallSub(Ct_Alpha,"sIn",V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).CUSTOMER_PO!FieldValTrim)
+		F.Intrinsic.Control.If(V.Global.sCtAlpha.Trim,<>,"")
+			F.Intrinsic.String.Build(",{0},",V.Global.sCtAlpha,V.Local.sKey)
+			F.Intrinsic.String.IsInString(V.Local.sSeen,V.Local.sKey,False,V.Local.bSeen)
+			F.Intrinsic.Control.If(V.Local.bSeen,=,False)
+				F.Intrinsic.String.Concat(V.Local.sSeen,V.Local.sKey,V.Local.sNext)
+				V.Local.sSeen.Set(V.Local.sNext)
+				F.Intrinsic.Control.If(V.Local.sPo,=,"")
+					V.Local.sPo.Set(V.Global.sCtAlpha)
+				F.Intrinsic.Control.Else
+					F.Intrinsic.String.Build("{0},{1}",V.Local.sPo,V.Global.sCtAlpha,V.Local.sNext)
+					V.Local.sPo.Set(V.Local.sNext)
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.i)
+	F.Intrinsic.Control.If(V.Local.sWhen,=,"")
+		F.Intrinsic.UI.Msgbox("This load needs a ship date before it can be sent.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sOrigin,=,"")
+		F.Intrinsic.UI.Msgbox("The first bin on this load does not start with L, D, or E, so the ship-from building is not Lewisville, Denton, or Denton 2.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sShip,=,"")
+		F.Intrinsic.UI.Msgbox("This load needs a Walmart ship-to before it can be sent.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Len(V.Local.sPo,V.Local.iLen)
+	F.Intrinsic.Control.If(V.Local.iLen,>,500)
+		F.Intrinsic.UI.Msgbox("The customer PO list is longer than Control Tower accepts. Shorten the POs on this load.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sOrigin,=,"L")
+		V.Local.sOriginName.Set("L Lewisville")
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sOrigin,=,"D")
+		V.Local.sOriginName.Set("D Denton")
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Local.sOrigin,=,"E")
+		V.Local.sOriginName.Set("E Denton 2")
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.CallSub(Ct_FindContact,"sCode",V.Local.sOrigin)
+	F.Intrinsic.Control.If(V.Global.bCtContact,=,False)
+		F.Intrinsic.UI.Msgbox(V.Global.sCtMessage)
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Global.sCtPhone.Trim,=,"")
+		F.Intrinsic.String.Build("The contact line for {0} needs a phone.",V.Local.sOrigin,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	V.Global.sCtOFirst.Set(V.Global.sCtFirst)
+	V.Global.sCtOLast.Set(V.Global.sCtLast)
+	V.Global.sCtOPhone.Set(V.Global.sCtPhone)
+	V.Global.sCtOEmail.Set(V.Global.sCtEmail)
+	F.Intrinsic.Control.CallSub(Ct_FindContact,"sCode",V.Local.sShip)
+	F.Intrinsic.Control.If(V.Global.bCtContact,=,False)
+		F.Intrinsic.UI.Msgbox(V.Global.sCtMessage)
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Global.sCtPhone.Trim,=,"")
+		F.Intrinsic.String.Build("The contact line for {0} needs a phone.",V.Local.sShip,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	V.Global.sCtDFirst.Set(V.Global.sCtFirst)
+	V.Global.sCtDLast.Set(V.Global.sCtLast)
+	V.Global.sCtDPhone.Set(V.Global.sCtPhone)
+	V.Global.sCtDEmail.Set(V.Global.sCtEmail)
+	F.Intrinsic.String.Format(V.Local.nSumP,"0.##",V.Local.sPallets)
+	F.Intrinsic.String.Format(V.Local.nSumW,"0.##",V.Local.sWeight)
+	F.Intrinsic.Control.If(V.Local.nSumP,>,12)
+		V.Local.sMode.Set("FTL")
+	F.Intrinsic.Control.Else
+		V.Local.sMode.Set("LTL")
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Build("Load {0}",V.Local.sLoad,V.Local.sDesc)
+	F.Intrinsic.String.Build("{0}T00:00:00Z",V.Local.sWhen,V.Local.sNext)
+	V.Global.sCtLoad.Set(V.Local.sLoad)
+	V.Global.sCtOrigin.Set(V.Local.sOrigin)
+	V.Global.sCtDest.Set(V.Local.sShip)
+	V.Global.sCtWhen.Set(V.Local.sNext)
+	V.Global.sCtPo.Set(V.Local.sPo)
+	V.Global.sCtStaged.Set(V.Local.sStaged)
+	V.Global.bCtSend.Set(False)
+	F.Intrinsic.Control.If(V.DataTable.dtCtConfirm.Exists,=,False)
+		F.Data.DataTable.Create("dtCtConfirm",True)
+		F.Data.DataTable.AddColumn("dtCtConfirm","Load","String")
+		F.Data.DataTable.AddColumn("dtCtConfirm","Pallets","String")
+		F.Data.DataTable.AddColumn("dtCtConfirm","Weight","String")
+		F.Data.DataTable.AddColumn("dtCtConfirm","Mode","String")
+		F.Data.DataTable.AddColumn("dtCtConfirm","Description","String")
+		F.Data.DataTable.AddColumn("dtCtConfirm","ShipDate","String")
+		F.Data.DataTable.AddColumn("dtCtConfirm","Origin","String")
+		F.Data.DataTable.AddColumn("dtCtConfirm","ShipTo","String")
+		F.Data.DataTable.AddColumn("dtCtConfirm","POs","String")
+		F.Data.DataTable.AddColumn("dtCtConfirm","Staged","String")
+	F.Intrinsic.Control.Else
+		F.Data.DataTable.Clear("dtCtConfirm")
+	F.Intrinsic.Control.EndIf
+	F.Data.DataTable.AddRow("dtCtConfirm","Load",V.Local.sLoad,"Pallets",V.Local.sPallets,"Weight",V.Local.sWeight,"Mode",V.Local.sMode,"Description",V.Local.sDesc,"ShipDate",V.Local.sWhen,"Origin",V.Local.sOriginName,"ShipTo",V.Local.sShip,"POs",V.Local.sPo,"Staged",V.Local.sStaged)
+	F.Data.DataTable.AcceptChanges("dtCtConfirm")
+	F.Intrinsic.Control.If(V.Global.sCtGridBound,<>,"Y")
+		Gui.frmCt.GsGCCt.AddGridviewFromDatatable("gvCt","dtCtConfirm")
+		Gui.frmCt.GsGCCt.MainView("gvCt")
+		Gui.frmCt.GsGCCt.SetGridViewProperty("gvCt","Editable",True)
+		Gui.frmCt.GsGCCt.SetGridViewProperty("gvCt","ReadOnly",False)
+		Gui.frmCt.GsGCCt.SetGridViewProperty("gvCt","OptionBehaviorEditable",True)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","Pallets","AllowEdit",True)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","Pallets","ReadOnly",False)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","Weight","AllowEdit",True)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","Weight","ReadOnly",False)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","Description","AllowEdit",True)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","Description","ReadOnly",False)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","Load","AllowEdit",False)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","Load","ReadOnly",True)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","Mode","AllowEdit",False)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","Mode","ReadOnly",True)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","ShipDate","Caption","Ship date")
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","ShipDate","AllowEdit",False)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","ShipDate","ReadOnly",True)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","Origin","AllowEdit",False)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","Origin","ReadOnly",True)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","ShipTo","Caption","Ship to")
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","ShipTo","AllowEdit",False)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","ShipTo","ReadOnly",True)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","POs","Caption","Customer POs")
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","POs","AllowEdit",False)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","POs","ReadOnly",True)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","Staged","AllowEdit",False)
+		Gui.frmCt.GsGCCt.SetColumnProperty("gvCt","Staged","ReadOnly",True)
+		V.Global.sCtGridBound.Set("Y")
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Build("Load {0}. Check the pallet count and weight. More than 12 pallets is a full truck and can be sent before the load is picked. Press Enter in a cell you change, then Send.",V.Local.sLoad,V.Local.sNext)
+	Gui.frmCt.lblCt.Caption(V.Local.sNext)
+	Gui.frmCt..Show
+	Gui.frmCt..AlwaysOnTop(True)
+	Gui.frmCt..AlwaysOnTop(False)
+	Gui.frmCt..WaitForDismiss
+	F.Intrinsic.Control.If(V.Global.bCtSend,<>,True)
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.CallSub(Ct_Token)
+	F.Intrinsic.Control.If(V.Global.bCtOk,=,False)
+		F.Intrinsic.UI.Msgbox(V.Global.sCtMessage)
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.CallSub(Ct_Create)
+	F.Intrinsic.Control.If(V.Global.sCtCode,=,"401")
+		F.Intrinsic.Control.CallSub(Ct_DropToken)
+		F.Intrinsic.Control.CallSub(Ct_Token)
+		F.Intrinsic.Control.If(V.Global.bCtOk,=,True)
+			F.Intrinsic.Control.CallSub(Ct_Create)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Global.sCtCode,=,"401")
+			F.Intrinsic.Control.CallSub(Ct_DropToken)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Global.sCtAudNote.Trim,<>,"")
+		F.Intrinsic.String.Build("{0} {1}",V.Global.sCtMessage,V.Global.sCtAudNote,V.Local.sNext)
+		V.Global.sCtMessage.Set(V.Local.sNext)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Trim(V.Global.sCtMessage,V.Global.sCtMessage)
+	F.Intrinsic.UI.Msgbox(V.Global.sCtMessage)
+	F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.Label("Click_Send_Err")
+	F.Intrinsic.Control.CallSub(Ct_DropToken)
+	F.Intrinsic.String.Build("Send to Control Tower did not finish. {0}",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.ClearErrors
+Program.Sub.Click_Send_ControlTower.End
+
+Program.Sub.Click_Sync_ControlTower.Start
+	F.Intrinsic.Control.SetErrorHandler("Click_Sync_Err")
+	F.Intrinsic.Control.ClearErrors
+	V.Local.sError.Declare(String)
+	V.Local.sSel.Declare(String)
+	V.Local.sLoad.Declare(String)
+	V.Local.sThis.Declare(String)
+	V.Local.sId.Declare(String)
+	V.Local.sNext.Declare(String)
+	V.Local.i.Declare(Long)
+	F.Intrinsic.Control.CallSub(Ct_CompanyOk)
+	F.Intrinsic.Control.If(V.Global.bCtCompany,=,False)
+		F.Intrinsic.UI.Msgbox("Control Tower is not used for this company.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Data.DataTable.AcceptChanges("dtLoad")
+	F.Intrinsic.Control.CallSub(MarkVisibleRows,"DT","dtLoad","GSGC","GsGCLoad","GV","gvLoad")
+	F.Data.Datatable.Select("dtLoad","[VISROW] = 1 AND [SELECT] = 1 AND [LOAD NUMBER] <> 0 AND [LOAD NUMBER] <> 9999",V.Local.sSel)
+	F.Intrinsic.Control.If(V.Local.sSel,=,"***NORETURN***")
+		F.Intrinsic.UI.Msgbox("Check one load on this tab, then try again.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Split(V.Local.sSel,"*!*",V.Local.sSel)
+	V.Local.sLoad.Set("")
+	V.Local.sId.Set("")
+	F.Intrinsic.Control.For(V.Local.i,0,V.Local.sSel.UBound)
+		V.Local.sThis.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).LOAD NUMBER!FieldValTrim)
+		F.Intrinsic.Control.If(V.Local.sLoad,=,"")
+			V.Local.sLoad.Set(V.Local.sThis)
+			V.Local.sId.Set(V.DataTable.dtLoad(V.Local.sSel(V.Local.i)).Carrier Load Number!FieldValTrim)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.Control.If(V.Local.sThis,<>,V.Local.sLoad)
+				F.Intrinsic.UI.Msgbox("Check one load at a time.")
+				F.Intrinsic.Control.ExitSub
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.i)
+	F.Intrinsic.Control.If(V.Local.sId,=,"")
+		F.Intrinsic.UI.Msgbox("Send this load to Control Tower before syncing it.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	V.Global.sCtLoad.Set(V.Local.sLoad)
+	V.Global.sCtId.Set(V.Local.sId)
+	F.Intrinsic.Control.CallSub(Ct_Token)
+	F.Intrinsic.Control.If(V.Global.bCtOk,=,False)
+		F.Intrinsic.UI.Msgbox(V.Global.sCtMessage)
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.CallSub(Ct_SyncOne)
+	F.Intrinsic.Control.If(V.Global.sCtCode,=,"401")
+		F.Intrinsic.Control.CallSub(Ct_DropToken)
+		F.Intrinsic.Control.CallSub(Ct_Token)
+		F.Intrinsic.Control.If(V.Global.bCtOk,=,True)
+			F.Intrinsic.Control.CallSub(Ct_SyncOne)
+		F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.If(V.Global.sCtCode,=,"401")
+			F.Intrinsic.Control.CallSub(Ct_DropToken)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.If(V.Global.sCtAudNote.Trim,<>,"")
+		F.Intrinsic.String.Build("{0} {1}",V.Global.sCtMessage,V.Global.sCtAudNote,V.Local.sNext)
+		V.Global.sCtMessage.Set(V.Local.sNext)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Trim(V.Global.sCtMessage,V.Global.sCtMessage)
+	F.Intrinsic.UI.Msgbox(V.Global.sCtMessage)
+	F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.Label("Click_Sync_Err")
+	F.Intrinsic.Control.CallSub(Ct_DropToken)
+	F.Intrinsic.String.Build("Sync load status did not finish. {0}",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.ClearErrors
+Program.Sub.Click_Sync_ControlTower.End
+
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20261111083512133$}$CursorSigned
-${$7$}$File Version:1.0.20261111163512.0
+${$6$}$bstevens$}$20261119091327635$}$CursorSigned
+${$7$}$File Version:1.0.20261119171327.0
 Program.Sub.Comments.End
