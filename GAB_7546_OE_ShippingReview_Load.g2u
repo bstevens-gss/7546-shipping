@@ -10395,6 +10395,7 @@ V.Local.sDateChg.Declare
 V.Local.sTimeChg.Declare
 V.Local.sSeen.Declare(String)
 V.Local.sLoadShip.Declare(String)
+V.Local.sLockMsg.Declare(String)
 
 v.Local.sUserID.Set(v.Caller.user)
 
@@ -10515,6 +10516,44 @@ f.Data.Datatable.Close("dtloadShipv")
 
 f.Data.DataView.ToDataTable("dtload","dvloadship","dtloadship0",True)
 v.local.iCnt.Set(0)
+'-- [POR020] - Custom Bugs - 11/20/2026 - Stop the whole load when any sales order is in use. Nothing is shipped.
+V.Local.sLockMsg.Set("")
+V.Local.i.Set(0)
+F.Data.Dictionary.Create("dShipLock")
+F.Data.Dictionary.SetDefaultReturn("dShipLock","")
+F.Intrinsic.Control.For(V.Local.iCnt,0,v.DataTable.dtloadship0.RowCount--,1)
+	V.Local.sSeen.Set(V.DataTable.dtloadship0(V.Local.iCnt).ORDER_NO!FieldValTrim)
+	V.Local.sLoadShip.Set(V.Dictionary.dShipLock![V.Local.sSeen])
+	F.Intrinsic.Control.If(V.Local.sLoadShip,=,"")
+		F.Data.Dictionary.AddItem("dShipLock",V.Local.sSeen,"1",True)
+		F.Intrinsic.Control.CallSub(OrderLocked,"sOrderNo",V.DataTable.dtloadship0(V.Local.iCnt).ORDER_NO!FieldVal)
+		F.Intrinsic.Control.If(v.Args.bIsLocked)
+			V.Local.sParam.Set(v.Args.sLockingUser)
+			F.Intrinsic.String.Trim(V.Local.sParam,V.Local.sParam)
+			F.Intrinsic.String.Build("Order {0} is in use by {1}.",V.Local.sSeen,V.Local.sParam,V.Local.sRet)
+			F.Intrinsic.Control.If(V.Local.sLockMsg,=,"")
+				V.Local.sLockMsg.Set(V.Local.sRet)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.String.Concat(V.Local.sLockMsg,V.Ambient.Newline,V.Local.sRet,V.Local.sLockMsg)
+			F.Intrinsic.Control.EndIf
+			F.Intrinsic.Math.Add(V.Local.i,1,V.Local.i)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.Next(V.Local.iCnt)
+F.Data.Dictionary.Close("dShipLock")
+F.Intrinsic.Control.If(V.Local.i,>,0)
+	F.Intrinsic.Control.If(V.Local.i,=,1)
+		F.Intrinsic.String.Concat(V.Local.sLockMsg," Ship Load stopped. Nothing was shipped.",V.Local.sLockMsg)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.String.Concat(V.Local.sLockMsg,V.Ambient.Newline,"Ship Load stopped. Nothing was shipped.",V.Local.sLockMsg)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.UI.Msgbox(V.Local.sLockMsg,"Order in use")
+	F.Data.Datatable.Close("dtloadship0")
+	F.Data.DataView.Close("dtLoad","dvloadship")
+	Function.Intrinsic.Control.UnBlockEvents
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.EndIf
+V.Local.iCnt.Set(0)
 '-- [POR020] - Custom Bugs - 11/19/2026 - Collapse duplicate suffixes before any shipped flag is written, and only flag the load being shipped.
 F.Data.Dictionary.Create("dShipSeen")
 F.Data.Dictionary.SetDefaultReturn("dShipSeen","")
@@ -15717,6 +15756,6 @@ Program.Sub.Click_Sync_ControlTower.End
 Program.Sub.Comments.Start
 ${$0$}$$}$$}$12:00:00 AM$}$False
 ${$5$}$2.0.0.0$}$2
-${$6$}$bstevens$}$20261119093906497$}$CursorSigned
-${$7$}$File Version:1.0.20261119173906.0
+${$6$}$bstevens$}$20261120092531277$}$CursorSigned
+${$7$}$File Version:1.0.20261120172531.0
 Program.Sub.Comments.End
